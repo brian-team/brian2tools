@@ -1,0 +1,30 @@
+package:
+  name: brian2tools
+  version: "2.0b4+git"
+
+# Note: specifying a minimal version for numyp leads to incorrect build strings
+requirements:
+  build:
+    - python
+    - setuptools >=6.0
+
+  run:
+    - python
+    - brian2 >=1.9,<2.1
+    - matplotlib >=1.3.1
+
+test:
+  # Python imports
+  imports:
+    - brian2tools
+    - brian2tools.plotting
+
+  commands:
+    #- python -c 'import brian2tools; brian2tools.test()'
+
+  requires:
+    - nose
+
+about:
+  license: CeCILL-2.1
+  summary: 'Tools for the Brian 2 simulator'
