@@ -68,7 +68,6 @@ after_success:
 # We only upload to binstar for commits merged into the master branch
 - if [[ $TRAVIS_PULL_REQUEST == 'false' && $TRAVIS_REPO_SLUG == 'brian-team/brian2tools' && $TRAVIS_BRANCH == 'master' && $DOCS_ONLY != 'yes' ]]; then
     cd $SRCDIR;
-    python dev/continuous-integration/move-conda-package.py dev/conda-recipe &&
     python dev/continuous-integration/conda-server-push.py;
   fi;
 
