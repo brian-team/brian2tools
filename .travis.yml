@@ -52,7 +52,7 @@ install:
 
 # Build documentation or build conda package and run tests
 script:
-  - if [[ $DOCS_ONLY == 'yes' ]]; then
+- if [[ $DOCS_ONLY == 'yes' ]]; then
     cd dist;
     tar xvzf *.tar.gz;
     cd brian2tools*;
