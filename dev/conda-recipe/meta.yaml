@@ -7,7 +7,6 @@ requirements:
   build:
     - python
     - setuptools >=6.0
-
   run:
     - python
     - brian2 >=1.9,<2.1
@@ -20,7 +19,7 @@ test:
     - brian2tools.plotting
 
   commands:
-    #- python -c 'import brian2tools; brian2tools.test()'
+    - nosetests brian2tools
 
   requires:
     - nose
