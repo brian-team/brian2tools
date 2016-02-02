@@ -30,15 +30,15 @@ matrix:
 before_install:
 - if [ ${PYTHON:0:1} == "2" ]; then
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-    wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-$ARCHITECTURE.sh -O miniconda.sh;
+    wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
     else
-    wget http://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-$ARCHITECTURE.sh -O miniconda.sh;
+    wget http://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -O miniconda.sh;
     fi;
     else
     if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-    wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-$ARCHITECTURE.sh -O miniconda.sh;
+    wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     else
-    wget http://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-$ARCHITECTURE.sh -O miniconda.sh;
+    wget http://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
     fi;
   fi
 - chmod +x miniconda.sh
