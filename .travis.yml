@@ -44,6 +44,7 @@ before_install:
 - chmod +x miniconda.sh
 - ./miniconda.sh -b -p ~/miniconda
 - export PATH=~/miniconda/bin:$PATH
+- if [[ $DOCS_ONLY == 'yes' ]]; then conda install --quiet sphinx; fi
 
 # command to install dependencies
 install:
