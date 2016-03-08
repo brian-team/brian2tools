@@ -24,6 +24,12 @@ test:
   requires:
     - nose
 
+source:
+  path: ../..
+
+build:
+  script: python setup.py install --single-version-externally-managed --record=record.txt
+
 about:
   license: CeCILL-2.1
   summary: 'Tools for the Brian 2 simulator'
