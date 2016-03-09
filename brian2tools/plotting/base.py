@@ -1,8 +1,34 @@
+'''
+Base module for the plotting facilities.
+'''
+import matplotlib.pyplot as plt
+
+from brian2.spatialneuron.morphology import Morphology
 from brian2.monitors import SpikeMonitor, StateMonitor, PopulationRateMonitor
 from brian2.units.fundamentalunits import Quantity
 from brian2.units.stdunits import ms
+from brian2.utils.logger import get_logger
 
 from .data import plot_raster, plot_state, plot_rate
+from .morphology import plot_morphology
+
+
+logger = get_logger(__name__)
+
+
+def _setup_axes(axes, newfigure):
+    '''
+    Helper function to create new figures/axes, depending on arguments provided
+    by the user.
+    '''
+    if newfigure:
+        plt.figure()
+        if axes is not None:
+            raise TypeError('Cannot use newfigure=True and provide an axes '
+                            'object at the same time.')
+    if axes is None:
+        axes = plt.axes()
+    return axes
 
 
 def brian_plot(brian_obj,
@@ -48,7 +74,8 @@ def brian_plot(brian_obj,
     '''
     if isinstance(brian_obj, SpikeMonitor):
         return plot_raster(brian_obj.t, brian_obj.i,
-                    axes=axes, newfigure=newfigure, showplot=showplot, **kwds)
+                           axes=axes, newfigure=newfigure, showplot=showplot,
+                           **kwds)
     elif isinstance(brian_obj, StateMonitor):
         if len(brian_obj.record_variables) != 1:
             raise TypeError('brian_plot only works for a StateMonitor that '
@@ -59,13 +86,21 @@ def brian_plot(brian_obj,
         if 'var_unit' not in kwds and isinstance(values, Quantity):
             kwds['var_unit'] = values._get_best_unit()
         return plot_state(brian_obj.t, values,
-                   axes=axes, newfigure=newfigure, showplot=showplot, **kwds)
+                          axes=axes, newfigure=newfigure, showplot=showplot,
+                          **kwds)
     elif isinstance(brian_obj, PopulationRateMonitor):
         smooth_rate = brian_obj.smooth_rate(width=1*ms)
         if 'rate_unit' not in kwds:
             kwds['rate_unit'] = smooth_rate._get_best_unit()
         return plot_rate(brian_obj.t, smooth_rate,
-                  axes=axes, newfigure=newfigure, showplot=showplot, **kwds)
+                         axes=axes, newfigure=newfigure, showplot=showplot,
+                         **kwds)
+    elif isinstance(brian_obj, Morphology):
+        if kwds:
+            logger.warn('plot_morphology does not take any additional keyword '
+                        'arguments, ignoring them.')
+        plot_morphology(brian_obj, axes=axes, newfigure=newfigure,
+                        showplot=showplot)
     else:
         raise NotImplementedError('Do not know how to plot object of type '
                                   '%s' % type(brian_obj))
