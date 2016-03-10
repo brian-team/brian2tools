@@ -38,7 +38,7 @@ def _setup_axes_mayavi(axes, newfigure):
     '''
     import mayavi.mlab as mayavi
     if newfigure or axes is None:
-        fig = mayavi.figure()
+        fig = mayavi.figure(bgcolor=(0.95, 0.95, 0.95))
         if axes is not None:
             raise TypeError('Cannot use newfigure=True and provide an axes '
                             'object at the same time.')
