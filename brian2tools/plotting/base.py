@@ -16,10 +16,10 @@ from .morphology import plot_morphology
 logger = get_logger(__name__)
 
 
-def _setup_axes(axes, newfigure):
+def _setup_axes_matplotlib(axes, newfigure):
     '''
-    Helper function to create new figures/axes, depending on arguments provided
-    by the user.
+    Helper function to create new figures/axes for matplotlib, depending on
+    arguments provided by the user.
     '''
     if newfigure:
         plt.figure()
@@ -29,6 +29,22 @@ def _setup_axes(axes, newfigure):
     if axes is None:
         axes = plt.axes()
     return axes
+
+
+def _setup_axes_mayavi(axes, newfigure):
+    '''
+    Helper function to create new figures/axes for mayavi, depending on
+    arguments provided by the user.
+    '''
+    import mayavi.mlab as mayavi
+    if newfigure or axes is None:
+        fig = mayavi.figure()
+        if axes is not None:
+            raise TypeError('Cannot use newfigure=True and provide an axes '
+                            'object at the same time.')
+    else:
+        fig = axes
+    return fig
 
 
 def brian_plot(brian_obj,

@@ -54,7 +54,7 @@ def plot_raster(spike_times, spike_indices, time_unit=ms,
         e.g. by setting the plotted range, the axis labels, the plot title,
         etc.
     '''
-    axes = base._setup_axes(axes, newfigure)
+    axes = base._setup_axes_matplotlib(axes, newfigure)
     axes.plot(spike_times/time_unit, spike_indices, '.', **kwds)
     axes.set_xlabel('time (%s)' % time_unit)
     axes.set_ylabel('neuron index')
@@ -110,7 +110,7 @@ def plot_state(times, values, time_unit=ms, var_unit=None, var_name=None,
         e.g. by setting the plotted range, the axis labels, the plot title,
         etc.
     '''
-    axes = base._setup_axes(axes, newfigure)
+    axes = base._setup_axes_matplotlib(axes, newfigure)
     if var_unit is None:
         if isinstance(values, Quantity):
             var_unit = values._get_best_unit()
@@ -169,7 +169,7 @@ def plot_rate(times, rate, time_unit=ms, rate_unit=Hz,
         e.g. by setting the plotted range, the axis labels, the plot title,
         etc.
     '''
-    axes = base._setup_axes(axes, newfigure)
+    axes = base._setup_axes_matplotlib(axes, newfigure)
     axes.plot(times/time_unit, rate/rate_unit, **kwds)
     axes.set_xlabel('time (%s)' % time_unit)
     axes.set_ylabel('population rate (%s)' % rate_unit)
