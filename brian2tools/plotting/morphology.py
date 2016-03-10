@@ -140,7 +140,50 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
 def plot_morphology(morphology, plot_3d=None, show_compartments=False,
                     show_diameter=False, colors=('darkblue', 'darkred'),
                     axes=None, newfigure=False, showplot=True):
+    '''
+    Plot a given `Morphology` in 2D or 3D.
 
+    Parameters
+    ----------
+    morphology : `Morphology`
+        The morphology to plot
+    plot_3d : bool, optional
+        Whether to plot the morphology in 3D or in 2D. If not set (the default)
+        a morphology where all z values are 0 is plotted in 2D, otherwise it is
+        plot in 3D.
+    show_compartments : bool, optional
+        Whether to plot a dot at the center of each compartment. Defaults to
+        ``False``.
+    show_diameter : bool, optional
+        Whether to plot the compartments with the diameter given in the
+        morphology. Defaults to ``False``.
+    colors : sequence of color specifications
+        A list of colors that is cycled through for each new section. Can be
+        any color specification that matplotlib understands (e.g. a string such
+        as ``'darkblue'`` or a tuple such as `(0, 0.7, 0)`.
+    axes : `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene`, optional
+        A matplotlib `~matplotlib.axes.Axes` (for 2D plots) or mayavi
+        `~mayavi.core.api.Scene` ( for 3D plots) instance, where the plot will
+        be added.
+    newfigure : bool, optional
+        Whether to create a new figure/scene for this plot. Defaults to
+        ``False``, but will create a new figure/scene nevertheless if none is
+        already open and ``axes`` is None.
+    showplot : bool, optional
+        Display the figure using matplotlib's `~matplotlib.pyplot.show` or
+        mayavi's `~mayavi.mlab.show` command. Defaults to ``True``. Set it to
+        ``False`` if you create several figures and want to have them displayed
+        at once. This setting is not relevant for interactive plotting
+        environments such as jupyter notebooks.
+
+    Returns
+    -------
+    axes : `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene`
+        The `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene` instance that
+        was used for plotting. This object allows to modify the plot further
+        (if ``showplot`` was not set), e.g. by setting the plotted range, the
+        axis labels, the plot title, etc.
+    '''
     if plot_3d is None:
         # Decide whether to use 2d or 3d plotting based on the coordinates
         flat_morphology = FlatMorphology(morphology)
