@@ -77,10 +77,14 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
         start_idx = 0
     if show_compartments:
         # plot points at center of compartment
+        if show_diameters:
+            diameters = flat_morpho.diameter[start_idx:]/float(um)/10
+        else:
+            diameters = np.ones(len(flat_morpho.diameter) - start_idx)
         mayavi.points3d(flat_morpho.x[start_idx:]/float(um),
                         flat_morpho.y[start_idx:]/float(um),
                         flat_morpho.z[start_idx:]/float(um),
-                        flat_morpho.diameter[start_idx:]/float(um)/10,
+                        diameters,
                         figure=figure, color=(0, 0, 0),
                         resolution=16, scale_factor=1)
     # Plot all other compartments
