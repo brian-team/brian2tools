@@ -214,3 +214,87 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
             plt.show()
 
     return axes
+
+
+def plot_dendrogram(morphology,
+                    axes=None, newfigure=False, showplot=True):
+    '''
+    Plot a "dendrogram" of a morphology, i.e. an abstract representation which
+    visualizes the branching structure and the length of each section.
+
+    Parameters
+    ----------
+    morphology : `Morphology`
+        The morphology to visualize.
+    axes : `~matplotlib.axes.Axes`, optional
+        The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
+        ``None`` which means that a new `~matplotlib.axes.Axes` will be
+        created for the plot. Note that this will override previous plots,
+        if a new figure should be created, set ``newfigure`` to ``True``.
+    newfigure : bool, optional
+        Whether to create a new `~matplotlib.figure.Figure` for this plot.
+        Defaults to ``False`.
+    showplot : bool, optional
+        Display the figure using matplotlib's `~matplotlib.pyplot.show`
+        command. Defaults to ``True``. Set it to ``False`` if you create
+        several figures and want to have them displayed at once. This setting
+        is not relevant for interactive plotting environments such as
+        jupyter notebooks.
+
+    Returns
+    -------
+    axes : `~matplotlib.axes.Axes`
+        The `~matplotlib.axes.Axes` instance that was used for plotting. This
+        object allows to modify the plot further (if ``showplot`` was not set),
+        e.g. by setting the plotted range, the axis labels, the plot title,
+        etc.
+    '''
+    axes = base._setup_axes_matplotlib(axes, newfigure)
+    # Get some information from the flattened morphology
+    flat_morpho = FlatMorphology(morphology)
+    section_depth = flat_morpho.depth[flat_morpho.starts]
+    section_distance = flat_morpho.end_distance/float(um)
+    n_sections = flat_morpho.sections
+    max_depth = max(flat_morpho.depth)
+    min_index = np.zeros(n_sections)
+    max_index = np.zeros(n_sections)
+    max_children = max(flat_morpho.morph_children_num)
+    children = flat_morpho.morph_children
+
+    # Each point should be in the middle of its two outermost terminal points
+    # We number all terminal points and go backwards through the tree, noting
+    # for each point the minimum and maximum terminal index in its subtree
+    terminal_counter = 0
+    for d in xrange(max_depth, -1, -1):
+        for counter, idx in enumerate(np.nonzero(section_depth == d)[0]):
+            child_start_idx = (idx+1)*max_children
+            num_children = flat_morpho.morph_children_num[idx+1]
+            if num_children == 0:
+                min_index[idx] = terminal_counter
+                max_index[idx] = terminal_counter
+                terminal_counter += 1
+            else:
+                child_indices = children[child_start_idx:child_start_idx+num_children]
+                min_index[idx] = min(min_index[child_indices-1])
+                max_index[idx] = max(max_index[child_indices-1])
+    x_values = (min_index + max_index) / 2.0
+
+    # Plot the dendogram with lengths of the vertical lines representing the
+    # total distance to the root
+    length_metric = section_distance
+    plt.plot(x_values[0], length_metric[0], 'ko', clip_on=False)
+    for sec, (x, depth) in enumerate(zip(x_values, length_metric)):
+        child_start_idx = (sec+1)*max_children
+        num_children = flat_morpho.morph_children_num[sec+1]
+        if num_children > 0:
+            child_indices = children[child_start_idx:child_start_idx+num_children]
+            child_depth = length_metric[child_indices-1]
+            child_x = x_values[child_indices-1]
+            axes.vlines(child_x, depth, child_depth, clip_on=False, lw=2)
+            axes.hlines(depth, min(child_x), max(child_x), lw=2)
+    axes.set_xticks([])
+    axes.set_ylabel('distance from root (um)')
+    axes.set_xlim(-1, terminal_counter)
+    if showplot:
+        plt.show()
+    return axes

@@ -10,7 +10,7 @@ from brian2.units.stdunits import ms
 from brian2.utils.logger import get_logger
 
 from .data import plot_raster, plot_state, plot_rate
-from .morphology import plot_morphology
+from .morphology import plot_dendrogram
 
 
 logger = get_logger(__name__)
@@ -113,9 +113,9 @@ def brian_plot(brian_obj,
                          **kwds)
     elif isinstance(brian_obj, Morphology):
         if kwds:
-            logger.warn('plot_morphology does not take any additional keyword '
+            logger.warn('plot_dendrogram does not take any additional keyword '
                         'arguments, ignoring them.')
-        plot_morphology(brian_obj, axes=axes, newfigure=newfigure,
+        plot_dendrogram(brian_obj, axes=axes, newfigure=newfigure,
                         showplot=showplot)
     else:
         raise NotImplementedError('Do not know how to plot object of type '
