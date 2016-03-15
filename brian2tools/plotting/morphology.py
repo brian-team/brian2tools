@@ -234,27 +234,47 @@ def plot_dendrogram(morphology, axes=None):
     max_children = max(flat_morpho.morph_children_num)
     children = flat_morpho.morph_children
 
+    length_metric = section_distance
+
     # Each point should be in the middle of its two outermost terminal points
-    # We number all terminal points and go backwards through the tree, noting
-    # for each point the minimum and maximum terminal index in its subtree
+    # We go backwards through the tree, noting for each point all terminal
+    # indices in its subtree
+    terminals = [set() for _ in xrange(n_sections)]
     terminal_counter = 0
     for d in xrange(max_depth, -1, -1):
-        for counter, idx in enumerate(np.nonzero(section_depth == d)[0]):
+        for idx in np.nonzero(section_depth == d)[0]:
             child_start_idx = (idx+1)*max_children
             num_children = flat_morpho.morph_children_num[idx+1]
             if num_children == 0:
-                min_index[idx] = terminal_counter
-                max_index[idx] = terminal_counter
+                terminals[idx] = {terminal_counter}
                 terminal_counter += 1
             else:
                 child_indices = children[child_start_idx:child_start_idx+num_children]
-                min_index[idx] = min(min_index[child_indices-1])
-                max_index[idx] = max(max_index[child_indices-1])
-    x_values = (min_index + max_index) / 2.0
+                terminals[idx].update(*[terminals[c-1] for c in child_indices])
+
+    # Now we make sure that subtrees starting at a lower x value will be left
+    # of other subtrees
+    # This is probably not the most efficient algorithm, but it seems to work
+    order_strings = [[] for _ in xrange(terminal_counter)]
+    for idx in np.argsort(length_metric):
+        child_terminals = terminals[idx]
+        for t, order_string in enumerate(order_strings):
+            if t in child_terminals:
+                order_string.extend('A')
+            else:
+                order_string.extend('B')
+    order_strings = [''.join(s) for s in order_strings]
+    terminal_x_values = np.argsort(np.argsort(order_strings))
+    # Use the re-arranged values to calculate the actual x value for the tree
+    min_index = [min(terminal_x_values[np.array(list(ts), dtype=int)])
+                 for ts in terminals]
+    max_index = [max(terminal_x_values[np.array(list(ts), dtype=int)])
+                 for ts in terminals]
+
+    x_values = (np.array(min_index) + np.array(max_index)) / 2.0
 
     # Plot the dendogram with lengths of the vertical lines representing the
     # total distance to the root
-    length_metric = section_distance
     plt.plot(x_values[0], length_metric[0], 'ko', clip_on=False)
     for sec, (x, depth) in enumerate(zip(x_values, length_metric)):
         child_start_idx = (sec+1)*max_children
