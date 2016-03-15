@@ -139,7 +139,7 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
 
 def plot_morphology(morphology, plot_3d=None, show_compartments=False,
                     show_diameter=False, colors=('darkblue', 'darkred'),
-                    axes=None, newfigure=False, showplot=True):
+                    axes=None):
     '''
     Plot a given `Morphology` in 2D or 3D.
 
@@ -165,24 +165,13 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         A matplotlib `~matplotlib.axes.Axes` (for 2D plots) or mayavi
         `~mayavi.core.api.Scene` ( for 3D plots) instance, where the plot will
         be added.
-    newfigure : bool, optional
-        Whether to create a new figure/scene for this plot. Defaults to
-        ``False``, but will create a new figure/scene nevertheless if none is
-        already open and ``axes`` is None.
-    showplot : bool, optional
-        Display the figure using matplotlib's `~matplotlib.pyplot.show` or
-        mayavi's `~mayavi.mlab.show` command. Defaults to ``True``. Set it to
-        ``False`` if you create several figures and want to have them displayed
-        at once. This setting is not relevant for interactive plotting
-        environments such as jupyter notebooks.
 
     Returns
     -------
     axes : `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene`
         The `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene` instance that
-        was used for plotting. This object allows to modify the plot further
-        (if ``showplot`` was not set), e.g. by setting the plotted range, the
-        axis labels, the plot title, etc.
+        was used for plotting. This object allows to modify the plot further,
+        e.g. by setting the plotted range, the axis labels, the plot title, etc.
     '''
     if plot_3d is None:
         # Decide whether to use 2d or 3d plotting based on the coordinates
@@ -194,30 +183,25 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
             import mayavi.mlab as mayavi
         except ImportError:
             raise ImportError('3D plotting needs the mayavi library')
-        axes = base._setup_axes_mayavi(axes, newfigure)
+        axes = base._setup_axes_mayavi(axes)
         axes.scene.disable_render = True
         _plot_morphology3D(morphology, axes, colors=colors,
                            show_diameters=show_diameter,
                            show_compartments=show_compartments)
         axes.scene.disable_render = False
-        if showplot:
-            mayavi.show()
     else:
-        axes = base._setup_axes_matplotlib(axes, newfigure)
+        axes = base._setup_axes_matplotlib(axes)
         _plot_morphology2D(morphology, axes, colors,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter)
         axes.set_xlabel('x (um)')
         axes.set_ylabel('y (um)')
         axes.set_aspect('equal')
-        if showplot:
-            plt.show()
 
     return axes
 
 
-def plot_dendrogram(morphology,
-                    axes=None, newfigure=False, showplot=True):
+def plot_dendrogram(morphology, axes=None):
     '''
     Plot a "dendrogram" of a morphology, i.e. an abstract representation which
     visualizes the branching structure and the length of each section.
@@ -229,27 +213,16 @@ def plot_dendrogram(morphology,
     axes : `~matplotlib.axes.Axes`, optional
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
-        created for the plot. Note that this will override previous plots,
-        if a new figure should be created, set ``newfigure`` to ``True``.
-    newfigure : bool, optional
-        Whether to create a new `~matplotlib.figure.Figure` for this plot.
-        Defaults to ``False`.
-    showplot : bool, optional
-        Display the figure using matplotlib's `~matplotlib.pyplot.show`
-        command. Defaults to ``True``. Set it to ``False`` if you create
-        several figures and want to have them displayed at once. This setting
-        is not relevant for interactive plotting environments such as
-        jupyter notebooks.
+        created for the plot.
 
     Returns
     -------
     axes : `~matplotlib.axes.Axes`
         The `~matplotlib.axes.Axes` instance that was used for plotting. This
-        object allows to modify the plot further (if ``showplot`` was not set),
-        e.g. by setting the plotted range, the axis labels, the plot title,
-        etc.
+        object allows to modify the plot further, e.g. by setting the plotted
+        range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes, newfigure)
+    axes = base._setup_axes_matplotlib(axes)
     # Get some information from the flattened morphology
     flat_morpho = FlatMorphology(morphology)
     section_depth = flat_morpho.depth[flat_morpho.starts]
@@ -295,6 +268,4 @@ def plot_dendrogram(morphology,
     axes.set_xticks([])
     axes.set_ylabel('distance from root (um)')
     axes.set_xlim(-1, terminal_counter)
-    if showplot:
-        plt.show()
     return axes

@@ -11,7 +11,7 @@ import base
 
 
 def plot_raster(spike_times, spike_indices, time_unit=ms,
-                axes=None, newfigure=False, showplot=True, **kwds):
+                axes=None, **kwds):
     '''
     Plot a "raster plot", a plot of neuron indices over spike times. The default
     marker used for plotting is `'.'`, it can be overriden with the `marker`
@@ -30,17 +30,7 @@ def plot_raster(spike_times, spike_indices, time_unit=ms,
     axes : `~matplotlib.axes.Axes`, optional
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
-        created for the plot. Note that this will override previous plots,
-        if a new figure should be created, set ``newfigure`` to ``True``.
-    newfigure : bool, optional
-        Whether to create a new `~matplotlib.figure.Figure` for this plot.
-        Defaults to ``False`.
-    showplot : bool, optional
-        Display the figure using matplotlib's `~matplotlib.pyplot.show`
-        command. Defaults to ``True``. Set it to ``False`` if you create
-        several figures and want to have them displayed at once. This setting
-        is not relevant for interactive plotting environments such as
-        jupyter notebooks.
+        created for the plot.
     kwds : dict, optional
         Any additional keywords command will be handed over to matplotlib's
         `~matplotlib.axes.Axes.plot` command. This can be used to set plot
@@ -50,21 +40,18 @@ def plot_raster(spike_times, spike_indices, time_unit=ms,
     -------
     axes : `~matplotlib.axes.Axes`
         The `~matplotlib.axes.Axes` instance that was used for plotting. This
-        object allows to modify the plot further (if ``showplot`` was not set),
-        e.g. by setting the plotted range, the axis labels, the plot title,
-        etc.
+        object allows to modify the plot further, e.g. by setting the plotted
+        range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes, newfigure)
+    axes = base._setup_axes_matplotlib(axes)
     axes.plot(spike_times/time_unit, spike_indices, '.', **kwds)
     axes.set_xlabel('time (%s)' % time_unit)
     axes.set_ylabel('neuron index')
-    if showplot:
-        plt.show()
     return axes
 
 
 def plot_state(times, values, time_unit=ms, var_unit=None, var_name=None,
-               axes=None, newfigure=False, showplot=True, **kwds):
+               axes=None, **kwds):
     '''
 
     Parameters
@@ -86,17 +73,7 @@ def plot_state(times, values, time_unit=ms, var_unit=None, var_name=None,
     axes : `~matplotlib.axes.Axes`, optional
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
-        created for the plot. Note that this will override previous plots,
-        if a new figure should be created, set ``newfigure`` to ``True``.
-    newfigure : bool, optional
-        Whether to create a new `~matplotlib.figure.Figure` for this plot.
-        Defaults to ``False`.
-    showplot : bool, optional
-        Display the figure using matplotlib's `~matplotlib.pyplot.show`
-        command. Defaults to ``True``. Set it to ``False`` if you create
-        several figures and want to have them displayed at once. This setting
-        is not relevant for interactive plotting environments such as
-        jupyter notebooks.
+        created for the plot.
     kwds : dict, optional
         Any additional keywords command will be handed over to matplotlib's
         `~matplotlib.axes.Axes.plot` command. This can be used to set plot
@@ -106,11 +83,10 @@ def plot_state(times, values, time_unit=ms, var_unit=None, var_name=None,
     -------
     axes : `~matplotlib.axes.Axes`
         The `~matplotlib.axes.Axes` instance that was used for plotting. This
-        object allows to modify the plot further (if ``showplot`` was not set),
-        e.g. by setting the plotted range, the axis labels, the plot title,
-        etc.
+        object allows to modify the plot further, e.g. by setting the plotted
+        range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes, newfigure)
+    axes = base._setup_axes_matplotlib(axes)
     if var_unit is None:
         if isinstance(values, Quantity):
             var_unit = values._get_best_unit()
@@ -122,13 +98,10 @@ def plot_state(times, values, time_unit=ms, var_unit=None, var_name=None,
         axes.set_ylabel('%s (%s)' % (var_name, var_unit))
     else:
         axes.set_ylabel('%s' % var_name)
-    if showplot:
-        plt.show()
     return axes
 
 
-def plot_rate(times, rate, time_unit=ms, rate_unit=Hz,
-              axes=None, newfigure=False, showplot=True, **kwds):
+def plot_rate(times, rate, time_unit=ms, rate_unit=Hz, axes=None, **kwds):
     '''
 
     Parameters
@@ -145,17 +118,7 @@ def plot_rate(times, rate, time_unit=ms, rate_unit=Hz,
     axes : `~matplotlib.axes.Axes`, optional
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
-        created for the plot. Note that this will override previous plots,
-        if a new figure should be created, set ``newfigure`` to ``True``.
-    newfigure : bool, optional
-        Whether to create a new `~matplotlib.figure.Figure` for this plot.
-        Defaults to ``False`.
-    showplot : bool, optional
-        Display the figure using matplotlib's `~matplotlib.pyplot.show`
-        command. Defaults to ``True``. Set it to ``False`` if you create
-        several figures and want to have them displayed at once. This setting
-        is not relevant for interactive plotting environments such as
-        jupyter notebooks.
+        created for the plot.
     kwds : dict, optional
         Any additional keywords command will be handed over to matplotlib's
         `~matplotlib.axes.Axes.plot` command. This can be used to set plot
@@ -165,14 +128,11 @@ def plot_rate(times, rate, time_unit=ms, rate_unit=Hz,
     -------
     axes : `~matplotlib.axes.Axes`
         The `~matplotlib.axes.Axes` instance that was used for plotting. This
-        object allows to modify the plot further (if ``showplot`` was not set),
-        e.g. by setting the plotted range, the axis labels, the plot title,
-        etc.
+        object allows to modify the plot further, e.g. by setting the plotted
+        range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes, newfigure)
+    axes = base._setup_axes_matplotlib(axes)
     axes.plot(times/time_unit, rate/rate_unit, **kwds)
     axes.set_xlabel('time (%s)' % time_unit)
     axes.set_ylabel('population rate (%s)' % rate_unit)
-    if showplot:
-        plt.show()
     return axes
