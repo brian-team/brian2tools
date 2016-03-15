@@ -14,17 +14,17 @@ def plot_raster(spike_times, spike_indices, time_unit=ms,
                 axes=None, **kwds):
     '''
     Plot a "raster plot", a plot of neuron indices over spike times. The default
-    marker used for plotting is `'.'`, it can be overriden with the `marker`
+    marker used for plotting is ``'.'``, it can be overriden with the ``marker``
     keyword argument.
 
     Parameters
     ----------
-    spike_times : `Quantity`
+    spike_times : `~brian2.units.fundamentalunits.Quantity`
         A sequence of spike times.
-    spike_indices : `ndarray`
+    spike_indices : `~numpy.ndarray`
         The indices of spiking neurons, corresponding to the times given in
         ``spike_times``.
-    time_unit : `Unit`, optional
+    time_unit : `~brian2.units.fundamentalunits.Unit`, optional
         The unit to use for the time axis. Defaults to ``ms``, but longer
         simulations could use ``second``, for example.
     axes : `~matplotlib.axes.Axes`, optional
@@ -56,15 +56,15 @@ def plot_state(times, values, time_unit=ms, var_unit=None, var_name=None,
 
     Parameters
     ----------
-    times : `Quantity`
+    times : `~brian2.units.fundamentalunits.Quantity`
         The array of times for the data points given in ``values``.
-    values : `Quantity`, `ndarray`
+    values : `~brian2.units.fundamentalunits.Quantity`, `~numpy.ndarray`
         The values to plot, either a 1D array with the same length as ``times``,
         or a 2D array with ``len(times)`` rows.
-    time_unit : `Unit`, optional
+    time_unit : `~brian2.units.fundamentalunits.Unit`, optional
         The unit to use for the time axis. Defaults to ``ms``, but longer
         simulations could use ``second``, for example.
-    var_unit : `Unit`, optional
+    var_unit : `~brian2.units.fundamentalunits.Unit`, optional
         The unit to use to plot the ``values`` (e.g. ``mV`` for a membrane
         potential). If none is given (the default), an attempt is made to
         find a good scale automatically based on the ``values``.
@@ -106,14 +106,14 @@ def plot_rate(times, rate, time_unit=ms, rate_unit=Hz, axes=None, **kwds):
 
     Parameters
     ----------
-    times : `Quantity`
+    times : `~brian2.units.fundamentalunits.Quantity`
         The time points at which the ``rate`` is measured.
-    rate : `Quantity`
+    rate : `~brian2.units.fundamentalunits.Quantity`
         The population rate for each time point in ``times``
-    time_unit : `Unit`, optional
+    time_unit : `~brian2.units.fundamentalunits.Unit`, optional
         The unit to use for the time axis. Defaults to ``ms``, but longer
         simulations could use ``second``, for example.
-    time_unit : `Unit`, optional
+    time_unit : `~brian2.units.fundamentalunits.Unit`, optional
         The unit to use for the rate axis. Defaults to ``Hz``.
     axes : `~matplotlib.axes.Axes`, optional
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to

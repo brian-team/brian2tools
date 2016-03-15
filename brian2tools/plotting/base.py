@@ -42,15 +42,17 @@ def brian_plot(brian_obj,
     '''
     Plot the data of the given object (e.g. a monitor). This function will
     call an adequate plotting function for the object, e.g. `plot_raster` for
-    a `SpikeMonitor`. The plotting may apply heuristics to get a generally
-    useful plot (e.g. for a `PopulationRateMonitor`, it will plot the rates
+    a `~brian2.monitors.spikemonitor.SpikeMonitor`. The plotting may apply
+    heuristics to get a generally useful plot (e.g. for a
+    `~brian2.monitors.ratemonitor.PopulationRateMonitor`, it will plot the rates
     smoothed with a Gaussian window of 1 ms), the exact details are subject to
     change. This function is therefore mostly meant as a quick and easy way to
     plot an object, for full control use one of the specific plotting functions.
 
     Parameters
     ----------
-    brian_obj
+    brian_obj : object
+        The Brian object to plot.
     axes : `~matplotlib.axes.Axes`, optional
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
@@ -68,8 +70,7 @@ def brian_plot(brian_obj,
         range, the axis labels, the plot title, etc.
     '''
     if isinstance(brian_obj, SpikeMonitor):
-        return plot_raster(brian_obj.t, brian_obj.i,
-                           axes=axes, **kwds)
+        return plot_raster(brian_obj.t, brian_obj.i, axes=axes, **kwds)
     elif isinstance(brian_obj, StateMonitor):
         if len(brian_obj.record_variables) != 1:
             raise TypeError('brian_plot only works for a StateMonitor that '

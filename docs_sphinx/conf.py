@@ -19,7 +19,7 @@ import shlex
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
 
 # -- General configuration ------------------------------------------------
 
@@ -31,6 +31,8 @@ import shlex
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
@@ -84,7 +86,7 @@ exclude_patterns = []
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
-#default_role = None
+default_role = 'obj'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True
@@ -101,7 +103,7 @@ exclude_patterns = []
 pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
+modindex_common_prefix = ['brian2tools.']
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
@@ -369,10 +371,17 @@ epub_exclude_files = ['search.html']
 #epub_use_index = True
 
 
-# Example configuration for intersphinx: refer to the Python standard library.
-# TODO: make this link to the correct version for Brian 2
-intersphinx_mapping = {'python': ('https://docs.python.org', None),
-                       'brian2': ('https://brian2.readthedocs.org', None),
-                       'matplotlib': ('http://matplotlib.org', None),
-                       'numpy': ('http://docs.scipy.org/doc/numpy', None),
-                       'scipy': ('http://docs.scipy.org/doc/scipy/reference', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/', None),
+                       'brian2': ('https://brian2.readthedocs.org/en/latest/', None),
+                       'matplotlib': ('http://matplotlib.org/', None),
+                       'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+                       'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
+                       'mayavi': ('http://docs.enthought.com/mayavi/mayavi/', None)}
+
+# Create api docs
+def run_apidoc(_):
+    import sphinx.apidoc as apidoc
+    apidoc.main(argv=['sphinx-apidoc', '-f', '-e', '-M', '-o', './reference', '../brian2tools'])
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)

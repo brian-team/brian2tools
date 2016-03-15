@@ -1,16 +1,17 @@
-.. brian2tools documentation master file, created by
-   sphinx-quickstart on Tue Feb  2 13:55:18 2016.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to brian2tools's documentation!
 =======================================
 
-Contents:
+Contents
+--------
 
+
+API reference
+-------------
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 5
+   :titlesonly:
 
+   reference/brian2tools
 
 
 Indices and tables

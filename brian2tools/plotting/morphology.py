@@ -1,5 +1,5 @@
 '''
-Module to plot Brian `Morphology` objects.
+Module to plot Brian `~brian2.spatialneuron.morphology.Morphology` objects.
 '''
 import numpy as np
 from brian2.spatialneuron.spatialneuron import FlatMorphology
@@ -141,11 +141,11 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
                     show_diameter=False, colors=('darkblue', 'darkred'),
                     axes=None):
     '''
-    Plot a given `Morphology` in 2D or 3D.
+    Plot a given `~brian2.spatialneuron.morphology.Morphology` in 2D or 3D.
 
     Parameters
     ----------
-    morphology : `Morphology`
+    morphology : `~brian2.spatialneuron.morphology.Morphology`
         The morphology to plot
     plot_3d : bool, optional
         Whether to plot the morphology in 3D or in 2D. If not set (the default)
@@ -208,7 +208,7 @@ def plot_dendrogram(morphology, axes=None):
 
     Parameters
     ----------
-    morphology : `Morphology`
+    morphology : `~brian2.spatialneuron.morphology.Morphology`
         The morphology to visualize.
     axes : `~matplotlib.axes.Axes`, optional
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
