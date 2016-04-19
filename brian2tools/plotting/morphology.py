@@ -229,8 +229,6 @@ def plot_dendrogram(morphology, axes=None):
     section_distance = flat_morpho.end_distance/float(um)
     n_sections = flat_morpho.sections
     max_depth = max(flat_morpho.depth)
-    min_index = np.zeros(n_sections)
-    max_index = np.zeros(n_sections)
     max_children = max(flat_morpho.morph_children_num)
     children = flat_morpho.morph_children
 
