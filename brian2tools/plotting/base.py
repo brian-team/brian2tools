@@ -8,9 +8,11 @@ from brian2.monitors import SpikeMonitor, StateMonitor, PopulationRateMonitor
 from brian2.units.fundamentalunits import Quantity
 from brian2.units.stdunits import ms
 from brian2.utils.logger import get_logger
+from brian2.synapses.synapses import Synapses
 
 from .data import plot_raster, plot_state, plot_rate
 from .morphology import plot_dendrogram
+from .synapses import plot_synapses
 
 
 logger = get_logger(__name__)
@@ -91,6 +93,8 @@ def brian_plot(brian_obj,
             logger.warn('plot_dendrogram does not take any additional keyword '
                         'arguments, ignoring them.')
         plot_dendrogram(brian_obj, axes=axes)
+    elif isinstance(brian_obj, Synapses):
+        plot_synapses(brian_obj.i, brian_obj.j, axes=axes)
     else:
         raise NotImplementedError('Do not know how to plot object of type '
                                   '%s' % type(brian_obj))
