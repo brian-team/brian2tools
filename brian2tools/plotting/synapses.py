@@ -18,6 +18,21 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
     if not len(sources) == len(targets):
         raise TypeError('Length of sources and targets does not match.')
 
+    # Get some information out of the values if provided
+    if values is not None:
+        if len(values) != len(sources):
+            raise TypeError('Length of values and sources/targets does not '
+                            'match.')
+        if var_name is None:
+            var_name = getattr(values, 'name', None)  # works for a VariableView
+        if var_unit is None:
+            try:
+                var_unit = values[:]._get_best_unit()
+            except AttributeError:
+                pass
+        if var_unit is not None:
+            values = values / var_unit
+
     connection_count = Counter(zip(sources, targets))
     multiple_synapses = np.any(np.array(connection_count.values()) > 1)
 
@@ -43,8 +58,6 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
         if values is None:
             axes.scatter(sources, targets)
         else:
-            if var_unit is not None:
-                values = values / var_unit
             # make some space for the colorbar:
             print axes.get_position()
             axes.set_position([0.125, 0.1, 0.725, 0.8])
