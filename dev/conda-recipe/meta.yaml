@@ -19,7 +19,7 @@ test:
     - brian2tools.plotting
 
   commands:
-    - py.test --pyargs brian2tools
+    - MPLBACKEND=Agg py.test --pyargs brian2tools
 
   requires:
     - pytest
