@@ -16,6 +16,40 @@ __all__ = ['plot_synapses']
 
 def plot_synapses(sources, targets, values=None, var_unit=None,
                   var_name=None, axes=None, **kwds):
+    '''
+    Parameters
+    ----------
+    sources : `~numpy.ndarray` of int
+        The source indices of the connections (as returned by
+        ``Synapses.i``).
+    targets : `~numpy.ndarray` of int
+        The target indices of the connections (as returned by
+        ``Synapses.j``).
+    values : `~brian2.units.fundamentalunits.Quantity`, `~numpy.ndarray`
+        The values to plot, a 1D array of the same size as ``sources`` and
+        ``targets``.
+    var_unit : `~brian2.units.fundamentalunits.Unit`, optional
+        The unit to use to plot the ``values`` (e.g. ``mV`` for a membrane
+        potential). If none is given (the default), an attempt is made to
+        find a good scale automatically based on the ``values``.
+    var_name : str, optional
+        The name of the variable that is plotted. Used for the axis label.
+    axes : `~matplotlib.axes.Axes`, optional
+        The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
+        ``None`` which means that a new `~matplotlib.axes.Axes` will be
+        created for the plot.
+    kwds : dict, optional
+        Any additional keywords command will be handed over to matplotlib's
+        `~matplotlib.axes.Axes.scatter` command. This can be used to set plot
+        properties such as the ``marker``.
+
+    Returns
+    -------
+    axes : `~matplotlib.axes.Axes`
+        The `~matplotlib.axes.Axes` instance that was used for plotting. This
+        object allows to modify the plot further, e.g. by setting the plotted
+        range, the axis labels, the plot title, etc.
+    '''
     axes = base._setup_axes_matplotlib(axes)
 
     if not len(sources) == len(targets):
