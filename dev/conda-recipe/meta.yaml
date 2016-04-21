@@ -31,5 +31,5 @@ build:
   script: python setup.py install --single-version-externally-managed --record=record.txt
 
 about:
-  license: CeCILL-2.1
+  license: LICENSE
   summary: 'Tools for the Brian 2 simulator'
