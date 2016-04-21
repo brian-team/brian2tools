@@ -10,7 +10,7 @@ from brian2.units.fundamentalunits import Quantity
 import base
 
 
-def plot_raster(spike_times, spike_indices, time_unit=ms,
+def plot_raster(spike_indices, spike_times, time_unit=ms,
                 axes=None, **kwds):
     '''
     Plot a "raster plot", a plot of neuron indices over spike times. The default
@@ -19,11 +19,11 @@ def plot_raster(spike_times, spike_indices, time_unit=ms,
 
     Parameters
     ----------
-    spike_times : `~brian2.units.fundamentalunits.Quantity`
-        A sequence of spike times.
     spike_indices : `~numpy.ndarray`
         The indices of spiking neurons, corresponding to the times given in
         ``spike_times``.
+    spike_times : `~brian2.units.fundamentalunits.Quantity`
+        A sequence of spike times.
     time_unit : `~brian2.units.fundamentalunits.Unit`, optional
         The unit to use for the time axis. Defaults to ``ms``, but longer
         simulations could use ``second``, for example.

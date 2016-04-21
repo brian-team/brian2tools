@@ -72,7 +72,7 @@ def brian_plot(brian_obj,
         range, the axis labels, the plot title, etc.
     '''
     if isinstance(brian_obj, SpikeMonitor):
-        return plot_raster(brian_obj.t, brian_obj.i, axes=axes, **kwds)
+        return plot_raster(brian_obj.i, brian_obj.t, axes=axes, **kwds)
     elif isinstance(brian_obj, StateMonitor):
         if len(brian_obj.record_variables) != 1:
             raise TypeError('brian_plot only works for a StateMonitor that '
