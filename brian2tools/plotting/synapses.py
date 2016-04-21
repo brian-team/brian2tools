@@ -50,7 +50,9 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
         object allows to modify the plot further, e.g. by setting the plotted
         range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes)
+    # Avoid circular import issues
+    from brian2tools.plotting.base import _setup_axes_matplotlib
+    axes = _setup_axes_matplotlib(axes)
 
     if not len(sources) == len(targets):
         raise TypeError('Length of sources and targets does not match.')

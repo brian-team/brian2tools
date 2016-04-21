@@ -11,9 +11,6 @@ import matplotlib.pyplot as plt
 from brian2.units.stdunits import um
 from brian2.spatialneuron.morphology import Soma
 
-# Only import the module to avoid circular import issues
-import base
-
 __all__ = ['plot_morphology', 'plot_dendrogram']
 
 
@@ -175,6 +172,9 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         was used for plotting. This object allows to modify the plot further,
         e.g. by setting the plotted range, the axis labels, the plot title, etc.
     '''
+    # Avoid circular import issues
+    from brian2tools.plotting.base import (_setup_axes_matplotlib,
+                                           _setup_axes_mayavi)
     if plot_3d is None:
         # Decide whether to use 2d or 3d plotting based on the coordinates
         flat_morphology = FlatMorphology(morphology)
@@ -185,14 +185,14 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
             import mayavi.mlab as mayavi
         except ImportError:
             raise ImportError('3D plotting needs the mayavi library')
-        axes = base._setup_axes_mayavi(axes)
+        axes = _setup_axes_mayavi(axes)
         axes.scene.disable_render = True
         _plot_morphology3D(morphology, axes, colors=colors,
                            show_diameters=show_diameter,
                            show_compartments=show_compartments)
         axes.scene.disable_render = False
     else:
-        axes = base._setup_axes_matplotlib(axes)
+        axes = _setup_axes_matplotlib(axes)
         _plot_morphology2D(morphology, axes, colors,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter)
@@ -224,7 +224,9 @@ def plot_dendrogram(morphology, axes=None):
         object allows to modify the plot further, e.g. by setting the plotted
         range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes)
+    # Avoid circular import issues
+    from brian2tools.plotting.base import _setup_axes_matplotlib
+    axes = _setup_axes_matplotlib(axes)
     # Get some information from the flattened morphology
     flat_morpho = FlatMorphology(morphology)
     section_depth = flat_morpho.depth[flat_morpho.starts]

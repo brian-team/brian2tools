@@ -6,9 +6,6 @@ import matplotlib.pyplot as plt
 from brian2.units.stdunits import ms, Hz
 from brian2.units.fundamentalunits import Quantity
 
-# Only import the module to avoid circular import issues
-import base
-
 __all__ = ['plot_raster', 'plot_state', 'plot_rate']
 
 
@@ -45,7 +42,9 @@ def plot_raster(spike_indices, spike_times, time_unit=ms,
         object allows to modify the plot further, e.g. by setting the plotted
         range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes)
+    # Avoid circular import issues
+    from brian2tools.plotting.base import _setup_axes_matplotlib
+    axes = _setup_axes_matplotlib(axes)
     axes.plot(spike_times/time_unit, spike_indices, '.', **kwds)
     axes.set_xlabel('time (%s)' % time_unit)
     axes.set_ylabel('neuron index')
@@ -88,7 +87,9 @@ def plot_state(times, values, time_unit=ms, var_unit=None, var_name=None,
         object allows to modify the plot further, e.g. by setting the plotted
         range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes)
+    # Avoid circular import issues
+    from brian2tools.plotting.base import _setup_axes_matplotlib
+    axes = _setup_axes_matplotlib(axes)
     if var_unit is None:
         if isinstance(values, Quantity):
             var_unit = values._get_best_unit()
@@ -133,7 +134,9 @@ def plot_rate(times, rate, time_unit=ms, rate_unit=Hz, axes=None, **kwds):
         object allows to modify the plot further, e.g. by setting the plotted
         range, the axis labels, the plot title, etc.
     '''
-    axes = base._setup_axes_matplotlib(axes)
+    # Avoid circular import issues
+    from brian2tools.plotting.base import _setup_axes_matplotlib
+    axes = _setup_axes_matplotlib(axes)
     axes.plot(times/time_unit, rate/rate_unit, **kwds)
     axes.set_xlabel('time (%s)' % time_unit)
     axes.set_ylabel('population rate (%s)' % rate_unit)
