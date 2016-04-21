@@ -8,9 +8,6 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-# Only import the module to avoid circular import issues
-import base
-
 __all__ = ['plot_synapses']
 
 
