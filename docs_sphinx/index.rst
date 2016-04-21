@@ -4,6 +4,11 @@ Welcome to brian2tools's documentation!
 Contents
 --------
 
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   plotting
 
 API reference
 -------------
