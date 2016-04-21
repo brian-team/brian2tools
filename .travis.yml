@@ -62,7 +62,8 @@ script:
     tar xvzf *.tar.gz;
     cd brian2tools*;
     mkdir docs;
-    sphinx-build docs_sphinx docs;
+    cd docs_sphinx;
+    make html && make latex;
   else
     export SRCDIR=$(pwd);
     conda build --quiet -c brian-team -c brian-team/channel/dev dev/conda-recipe;
