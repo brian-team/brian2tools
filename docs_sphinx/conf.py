@@ -372,7 +372,7 @@ epub_exclude_files = ['search.html']
 
 
 intersphinx_mapping = {'python': ('https://docs.python.org/', None),
-                       'brian2': ('https://brian2.readthedocs.org/en/latest/', None),
+                       'brian2': ('https://brian2.readthedocs.org/en/2.0rc/', None),
                        'matplotlib': ('http://matplotlib.org/', None),
                        'numpy': ('http://docs.scipy.org/doc/numpy/', None),
                        'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
