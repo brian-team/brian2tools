@@ -14,7 +14,7 @@ def readme():
         return f.read()
 
 setup(name='brian2tools',
-      version='2.0b4+git',
+      version='0.0+git',
       packages=find_packages(),
       install_requires=['matplotlib>=1.3.1',
                         'brian2>1.9'],
