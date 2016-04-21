@@ -63,7 +63,7 @@ script:
     cd brian2tools*;
     mkdir docs;
     cd docs_sphinx;
-    make html && make latex;
+    sphinx-build . ../docs;
   else
     export SRCDIR=$(pwd);
     conda build --quiet -c brian-team -c brian-team/channel/dev dev/conda-recipe;
