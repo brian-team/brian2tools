@@ -70,7 +70,7 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             values = values / var_unit
 
     connection_count = Counter(zip(sources, targets))
-    multiple_synapses = np.any(np.array(connection_count.values()) > 1)
+    multiple_synapses = np.any(np.array(list(connection_count.values())) > 1)
 
     edgecolor = kwds.pop('edgecolor', 'none')
 

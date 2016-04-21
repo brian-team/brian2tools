@@ -107,7 +107,7 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
     for start, end in zip(flat_morpho.starts[1:], flat_morpho.ends[1:]):
         # we only need the lines within the sections
         new_connections = [((idx-1)*2, (idx-1)*2 + 1)
-                           for idx in xrange(start, end)]
+                           for idx in range(start, end)]
         connections.extend(new_connections)
     connections = np.vstack(connections)
     src.mlab_source.dataset.lines = connections
@@ -241,9 +241,9 @@ def plot_dendrogram(morphology, axes=None):
     # Each point should be in the middle of its two outermost terminal points
     # We go backwards through the tree, noting for each point all terminal
     # indices in its subtree
-    terminals = [set() for _ in xrange(n_sections)]
+    terminals = [set() for _ in range(n_sections)]
     terminal_counter = 0
-    for d in xrange(max_depth, -1, -1):
+    for d in range(max_depth, -1, -1):
         for idx in np.nonzero(section_depth == d)[0]:
             child_start_idx = (idx+1)*max_children
             num_children = flat_morpho.morph_children_num[idx+1]
@@ -257,7 +257,7 @@ def plot_dendrogram(morphology, axes=None):
     # Now we make sure that subtrees starting at a lower x value will be left
     # of other subtrees
     # This is probably not the most efficient algorithm, but it seems to work
-    order_strings = [[] for _ in xrange(terminal_counter)]
+    order_strings = [[] for _ in range(terminal_counter)]
     for idx in np.argsort(length_metric):
         child_terminals = terminals[idx]
         for t, order_string in enumerate(order_strings):
