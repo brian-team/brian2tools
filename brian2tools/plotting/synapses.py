@@ -63,7 +63,6 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             axes.scatter(sources, targets, edgecolor=edgecolor, **kwds)
         else:
             # make some space for the colorbar:
-            print axes.get_position()
             axes.set_position([0.125, 0.1, 0.725, 0.8])
             s = axes.scatter(sources, targets, c=values, edgecolor=edgecolor,
                              **kwds)
