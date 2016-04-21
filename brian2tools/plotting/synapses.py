@@ -6,6 +6,7 @@ from collections import Counter
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # Only import the module to avoid circular import issues
 import base
@@ -52,7 +53,8 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
         axes.scatter(unique_sources, unique_targets, c=n_synapses,
                      edgecolor=edgecolor, cmap=cmap, **kwds)
-        cax = axes.get_figure().add_axes([0.92, 0.1, 0.03, 0.8])
+        locatable_axes = make_axes_locatable(axes)
+        cax = locatable_axes.append_axes('right', size='5%', pad=0.05)
         mpl.colorbar.ColorbarBase(cax, cmap=cmap,
                                   norm=norm,
                                   ticks=bounds-0.5,
@@ -62,11 +64,10 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
         if values is None:
             axes.scatter(sources, targets, edgecolor=edgecolor, **kwds)
         else:
-            # make some space for the colorbar:
-            axes.set_position([0.125, 0.1, 0.725, 0.8])
             s = axes.scatter(sources, targets, c=values, edgecolor=edgecolor,
                              **kwds)
-            cax = axes.get_figure().add_axes([0.875, 0.1, 0.03, 0.8])
+            locatable_axes = make_axes_locatable(axes)
+            cax = locatable_axes.append_axes('right', size='7.5%', pad=0.05)
             plt.colorbar(s, cax=cax)
             if var_name is None:
                 if var_unit is not None:
