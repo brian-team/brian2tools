@@ -19,10 +19,10 @@ test:
     - brian2tools.plotting
 
   commands:
-    - nosetests brian2tools
+    - py.test --pyargs brian2tools
 
   requires:
-    - nose
+    - pytest
 
 source:
   path: ../..
