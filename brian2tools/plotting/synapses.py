@@ -38,6 +38,8 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
     connection_count = Counter(zip(sources, targets))
     multiple_synapses = np.any(np.array(connection_count.values()) > 1)
 
+    edgecolor = kwds.pop('edgecolor', 'none')
+
     if multiple_synapses:
         if values is not None:
             raise NotImplementedError('Plotting variables with multiple '
@@ -45,11 +47,11 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
                                       'implemented yet.')
         unique_sources, unique_targets = zip(*connection_count.keys())
         n_synapses = list(connection_count.values())
-        cmap = mpl.cm.get_cmap(kwds.get('cmap', 'Accent'), max(n_synapses))
+        cmap = mpl.cm.get_cmap(kwds.pop('cmap', 'Accent'), max(n_synapses))
         bounds = np.arange(max(n_synapses) + 1) + 0.5
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
         axes.scatter(unique_sources, unique_targets, c=n_synapses,
-                     edgecolor='none', cmap=cmap, **kwds)
+                     edgecolor=edgecolor, cmap=cmap, **kwds)
         cax = axes.get_figure().add_axes([0.92, 0.1, 0.03, 0.8])
         mpl.colorbar.ColorbarBase(cax, cmap=cmap,
                                   norm=norm,
@@ -58,12 +60,13 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
         cax.set_ylabel('number of synapses')
     else:
         if values is None:
-            axes.scatter(sources, targets)
+            axes.scatter(sources, targets, edgecolor=edgecolor, **kwds)
         else:
             # make some space for the colorbar:
             print axes.get_position()
             axes.set_position([0.125, 0.1, 0.725, 0.8])
-            s = axes.scatter(sources, targets, c=values)
+            s = axes.scatter(sources, targets, c=values, edgecolor=edgecolor,
+                             **kwds)
             cax = axes.get_figure().add_axes([0.875, 0.1, 0.03, 0.8])
             plt.colorbar(s, cax=cax)
             if var_name is None:
