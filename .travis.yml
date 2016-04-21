@@ -62,10 +62,11 @@ script:
     tar xvzf *.tar.gz;
     cd brian2tools*;
     mkdir docs;
-    sphinx-build docs_sphinx docs;
+    cd docs_sphinx;
+    sphinx-build . ../docs;
   else
     export SRCDIR=$(pwd);
-    conda build --quiet -c brian-team dev/conda-recipe;
+    conda build --quiet -c brian-team -c brian-team/channel/dev dev/conda-recipe;
   fi
 
 after_success:
