@@ -14,6 +14,8 @@ from brian2.spatialneuron.morphology import Soma
 # Only import the module to avoid circular import issues
 import base
 
+__all__ = ['plot_morphology', 'plot_dendrogram']
+
 
 def _plot_morphology2D(morpho, axes, colors, show_diameter=False,
                        show_compartments=True, color_counter=0):

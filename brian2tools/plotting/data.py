@@ -9,6 +9,8 @@ from brian2.units.fundamentalunits import Quantity
 # Only import the module to avoid circular import issues
 import base
 
+__all__ = ['plot_raster', 'plot_state', 'plot_rate']
+
 
 def plot_raster(spike_indices, spike_times, time_unit=ms,
                 axes=None, **kwds):

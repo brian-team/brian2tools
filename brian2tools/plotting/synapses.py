@@ -10,6 +10,8 @@ import matplotlib as mpl
 # Only import the module to avoid circular import issues
 import base
 
+__all__ = ['plot_synapses']
+
 
 def plot_synapses(sources, targets, values=None, var_unit=None,
                   var_name=None, axes=None, **kwds):

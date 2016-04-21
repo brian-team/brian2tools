@@ -14,6 +14,7 @@ from .data import plot_raster, plot_state, plot_rate
 from .morphology import plot_dendrogram
 from .synapses import plot_synapses
 
+__all__ = ['brian_plot']
 
 logger = get_logger(__name__)
 
