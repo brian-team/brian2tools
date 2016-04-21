@@ -25,7 +25,7 @@ def _setup_axes_matplotlib(axes):
     arguments provided by the user.
     '''
     if axes is None:
-        axes = plt.axes()
+        axes = plt.gca()
     return axes
 
 
