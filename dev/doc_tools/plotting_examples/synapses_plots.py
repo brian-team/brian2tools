@@ -19,10 +19,10 @@ synapses.delay = '1*ms + 2*ms*rand()'
 from brian2tools import *
 fig_dir = '../../../docs_sphinx/images'
 brian_plot(synapses)
-plt.savefig(os.path.join(fig_dir, 'brian_plot_synapses.svg'))
+plt.savefig(os.path.join(fig_dir, 'brian_plot_synapses.png'))
 close()
 
-plot_synapses(synapses.i, synapses.j, color='gray', marker='s')
+plot_synapses(synapses.i, synapses.j, plot_type='scatter', color='gray', marker='s')
 plt.savefig(os.path.join(fig_dir, 'plot_synapses_connections.svg'))
 close()
 
@@ -35,13 +35,23 @@ plt.savefig(os.path.join(fig_dir, 'plot_synapses_weights_delays.svg'))
 close()
 
 ax = plot_synapses(synapses.i, synapses.j, synapses.w, var_name='synaptic weights',
-              marker='s', cmap='hot')
-ax.set_axis_bgcolor('gray')
+                   plot_type='image', cmap='hot')
+ax.set_title('Recurrent connections')
 synapses.connect(j='i+k for k in sample(-10, 10, p=0.5) if k != 0',
                  skip_if_invalid=True)  # ignore values outside of the limits
-plt.savefig(os.path.join(fig_dir, 'plot_synapses_weights_custom.svg'))
+plt.savefig(os.path.join(fig_dir, 'plot_synapses_weights_custom.png'))
 close()
 
 brian_plot(synapses)
-plt.savefig(os.path.join(fig_dir, 'brian_plot_multiple_synapses.svg'))
+plt.savefig(os.path.join(fig_dir, 'brian_plot_multiple_synapses.png'))
 close()
+
+big_group = NeuronGroup(10000, '')
+many_synapses = Synapses(big_group, big_group)
+many_synapses.connect(j='i+k for k in range(-2000, 2000) if rand() < exp(-(k/1000.)**2)',
+                      skip_if_invalid=True)
+brian_plot(many_synapses)
+plt.savefig(os.path.join(fig_dir, 'brian_plot_synapses_big.png'))
+close()
+
+
