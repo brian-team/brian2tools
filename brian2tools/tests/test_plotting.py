@@ -3,6 +3,7 @@ Test the brian2tools package
 '''
 import matplotlib
 matplotlib.use('Agg')
+
 from brian2 import *
 from brian2tools import *
 
@@ -50,12 +51,29 @@ def test_plot_synapses():
     close()
     plot_synapses(synapses.i, synapses.j)
     close()
+    plot_synapses(synapses.i, synapses.j, plot_type='scatter')
+    close()
+    plot_synapses(synapses.i, synapses.j, plot_type='image')
+    close()
+    plot_synapses(synapses.i, synapses.j, plot_type='hexbin')
+    close()
     plot_synapses(synapses.i, synapses.j, synapses.w)
+    close()
+    plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='scatter')
+    close()
+    plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='image')
+    close()
+    plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='hexbin')
     close()
 
     synapses.connect('i > 5')  # More than one synapse per connection
     brian_plot(synapses)
     close()
+    # It should be possible to plot synaptic variables for multiple connections
+    # with hexbin
+    plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='hexbin')
+    close()
+
 
 def test_plot_morphology():
     # Only testing 2D plotting for now
