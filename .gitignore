@@ -70,8 +70,11 @@ target/
 
 # pycharm project files
 .idea
-/Brian2.egg-info
 
 # vim files
 *.swp
 .rope*
+
+# Installation and auto-generated files
+brian2tools.egg-info
+brian2tools/version.py

@@ -2,7 +2,9 @@
 '''
 brian2tools setup script
 '''
+import os
 import sys
+
 from setuptools import setup, find_packages
 
 if sys.version_info < (2, 7):
@@ -13,11 +15,16 @@ def readme():
     with open('README.rst') as f:
         return f.read()
 
+# Note that this does not set a version number explicitly, but automatically
+# figures out a version based on git tags
 setup(name='brian2tools',
-      version='0.0+git',
+      use_scm_version={'write_to': 'brian2tools/version.py'},
+      setup_requires=['setuptools_scm'],
       packages=find_packages(),
       install_requires=['matplotlib>=1.3.1',
-                        'brian2>1.9'],
+                        'brian2>1.9',
+                        'setuptools',
+                        'setuptools_scm'],
       provides=['brian2tools'],
       extras_require={'test': ['pytest'],
                       'docs': ['sphinx>=1.0.1', 'sphinxcontrib-issuetracker']},
@@ -38,3 +45,8 @@ setup(name='brian2tools',
           'Topic :: Scientific/Engineering :: Bio-Informatics'
       ]
       )
+
+# If we are building a conda package, we write the version number to a file
+if 'CONDA_BUILD' in os.environ and 'RECIPE_DIR' in os.environ:
+    from setuptools_scm import get_version
+    get_version(write_to='__conda_version__.txt')
