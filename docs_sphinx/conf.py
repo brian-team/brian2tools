@@ -381,7 +381,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/', None),
 # Create api docs
 def run_apidoc(_):
     import sphinx.apidoc as apidoc
-    apidoc.main(argv=['sphinx-apidoc', '-f', '-e', '-M', '-o', './reference', '../brian2tools'])
+    apidoc.main(argv=['sphinx-apidoc', '-f', '-e', '-M', '-o', './reference',
+                      '../brian2tools', '../brian2tools/tests'])
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)

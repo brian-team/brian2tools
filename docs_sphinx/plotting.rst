@@ -129,16 +129,28 @@ source and target indices)::
 Connections
 ~~~~~~~~~~~
 A call of `~brian2tools.plotting.base.brian_plot` with a `~brian2.synapses.synapses.Synapses` object will plot all
-connections as a dot::
+connections, plotting either the matrix as an image, the connections as a scatter plot, or a 2-dimensional histogram
+(using matplotlib's `~matplotlib.axes.Axes.hexbin` function). The decision which type of plot to use is based on some
+heuristics applied to the number of synapses and might possibly change in future versions::
 
     brian_plot(synapses)
 
-.. image:: images/brian_plot_synapses.svg
+.. image:: images/brian_plot_synapses.png
 
-Under the hood this calls `~brian2tools.plotting.synapses.plot_synapses` which can also be used directly for more
-control::
+As explained above, for a large connection matrix this would instead use an approach based on a hexagonal 2D histogram::
 
-    plot_synapses(synapses.i, synapses.j, color='gray', marker='s')
+    big_group = NeuronGroup(10000, '')
+    many_synapses = Synapses(big_group, big_group)
+    many_synapses.connect(j='i+k for k in range(-2000, 2000) if rand() < exp(-(k/1000.)**2)',
+                          skip_if_invalid=True)
+    brian_plot(many_synapses)
+
+.. image:: images/brian_plot_synapses_big.png
+
+Under the hood `~brian2tools.plotting.base.brian_plot` calls `~brian2tools.plotting.synapses.plot_synapses` which can
+also be used directly for more control::
+
+    plot_synapses(synapses.i, synapses.j, plot_type='scatter', color='gray', marker='s')
 
 .. image:: images/plot_synapses_connections.svg
 
@@ -158,10 +170,10 @@ weights or delays::
 These plots can be customized using additional keyword arguments::
 
     ax = plot_synapses(synapses.i, synapses.j, synapses.w, var_name='synaptic weights',
-                  marker='s', cmap='hot')
-    ax.set_axis_bgcolor('gray')
+                       plot_type='image', cmap='hot')
+    ax.set_title('Recurrent connections')
 
-.. image:: images/plot_synapses_weights_custom.svg
+.. image:: images/plot_synapses_weights_custom.png
 
 Multiple synapses per source-target pair
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -178,7 +190,7 @@ number of synapses between each pair of neurons::
 
     brian_plot(synapses)
 
-.. image:: images/brian_plot_multiple_synapses.svg
+.. image:: images/brian_plot_multiple_synapses.png
 
 Plotting neuronal morphologies
 ------------------------------
@@ -207,7 +219,7 @@ Morphologies in 2D or 3D
 ~~~~~~~~~~~~~~~~~~~~~~~~
 In addition to the dendogram which only plots the general structure but not the actual morphology of the neuron in
 space, you can plot the morphology using `~brian2tools.plotting.morphology.plot_morphology`. For a 3D morphology, this
-will plot the morphology in 3D using the `Majavi package`_ ::
+will plot the morphology in 3D using the `Mayavi package`_ ::
 
     plot_morphology(morpho)
 
@@ -228,6 +240,6 @@ use the default alternation between blue and red for each section::
 
 .. image:: images/plot_morphology_3d_diameters.png
 
-.. _`Majavi package`: http://docs.enthought.com/mayavi/mayavi/
+.. _`Mayavi package`: http://docs.enthought.com/mayavi/mayavi/
 
 .. [#] Available at http://neuromorpho.org/neuron_info.jsp?neuron_name=51-2a

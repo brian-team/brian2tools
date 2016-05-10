@@ -2,6 +2,7 @@
 Base module for the plotting facilities.
 '''
 import matplotlib.pyplot as plt
+import numpy as np
 
 from brian2.spatialneuron.morphology import Morphology
 from brian2.monitors import SpikeMonitor, StateMonitor, PopulationRateMonitor
@@ -95,7 +96,19 @@ def brian_plot(brian_obj,
                         'arguments, ignoring them.')
         plot_dendrogram(brian_obj, axes=axes)
     elif isinstance(brian_obj, Synapses):
-        plot_synapses(brian_obj.i, brian_obj.j, axes=axes)
+        if len(brian_obj) == 0:
+            raise TypeError('Synapses object does not have any synapses.')
+        min_sources, max_sources = np.min(brian_obj.i[:]), np.max(brian_obj.i[:])
+        min_targets, max_targets = np.min(brian_obj.j[:]), np.max(brian_obj.j[:])
+        source_range = max_sources - min_sources
+        target_range = max_targets - min_targets
+        if source_range < 1000 and target_range < 1000:
+            plot_type = 'image'
+        elif len(brian_obj) < 10000:
+            plot_type = 'scatter'
+        else:
+            plot_type = 'hexbin'
+        plot_synapses(brian_obj.i, brian_obj.j, plot_type=plot_type, axes=axes)
     else:
         raise NotImplementedError('Do not know how to plot object of type '
                                   '%s' % type(brian_obj))
