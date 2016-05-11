@@ -19,10 +19,13 @@ version = raw_input('Enter new Brian2 version number: ').strip()
 os.system('git tag -a -m "Release brian2tools %s" %s' % (version, version))
 
 # Create universal wheels and source distribution
+os.chdir('../..')
 if os.path.exists('dist'):
     shutil.rmtree('dist')
 os.system('%s setup.py sdist --formats=zip,gztar,bztar bdist_wheel' % sys.executable)
 
 # print commands necessary for pushing
+print('')
+print('*'*60)
 print('To push, using the following command:')
 print('git push --tags origin master')
