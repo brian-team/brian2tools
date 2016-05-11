@@ -1,14 +1,27 @@
-Welcome to brian2tools's documentation!
-=======================================
+brian2tools documentation
+=========================
+
+The `brian2tools` package is a collection of useful tools for
+the `Brian 2 simulator <https://brian2.readthedocs.org>`_. The project
+is still in its infancy but it already provides helpful functions
+for plotting. In the future it will be extended to also provide
+analysis and export/import functions.
+
+Please contact us at
+``brian-development@googlegroups.com`` (https://groups.google.com/forum/#!forum/brian-development)
+if you are interested in contributing.
+
+Please report bugs at the `github issue tracker <http://brian2tools.readthedocs.io>`_ or to
+``briansupport@googlegroups.com`` (https://groups.google.com/forum/#!forum/briansupport).
 
 Contents
 --------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :titlesonly:
 
-   plotting
+   user/index
 
 API reference
 -------------
@@ -20,7 +33,7 @@ API reference
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
