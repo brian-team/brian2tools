@@ -11,7 +11,7 @@ Please contact us at
 ``brian-development@googlegroups.com`` (https://groups.google.com/forum/#!forum/brian-development)
 if you are interested in contributing.
 
-Please report bugs at the `github issue tracker <http://brian2tools.readthedocs.io>`_ or to
+Please report bugs at the `github issue tracker <https://github.com/brian-team/brian2tools/issues>`_ or to
 ``briansupport@googlegroups.com`` (https://groups.google.com/forum/#!forum/briansupport).
 
 Contents
@@ -21,7 +21,9 @@ Contents
    :maxdepth: 2
    :titlesonly:
 
+   release_notes
    user/index
+   developer/index
 
 API reference
 -------------
