@@ -83,7 +83,7 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 #
 try:
     from brian2tools.version import version
-except ImportError:
+except (ImportError, LookupError):
     from setuptools_scm import get_version
     import brian2tools
     version = get_version(relative_to=brian2tools.__file__)
