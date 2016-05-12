@@ -10,4 +10,7 @@ those simulations.
 .. image:: https://anaconda.org/brian-team/brian2tools/badges/version.svg
     :target: https://anaconda.org/brian-team/brian2tools
 
+.. image:: https://readthedocs.org/projects/brian2tools/badge/?version=stable
+    :target: http://brian2tools.readthedocs.io/en/stable/?badge=stable
+
 
