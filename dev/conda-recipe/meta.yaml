@@ -1,12 +1,11 @@
 package:
   name: brian2tools
-  version: "0.0+git"
 
-# Note: specifying a minimal version for numyp leads to incorrect build strings
 requirements:
   build:
     - python
     - setuptools >=6.0
+    - setuptools_scm
   run:
     - python
     - brian2 >=1.9

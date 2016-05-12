@@ -15,6 +15,12 @@ with open(os.path.join('dev', 'conda-recipe', 'meta.yaml')) as f:
 #### Convert linux-64 package to all other platforms
 binary_package_glob = os.path.join(config.bldpkgs_dir, '{0}*.tar.bz2'.format(name))
 binary_package = glob.glob(binary_package_glob)[0]
+
+release = 'dev' not in binary_package
+# We only upload release packages to conda
+if not release:
+    sys.exit(0)
+
 # Fake a command line call
 sys.argv = ['conda-convert', binary_package, '-p', 'all',
             '-o', os.path.join(config.bldpkgs_dir, '..')]
@@ -24,10 +30,6 @@ main_convert()
 token = os.environ['BINSTAR_TOKEN']
 options = ['-t', token, 'upload',
            '-u', 'brian-team']
-
-release = '+git' not in binary_package
-if not release:
-    options.extend(['--channel', 'dev', '--force'])
 
 for target in ['linux-32', 'linux-64', 'win-32', 'win-64', 'osx-64']:
     filename = os.path.abspath(os.path.join(config.bldpkgs_dir, '..', target,

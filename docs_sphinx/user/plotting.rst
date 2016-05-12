@@ -59,14 +59,14 @@ To plot a basic raster plot, you can call `~brian2tools.plotting.base.brian_plot
 
     brian_plot(spike_mon)
 
-.. image:: images/brian_plot_spike_mon.png
+.. image:: ../images/brian_plot_spike_mon.png
 
 To have more control over the plot, or to plot spikes that are not stored in a
 `~brian2.monitors.spikemonitor.SpikeMonitor`, use `~brian2tools.plotting.data.plot_raster`::
 
     plot_raster(spike_mon.i, spike_mon.t, time_unit=second, marker=',', color='k')
 
-.. image:: images/plot_raster.png
+.. image:: ../images/plot_raster.png
 
 Rates
 ~~~~~
@@ -75,7 +75,7 @@ the rate smoothed with a Gaussian window with 1ms standard deviation.::
 
     brian_plot(rate_mon)
 
-.. image:: images/brian_plot_rate_mon.svg
+.. image:: ../images/brian_plot_rate_mon.svg
 
 To plot the rate with a different smoothing and/or to set other details of the plot use
 `~brian2tools.plotting.data.plot_raster`::
@@ -83,7 +83,7 @@ To plot the rate with a different smoothing and/or to set other details of the p
     plot_rate(rate_mon.t, rate_mon.smooth_rate(window='flat', width=10.1*ms),
               linewidth=3, color='gray')
 
-.. image:: images/plot_rate.svg
+.. image:: ../images/plot_rate.svg
 
 State variables
 ~~~~~~~~~~~~~~~
@@ -92,7 +92,7 @@ the recorded voltage traces::
 
     brian_plot(state_mon)
 
-.. image:: images/brian_plot_state_mon.svg
+.. image:: ../images/brian_plot_state_mon.svg
 
 Again, for more detailed control you can directly use the `~brian2tools.plotting.data.plot_state` function. Here we also
 demonstrate the use of the returned `~matplotlib.axes.Axes` object to add a legend to the plot::
@@ -102,7 +102,7 @@ demonstrate the use of the returned `~matplotlib.axes.Axes` object to add a lege
 
     plot_state()
 
-.. image:: images/plot_state.svg
+.. image:: ../images/plot_state.svg
 
 Plotting synaptic connections and variables
 -------------------------------------------
@@ -135,7 +135,7 @@ heuristics applied to the number of synapses and might possibly change in future
 
     brian_plot(synapses)
 
-.. image:: images/brian_plot_synapses.png
+.. image:: ../images/brian_plot_synapses.png
 
 As explained above, for a large connection matrix this would instead use an approach based on a hexagonal 2D histogram::
 
@@ -145,14 +145,14 @@ As explained above, for a large connection matrix this would instead use an appr
                           skip_if_invalid=True)
     brian_plot(many_synapses)
 
-.. image:: images/brian_plot_synapses_big.png
+.. image:: ../images/brian_plot_synapses_big.png
 
 Under the hood `~brian2tools.plotting.base.brian_plot` calls `~brian2tools.plotting.synapses.plot_synapses` which can
 also be used directly for more control::
 
     plot_synapses(synapses.i, synapses.j, plot_type='scatter', color='gray', marker='s')
 
-.. image:: images/plot_synapses_connections.svg
+.. image:: ../images/plot_synapses_connections.svg
 
 Synaptic variables (weights, delays, etc.)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,7 +165,7 @@ weights or delays::
     plot_synapses(synapses.i, synapses.j, synapses.delay)
     tight_layout()
 
-.. image:: images/plot_synapses_weights_delays.svg
+.. image:: ../images/plot_synapses_weights_delays.svg
 
 These plots can be customized using additional keyword arguments::
 
@@ -173,7 +173,7 @@ These plots can be customized using additional keyword arguments::
                        plot_type='image', cmap='hot')
     ax.set_title('Recurrent connections')
 
-.. image:: images/plot_synapses_weights_custom.png
+.. image:: ../images/plot_synapses_weights_custom.png
 
 Multiple synapses per source-target pair
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -190,7 +190,7 @@ number of synapses between each pair of neurons::
 
     brian_plot(synapses)
 
-.. image:: images/brian_plot_multiple_synapses.png
+.. image:: ../images/brian_plot_multiple_synapses.png
 
 Plotting neuronal morphologies
 ------------------------------
@@ -209,11 +209,13 @@ dendogram::
 
     brian_plot(morpho)
 
-.. image:: images/plot_dendrogram.svg
+.. image:: ../images/plot_dendrogram.svg
 
 The `~brian2tools.plotting.morphology.plot_dendrogram` function does the same thing, but in contrast to the other
 plot functions it does not allow any customization at the moment, so there is no benefit over using
 `~brian2tools.plotting.base.brian_plot`.
+
+.. _plotting_morphologies:
 
 Morphologies in 2D or 3D
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,14 +225,14 @@ will plot the morphology in 3D using the `Mayavi package`_ ::
 
     plot_morphology(morpho)
 
-.. image:: images/plot_morphology_3d.png
+.. image:: ../images/plot_morphology_3d.png
 
 For artificially created morphologies (where one might only use coordinates in 2D) or to get a quick view of a
 morphology, you can also plot it in 2D (this will be done automatically if the coordinates are 2D only)::
 
     plot_morphology(morpho, plot_3d=False)
 
-.. image:: images/plot_morphology_2d.svg
+.. image:: ../images/plot_morphology_2d.svg
 
 Both 2D and 3D morphology plots can be further customized, e.g. they can show the width of the compartments and do not
 use the default alternation between blue and red for each section::
@@ -238,7 +240,7 @@ use the default alternation between blue and red for each section::
     plot_morphology(morpho, plot_3d=True, show_compartments=True,
                     show_diameter=True, colors=('darkblue',))
 
-.. image:: images/plot_morphology_3d_diameters.png
+.. image:: ../images/plot_morphology_3d_diameters.png
 
 .. _`Mayavi package`: http://docs.enthought.com/mayavi/mayavi/
 

@@ -44,9 +44,12 @@ before_install:
 - chmod +x miniconda.sh
 - ./miniconda.sh -b -p ~/miniconda
 - export PATH=~/miniconda/bin:$PATH
-- if [[ $DOCS_ONLY == 'yes' ]];
-    then conda install --quiet --yes sphinx;
+- if [[ $DOCS_ONLY == 'yes' ]]; then
+    conda install --quiet --yes sphinx setuptools_scm;
     pip install -q sphinxcontrib-issuetracker;
+    if [ ${PYTHON:0:1} == "2" ]; then
+      conda install --quiet --yes mock;
+    fi;
     python setup.py sdist;
   fi
 
@@ -62,8 +65,7 @@ script:
     tar xvzf *.tar.gz;
     cd brian2tools*;
     mkdir docs;
-    cd docs_sphinx;
-    sphinx-build . ../docs;
+    sphinx-build docs_sphinx docs;
   else
     export SRCDIR=$(pwd);
     conda build --quiet -c brian-team -c brian-team/channel/dev dev/conda-recipe;
