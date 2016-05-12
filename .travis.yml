@@ -58,6 +58,7 @@ install:
 # Build documentation or build conda package and run tests
 script:
 - if [[ $DOCS_ONLY == 'yes' ]]; then
+    conda install --quiet --yes setuptools_scm;
     cd dist;
     tar xvzf *.tar.gz;
     cd brian2tools*;
