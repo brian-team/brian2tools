@@ -18,6 +18,7 @@ def readme():
 # Note that this does not set a version number explicitly, but automatically
 # figures out a version based on git tags
 setup(name='brian2tools',
+      url='https://github.com/brian-team/brian2tools',
       use_scm_version={'write_to': 'brian2tools/version.py'},
       setup_requires=['setuptools_scm'],
       packages=find_packages(),
@@ -32,7 +33,8 @@ setup(name='brian2tools',
       description='Tools for the Brian 2 simulator',
       long_description=readme(),
       author='Marcel Stimberg, Dan Goodman, Romain Brette',
-      author_email='',
+      author_email='team@briansimulator.org',
+      license='CeCILL-2.1',
       classifiers=[
           'Development Status :: 4 - Beta',
           'Intended Audience :: Science/Research',
@@ -43,7 +45,8 @@ setup(name='brian2tools',
           'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 3',
           'Topic :: Scientific/Engineering :: Bio-Informatics'
-      ]
+      ],
+      keywords='visualization neuroscience'
       )
 
 # If we are building a conda package, we write the version number to a file
