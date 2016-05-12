@@ -59,6 +59,24 @@ project = u'brian2tools'
 copyright = u'2016, Brian authors'
 author = u'Brian authors'
 
+# We mock modules that are not needed just for building the documentation
+import sys
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
+
+MOCK_MODULES = ['matplotlib.colors', 'matplotlib.patches', 'matplotlib.pyplot', 'matplotlib',
+                'mpl_toolkits', 'mpl_toolkits.axes_grid1',
+                'numpy',
+                'brian2',
+                'brian2.monitors',
+                'brian2.spatialneuron', 'brian2.spatialneuron.morphology', 'brian2.spatialneuron.spatialneuron',
+                'brian2.synapses', 'brian2.synapses.synapses',
+                'brian2.units', 'brian2.units.fundamentalunits', 'brian2.units.stdunits',
+                'brian2.utils', 'brian2.utils.logger']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
@@ -384,8 +402,10 @@ intersphinx_mapping = {'python': ('https://docs.python.org/', None),
 # Create api docs
 def run_apidoc(_):
     import sphinx.apidoc as apidoc
+    import brian2tools
+    brian2tools_dir = os.path.abspath(os.path.dirname(brian2tools.__file__))
     apidoc.main(argv=['sphinx-apidoc', '-f', '-e', '-M', '-o', './reference',
-                      '../brian2tools', '../brian2tools/tests'])
+                      brian2tools_dir, os.path.join(brian2tools_dir, 'tests')])
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
