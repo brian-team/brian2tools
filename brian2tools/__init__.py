@@ -3,6 +3,7 @@ Tools for use with the Brian 2 simulator.
 '''
 
 from .plotting import *
+from .modelfitting import *
 from .tests import run as test
 
 try:
@@ -13,5 +14,5 @@ except ImportError:
     # Apparently we are running directly from a git clone, let
     # setuptools_scm fetch the version from git
     from setuptools_scm import get_version
-    __version__ = get_version()
+    __version__ = None # get_version()
     version = __version__
