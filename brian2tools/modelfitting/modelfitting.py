@@ -2,12 +2,9 @@
 Main module for model fitting
 
 TODO:
-* Initialization of state variables
-* Vectorization of differential evolution
-* Error calculation without monitoring
 * Deal with variable duration traces
 * User-defined error
-* Maybe no need to define parameters in equations
+(* Maybe no need to define parameters in equations)
 * Callback to stop after a given time
 * Split over multiple cores
 * Symbolic gradient calculation
@@ -16,9 +13,9 @@ TODO:
 
 from brian2.equations import Equations
 from brian2.input import TimedArray
-from brian2 import NeuronGroup, StateMonitor, store, restore, run
-from scipy.optimize import differential_evolution
-from numpy import mean
+from brian2 import NeuronGroup, StateMonitor, store, restore, run, defaultclock, second
+from .differential_evolution import differential_evolution
+from numpy import mean, ones, array
 
 __all__=['fit_traces']
 
@@ -27,7 +24,12 @@ def fit_traces(model = None,
                input = None,
                output_var = None,
                output = None,
-               dt = None, tol = 1e-9, **params):
+               dt = None, tol = 1e-9,
+               maxiter = None,
+               popsize = 15,
+               method = ('linear', 'exponential_euler', 'euler'),
+               t_start = 0*second,
+               **params):
     '''
     Fits a model to a set of traces.
 
@@ -51,11 +53,24 @@ def fit_traces(model = None,
     tol : float, optional
         Stop criterion of the differential evolution algorithm.
 
+    maxiter : int, optional
+        Maximum number of iterations.
+
+    popsize : int, optional
+        Number of population samples per parameter.
+
+    method: string, optional
+        Integration method
+
+    t_start: starting time of error measurement.
+
     Returns
     -------
-    A dictionary of parameter values.
+    A dictionary of parameter values, fits as a 2D array, and error (RMS).
 
     '''
+
+    parameter_names = model.parameter_names
 
     # Check parameter names
     for param in params.keys():
@@ -68,6 +83,7 @@ def fit_traces(model = None,
     # dt must be set
     if dt is None:
         raise Exception('dt (sampling frequency of the input) must be set')
+    defaultclock.dt = dt
 
     # Check input variable
     if input_var not in model.identifiers:
@@ -84,41 +100,61 @@ def fit_traces(model = None,
     # Replace input variable by TimedArray
     input_traces = TimedArray(input, dt = dt)
     input_unit = input.dim
-    model = model + Equations(input_var + "= input_var(t,i) : % s" % repr(input_unit))
+    model = model + Equations(input_var + '= input_var(t,i % Ntraces) : '+ "% s" % repr(input_unit))
 
     # Add criterion with TimedArray
     output_traces = TimedArray(output, dt = dt)
     error_unit = output.dim**2
-    model = model + Equations('error = (' + output_var + '-output_var(t,i))**2 : %s' % repr(error_unit))
+    model = model + Equations('total_error : %s' % repr(error_unit))
 
-    neurons = NeuronGroup(Ntraces, model)
+    # Population size for differential evolution
+    # (actually in scipy's algorithm this is popsize * nb params)
+    N = popsize * len(parameter_names)
+
+    neurons = NeuronGroup(Ntraces*N, model, method = method)
     neurons.namespace['input_var'] = input_traces
     neurons.namespace['output_var'] = output_traces
-    M = StateMonitor(neurons, 'error', record = True)
+    neurons.namespace['t_start'] = t_start
+
+    # Record error
+    neurons.run_regularly('total_error +=  (' + output_var + '-output_var(t,i % Ntraces))**2 * (t>=t_start)')
+
+    # Store for reinitialization
     store()
 
-    # Error function
+    # Vectorized error function
     def error_function(params):
         # Set parameter values with units
         d = dict()
-        for name, value in zip(model.parameter_names, params):
-            d[name] = value * model.units[name]
+        for name, value in zip(parameter_names, params.T):
+            d[name] = (value * ones((Ntraces,N))).T.flatten() * model.units[name]
 
         # Run the model
         restore()
         neurons.set_states(d)
         run(duration)
-        e = mean(M.error)
-        return float(e)
+
+        e = neurons.total_error/int((duration-t_start)/defaultclock.dt)
+        e = mean(e.reshape((N,Ntraces)),axis=1)
+        return array(e)
 
     # Set parameter bounds
     bounds = []
-    for name in model.parameter_names:
+    for name in parameter_names:
         bounds.append(params[name])
 
-    res = differential_evolution(error_function,bounds, tol = tol)
+    res = differential_evolution(error_function,bounds, tol = tol, maxiter = maxiter, popsize = popsize)
     d = dict()
-    for name, value in zip(model.parameter_names, res.x):
+    for name, value in zip(parameter_names, res.x):
         d[name] = value * model.units[name]
 
-    return d
+    # Run once with the optimized parameters to get model outputs
+    restore()
+    M_out = StateMonitor(neurons, output_var, record = range(Ntraces))
+    neurons.set_states(d)
+    run(duration)
+    fits = M_out.get_states()[output_var]
+
+    error = (res.fun)**.5 * model.units[output_var]
+
+    return d, fits, error
