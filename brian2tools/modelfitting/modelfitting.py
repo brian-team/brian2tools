@@ -10,12 +10,15 @@ TODO:
 * Symbolic gradient calculation
 * Extend to IF models (threshold, reset etc)
 '''
+from numpy import mean, ones, array
 
-from brian2.equations import Equations
+from brian2.equations.equations import (DIFFERENTIAL_EQUATION, Equations,
+                                        SingleEquation, PARAMETER)
 from brian2.input import TimedArray
 from brian2 import NeuronGroup, StateMonitor, store, restore, run, defaultclock, second
+from brian2.stateupdaters.base import StateUpdateMethod
+
 from .differential_evolution import differential_evolution
-from numpy import mean, ones, array
 
 __all__=['fit_traces']
 
@@ -97,6 +100,21 @@ def fit_traces(model = None,
     if output.shape!=input.shape:
         raise Exception("Input and output must have the same size")
 
+    # This only works because the equations are completely self-contained
+    # TODO: This will not work like this for models with refractoriness
+    state_update_code = StateUpdateMethod.apply_stateupdater(model, {},
+                                                             method=method)
+    # Remove all differential equations from the model (they will be updated
+    # explicitly)
+    model_without_diffeq = Equations([eq for eq in model.ordered
+                                      if eq.type != DIFFERENTIAL_EQUATION])
+    # Add a parameter for each differential equation
+    diffeq_params = Equations([SingleEquation(PARAMETER, varname, model.units[varname])
+                               for varname in model.diff_eq_names])
+
+    # Our new model:
+    model = model_without_diffeq + diffeq_params
+
     # Replace input variable by TimedArray
     input_traces = TimedArray(input, dt = dt)
     input_unit = input.dim
@@ -115,9 +133,14 @@ def fit_traces(model = None,
     neurons.namespace['input_var'] = input_traces
     neurons.namespace['output_var'] = output_traces
     neurons.namespace['t_start'] = t_start
+    neurons.namespace['Ntraces'] = Ntraces
 
     # Record error
-    neurons.run_regularly('total_error +=  (' + output_var + '-output_var(t,i % Ntraces))**2 * (t>=t_start)')
+    neurons.run_regularly('total_error +=  (' + output_var + '-output_var(t,i % Ntraces))**2 * int(t>=t_start)',
+                          when='end')
+
+    # Add the code doing the numerical integration
+    neurons.run_regularly(state_update_code, when='groups')
 
     # Store for reinitialization
     store()
@@ -133,7 +156,7 @@ def fit_traces(model = None,
         # Run the model
         restore()
         neurons.set_states(d, units = False)
-        run(duration, namespace = {'Ntraces' : Ntraces})
+        run(duration, namespace = {})
 
         e = neurons.total_error/int((duration-t_start)/defaultclock.dt)
         e = mean(e.reshape((N,Ntraces)),axis=1)
@@ -153,7 +176,7 @@ def fit_traces(model = None,
     restore()
     M_out = StateMonitor(neurons, output_var, record = range(Ntraces))
     neurons.set_states(d, units = False)
-    run(duration)
+    run(duration, namespace = {})
     fits = M_out.get_states()[output_var]
 
     error = (res.fun)**.5 * model.units[output_var]
