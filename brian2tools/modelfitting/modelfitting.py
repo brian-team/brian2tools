@@ -133,7 +133,7 @@ def fit_traces(model = None,
         # Run the model
         restore()
         neurons.set_states(d, units = False)
-        run(duration)
+        run(duration, namespace = {'Ntraces' : Ntraces})
 
         e = neurons.total_error/int((duration-t_start)/defaultclock.dt)
         e = mean(e.reshape((N,Ntraces)),axis=1)
