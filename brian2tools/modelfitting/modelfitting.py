@@ -124,14 +124,15 @@ def fit_traces(model = None,
 
     # Vectorized error function
     def error_function(params):
-        # Set parameter values with units
+        # Set parameter values, duplicated over traces
+        # params is a list of vectors (vector = value for population)
         d = dict()
         for name, value in zip(parameter_names, params.T):
-            d[name] = (value * ones((Ntraces,N))).T.flatten() * model.units[name]
+            d[name] = (value * ones((Ntraces,N))).T.flatten()
 
         # Run the model
         restore()
-        neurons.set_states(d)
+        neurons.set_states(d, units = False)
         run(duration)
 
         e = neurons.total_error/int((duration-t_start)/defaultclock.dt)
@@ -146,12 +147,12 @@ def fit_traces(model = None,
     res = differential_evolution(error_function,bounds, tol = tol, maxiter = maxiter, popsize = popsize)
     d = dict()
     for name, value in zip(parameter_names, res.x):
-        d[name] = value * model.units[name]
+        d[name] = value
 
     # Run once with the optimized parameters to get model outputs
     restore()
     M_out = StateMonitor(neurons, output_var, record = range(Ntraces))
-    neurons.set_states(d)
+    neurons.set_states(d, units = False)
     run(duration)
     fits = M_out.get_states()[output_var]
 
