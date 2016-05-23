@@ -29,11 +29,14 @@ We'll use the following example (the *CUBA example* from Brian 2) as a demonstra
 
     from brian2 import *
 
+    Vt = -50*mV
+    Vr = -60*mV
+
     eqs = '''dv/dt  = (ge+gi-(v + 49*mV))/(20*ms) : volt (unless refractory)
              dge/dt = -ge/(5*ms) : volt
              dgi/dt = -gi/(10*ms) : volt
           '''
-    P = NeuronGroup(4000, eqs, threshold='v>-50*mV', reset='v = -60*mV', refractory=5*ms,
+    P = NeuronGroup(4000, eqs, threshold='v>Vt', reset='v = Vr', refractory=5*ms,
                     method='linear')
     P.v = 'Vr + rand() * (Vt - Vr)'
     P.ge = 0*mV
@@ -51,6 +54,13 @@ We'll use the following example (the *CUBA example* from Brian 2) as a demonstra
     state_mon = StateMonitor(P, 'v', record=[0, 100, 1000])  # record three cells
 
     run(1 * second)
+
+We will also assume that ``brian2tools`` has been imported like this:
+
+.. code:: python
+
+    from brian2tools import *
+
 
 Spikes
 ~~~~~~
@@ -99,8 +109,6 @@ demonstrate the use of the returned `~matplotlib.axes.Axes` object to add a lege
 
     ax = plot_state(state_mon.t, state_mon.v.T, var_name='membrane potential', lw=2)
     ax.legend(['neuron 0', 'neuron 100', 'neuron 1000'], frameon=False, loc='best')
-
-    plot_state()
 
 .. image:: ../images/plot_state.svg
 
