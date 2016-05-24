@@ -104,6 +104,13 @@ the recorded voltage traces::
 
 .. image:: ../images/brian_plot_state_mon.svg
 
+By indexing the `~brian2.monitors.statemonitor.StateMonitor`, the plot can be restricted to a subset of the recorded
+neurons::
+
+    brian_plot(state_mon[1000])
+
+.. image:: ../images/brian_plot_state_mon_view.svg
+
 Again, for more detailed control you can directly use the `~brian2tools.plotting.data.plot_state` function. Here we also
 demonstrate the use of the returned `~matplotlib.axes.Axes` object to add a legend to the plot::
 
@@ -164,21 +171,20 @@ also be used directly for more control::
 
 Synaptic variables (weights, delays, etc.)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The `~brian2tools.plotting.synapses.plot_synapses` function can also be used to plot synaptic variables such as synaptic
-weights or delays::
+Synaptic variables such as synaptic weights or delays can also be plotted with `~brian2tools.plotting.base.brian_plot`::
 
     subplot(1, 2, 1)
-    plot_synapses(synapses.i, synapses.j, synapses.w)
+    brian_plot(synapses.w)
     subplot(1, 2, 2)
-    plot_synapses(synapses.i, synapses.j, synapses.delay)
+    brian_plot(synapses.delay)
     tight_layout()
 
 .. image:: ../images/plot_synapses_weights_delays.svg
 
-These plots can be customized using additional keyword arguments::
+Again, using `~brian2tools.plotting.synapses.plot_synapses` provides more control::
 
     ax = plot_synapses(synapses.i, synapses.j, synapses.w, var_name='synaptic weights',
-                       plot_type='image', cmap='hot')
+                       plot_type='scatter', cmap='hot')
     ax.set_title('Recurrent connections')
 
 .. image:: ../images/plot_synapses_weights_custom.png
