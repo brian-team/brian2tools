@@ -4,6 +4,7 @@ Module to plot synaptic connections.
 from collections import Counter
 
 import numpy as np
+import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -119,11 +120,13 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
                         unique_sources - np.min(unique_sources)] = n_synapses
             cmap = mpl.cm.get_cmap(kwds.pop('cmap', None),
                                    max(n_synapses) + 1)
-            bounds = np.arange(max(n_synapses) + 2) - 0.5
+            bounds = np.arange(1, max(n_synapses) + 2) - 0.5
             norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
             origin = kwds.pop('origin', 'lower')
-            axes.imshow(full_matrix, origin=origin, cmap=cmap, norm=norm,
-                        **kwds)
+            interpolation = kwds.pop('interpolation', 'nearest')
+            axes.imshow(ma.masked_equal(full_matrix, 0, copy=False),
+                        origin=origin, interpolation=interpolation,
+                        cmap=cmap, norm=norm, **kwds)
         elif plot_type == 'hexbin':
             cmap = mpl.cm.get_cmap(kwds.pop('cmap', None),
                                    max(n_synapses) + 1)
@@ -145,19 +148,25 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             plotted = axes.scatter(sources, targets, marker=marker, c=color,
                                    edgecolor=edgecolor, **kwds)
         elif plot_type == 'image':
-            full_matrix = np.zeros((np.max(targets) - np.min(targets) + 1,
-                                    np.max(sources) - np.min(sources) + 1))
             if values is not None:
+                full_matrix = np.ones((np.max(targets) - np.min(targets) + 1,
+                                       np.max(sources) - np.min(sources) + 1))*np.nan
                 full_matrix[targets-np.min(targets), sources-np.min(sources)] = values
+                masked_matrix = ma.masked_invalid(full_matrix, copy=False)
             else:
+                full_matrix = np.zeros((np.max(targets) - np.min(targets) + 1,
+                                        np.max(sources) - np.min(sources) + 1),
+                                       dtype=np.uint8)
                 full_matrix[targets - np.min(targets), sources - np.min(sources)] = 1
+                masked_matrix = ma.masked_equal(full_matrix, 0, copy=False)
             origin = kwds.pop('origin', 'lower')
             interpolation = kwds.pop('interpolation', 'nearest')
             if values is None:
                 vmin = kwds.pop('vmin', 0)
             else:
                 vmin = kwds.pop('vmin', None)
-            plotted = axes.imshow(full_matrix, origin=origin, interpolation=interpolation,
+            plotted = axes.imshow(masked_matrix, origin=origin,
+                                  interpolation=interpolation,
                                   vmin=vmin, **kwds)
         elif plot_type == 'hexbin':
             plotted = axes.hexbin(sources, targets, C=values, **kwds)
