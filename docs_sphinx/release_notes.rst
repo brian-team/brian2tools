@@ -1,6 +1,22 @@
 Release notes
 =============
 
+Current development version
+---------------------------
+TODO
+
+Improvements and bug fixes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Synaptic plots of the "image" type with `~brian2tools.plotting.synapses.plot_synapses` (also the default for
+  `~brian2tools.plotting.base.brian_plot` for synapses between small numbers of neurons) where plotting a transposed
+  version of the correct connection matrix that was in addition potentially cut off and therefore not showing all
+  connections (#6).
+
+Testing, suggestions and bug reports (ordered alphabetically, apologies to
+anyone we forgot...):
+
+* Ibrahim Ozturk
+
 brian2tools 0.1
 ---------------
 This is the first release of the `brian2tools` package (a collection of optional tools for the

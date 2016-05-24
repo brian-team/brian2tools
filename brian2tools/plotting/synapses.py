@@ -112,11 +112,11 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
                          **kwds)
         elif plot_type == 'image':
             assert np.max(n_synapses) < 256
-            full_matrix = np.zeros((np.max(unique_sources) - np.min(unique_sources) + 1,
-                                    np.max(unique_targets) - np.min(unique_targets) + 1),
+            full_matrix = np.zeros((np.max(unique_targets) - np.min(unique_targets) + 1,
+                                    np.max(unique_sources) - np.min(unique_sources) + 1),
                                    dtype=np.uint8)
-            full_matrix[unique_sources - np.min(unique_sources),
-                        unique_targets - np.min(unique_targets)] = n_synapses
+            full_matrix[unique_targets - np.min(unique_targets),
+                        unique_sources - np.min(unique_sources)] = n_synapses
             cmap = mpl.cm.get_cmap(kwds.pop('cmap', None),
                                    max(n_synapses) + 1)
             bounds = np.arange(max(n_synapses) + 2) - 0.5
@@ -145,12 +145,12 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             plotted = axes.scatter(sources, targets, marker=marker, c=color,
                                    edgecolor=edgecolor, **kwds)
         elif plot_type == 'image':
-            full_matrix = np.zeros((np.max(sources) - np.min(sources) + 1,
-                                    np.max(targets) - np.min(targets) + 1))
+            full_matrix = np.zeros((np.max(targets) - np.min(targets) + 1,
+                                    np.max(sources) - np.min(sources) + 1))
             if values is not None:
-                full_matrix[sources-np.min(sources), targets-np.min(targets)] = values
+                full_matrix[targets-np.min(targets), sources-np.min(sources)] = values
             else:
-                full_matrix[sources - np.min(sources), targets - np.min(targets)] = 1
+                full_matrix[targets - np.min(targets), sources - np.min(sources)] = 1
             origin = kwds.pop('origin', 'lower')
             interpolation = kwds.pop('interpolation', 'nearest')
             if values is None:
@@ -158,7 +158,7 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             else:
                 vmin = kwds.pop('vmin', None)
             plotted = axes.imshow(full_matrix, origin=origin, interpolation=interpolation,
-                                    vmin=vmin, **kwds)
+                                  vmin=vmin, **kwds)
         elif plot_type == 'hexbin':
             plotted = axes.hexbin(sources, targets, C=values, **kwds)
 
