@@ -94,7 +94,7 @@ def brian_plot(brian_obj,
         if kwds:
             logger.warn('plot_dendrogram does not take any additional keyword '
                         'arguments, ignoring them.')
-        plot_dendrogram(brian_obj, axes=axes)
+        return plot_dendrogram(brian_obj, axes=axes)
     elif isinstance(brian_obj, Synapses):
         if len(brian_obj) == 0:
             raise TypeError('Synapses object does not have any synapses.')
@@ -108,7 +108,8 @@ def brian_plot(brian_obj,
             plot_type = 'scatter'
         else:
             plot_type = 'hexbin'
-        plot_synapses(brian_obj.i, brian_obj.j, plot_type=plot_type, axes=axes)
+        return plot_synapses(brian_obj.i, brian_obj.j, plot_type=plot_type,
+                             axes=axes)
     else:
         raise NotImplementedError('Do not know how to plot object of type '
                                   '%s' % type(brian_obj))

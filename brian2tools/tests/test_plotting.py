@@ -7,6 +7,7 @@ matplotlib.use('Agg')
 from brian2 import *
 from brian2tools import *
 
+
 def test_import():
     # Make sure that the expected names are there
     brian_plot
@@ -17,6 +18,7 @@ def test_import():
     plot_dendrogram
     plot_morphology
 
+
 def test_plot_monitors():
     group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt', threshold='False',
                         method='linear')
@@ -26,18 +28,25 @@ def test_plot_monitors():
     state_mon = StateMonitor(group, 'v', record=[3, 5])
     run(10*ms)
 
-    # Just checking whether the plotting does not fail with an error
-    brian_plot(spike_mon)
+    # Just checking whether the plotting does not fail with an error and that
+    # it retuns an Axis object as promised
+    ax = brian_plot(spike_mon)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_raster(spike_mon.i, spike_mon.t)
+    ax = plot_raster(spike_mon.i, spike_mon.t)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    brian_plot(rate_mon)
+    ax = brian_plot(rate_mon)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_rate(rate_mon.t, rate_mon.rate)
+    ax = plot_rate(rate_mon.t, rate_mon.rate)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    brian_plot(state_mon)
+    ax = brian_plot(state_mon)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_state(state_mon.t, state_mon.v.T)
+    ax = plot_state(state_mon.t, state_mon.v.T)
+    assert isinstance(ax, matplotlib.axes.Axes)
 
 
 def test_plot_synapses():
@@ -46,24 +55,34 @@ def test_plot_synapses():
     synapses = Synapses(group, group, 'w : volt', on_pre='v += w')
     synapses.connect('i != j')
     synapses.w = 'i*0.1*mV'
-    # Just checking whether the plotting does not fail with an error
-    brian_plot(synapses)
+    # Just checking whether the plotting does not fail with an error and that
+    # it retuns an Axis object as promised
+    ax = brian_plot(synapses)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_synapses(synapses.i, synapses.j)
+    ax = plot_synapses(synapses.i, synapses.j)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_synapses(synapses.i, synapses.j, plot_type='scatter')
+    ax = plot_synapses(synapses.i, synapses.j, plot_type='scatter')
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_synapses(synapses.i, synapses.j, plot_type='image')
+    ax = plot_synapses(synapses.i, synapses.j, plot_type='image')
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_synapses(synapses.i, synapses.j, plot_type='hexbin')
+    ax = plot_synapses(synapses.i, synapses.j, plot_type='hexbin')
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_synapses(synapses.i, synapses.j, synapses.w)
+    ax = plot_synapses(synapses.i, synapses.j, synapses.w)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='scatter')
+    ax = plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='scatter')
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='image')
+    ax = plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='image')
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='hexbin')
+    ax = plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='hexbin')
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
 
     synapses.connect('i > 5')  # More than one synapse per connection
@@ -71,7 +90,8 @@ def test_plot_synapses():
     close()
     # It should be possible to plot synaptic variables for multiple connections
     # with hexbin
-    plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='hexbin')
+    ax = plot_synapses(synapses.i, synapses.j, synapses.w, plot_type='hexbin')
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
 
 
@@ -83,12 +103,16 @@ def test_plot_morphology():
                           length=np.ones(10)*5*um)
     morpho = morpho.generate_coordinates()
 
-    # Just checking whether the plotting does not fail with an error
-    brian_plot(morpho)
+    # Just checking whether the plotting does not fail with an error and that
+    # it retuns an Axis object as promised
+    ax = brian_plot(morpho)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_dendrogram(morpho)
+    ax = plot_dendrogram(morpho)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
-    plot_morphology(morpho)
+    ax = plot_morphology(morpho)
+    assert isinstance(ax, matplotlib.axes.Axes)
     close()
 
 

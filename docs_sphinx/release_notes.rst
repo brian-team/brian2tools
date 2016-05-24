@@ -11,6 +11,7 @@ Improvements and bug fixes
   `~brian2tools.plotting.base.brian_plot` for synapses between small numbers of neurons) where plotting a transposed
   version of the correct connection matrix that was in addition potentially cut off and therefore not showing all
   connections (#6).
+* Fix that `~brian2tools.plotting.base.brian_plot` was not always returning the `~matplotlib.axes.Axes` object.
 
 Testing, suggestions and bug reports (ordered alphabetically, apologies to
 anyone we forgot...):
