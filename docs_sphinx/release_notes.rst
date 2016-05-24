@@ -12,9 +12,10 @@ Improvements and bug fixes
   version of the correct connection matrix that was in addition potentially cut off and therefore not showing all
   connections (#6).
 * Fix that `~brian2tools.plotting.base.brian_plot` was not always returning the `~matplotlib.axes.Axes` object.
+* Enable direct calls of `~brian2tools.plotting.base.brian_plot` with a synaptic variable or an indexed
+  `~brian2.monitors.statemonitor.StateMonitor` (to only plot a subset of recorded cells).
 
-Testing, suggestions and bug reports (ordered alphabetically, apologies to
-anyone we forgot...):
+Testing, suggestions and bug reports (ordered alphabetically, apologies to anyone we forgot...):
 
 * Ibrahim Ozturk
 
