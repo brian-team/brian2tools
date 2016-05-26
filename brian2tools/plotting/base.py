@@ -162,7 +162,7 @@ def add_background_pattern(axes, hatch='xxx', fill=True, fc=(0.9, 0.9, 0.9),
     that is identical to the background color). By default, it uses a cross
     hatching pattern in gray which can be changed by providing the respective
     arguments. All additional keyword arguments are passed on to the
-    `~matplotlib.patches.Rectangle` intializer.
+    `~matplotlib.patches.Rectangle` initializer.
 
     Parameters
     ----------
@@ -183,7 +183,7 @@ def add_background_pattern(axes, hatch='xxx', fill=True, fc=(0.9, 0.9, 0.9),
     '''
     xmin, xmax = axes.get_xlim()
     ymin, ymax = axes.get_ylim()
-    xy = (xmin,ymin)
+    xy = (xmin, ymin)
     width = xmax - xmin
     height = ymax - ymin
     p = patches.Rectangle(xy, width, height, hatch=hatch, fill=fill, fc=fc,
