@@ -209,7 +209,12 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
                                   interpolation=interpolation,
                                   vmin=vmin, **kwds)
         elif plot_type == 'hexbin':
-            plotted = axes.hexbin(sources, targets, C=values, **kwds)
+            if values is None:  # Counting synapses
+                mincnt = kwds.pop('mincnt', 1)
+            else:
+                mincnt = kwds.pop('mincnt', None)
+            plotted = axes.hexbin(sources, targets, C=values, mincnt=mincnt,
+                                  **kwds)
 
         if values is not None or plot_type == 'hexbin':
             # Add a colorbar
