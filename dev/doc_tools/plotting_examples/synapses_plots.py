@@ -36,6 +36,7 @@ close()
 
 ax = plot_synapses(synapses.i, synapses.j, synapses.w, var_name='synaptic weights',
                    plot_type='scatter', cmap='hot')
+add_background_pattern(ax)
 ax.set_title('Recurrent connections')
 synapses.connect(j='i+k for k in sample(-10, 10, p=0.5) if k != 0',
                  skip_if_invalid=True)  # ignore values outside of the limits

@@ -14,6 +14,8 @@ Improvements and bug fixes
 * Fix that `~brian2tools.plotting.base.brian_plot` was not always returning the `~matplotlib.axes.Axes` object.
 * Enable direct calls of `~brian2tools.plotting.base.brian_plot` with a synaptic variable or an indexed
   `~brian2.monitors.statemonitor.StateMonitor` (to only plot a subset of recorded cells).
+* A new function `~brian2tools.plotting.base.add_background_pattern` to add a hatching pattern to the figure background
+  (for colormaps that include the background color).
 
 Testing, suggestions and bug reports (ordered alphabetically, apologies to anyone we forgot...):
 

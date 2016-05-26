@@ -181,10 +181,13 @@ Synaptic variables such as synaptic weights or delays can also be plotted with `
 
 .. image:: ../images/plot_synapses_weights_delays.svg
 
-Again, using `~brian2tools.plotting.synapses.plot_synapses` provides more control::
+Again, using `~brian2tools.plotting.synapses.plot_synapses` provides more control. The following code snippet also calls
+the `~brian2tools.plotting.base.add_background_pattern` function to make the distinction between white color values and
+the background clearer::
 
     ax = plot_synapses(synapses.i, synapses.j, synapses.w, var_name='synaptic weights',
                        plot_type='scatter', cmap='hot')
+    add_background_pattern(ax)
     ax.set_title('Recurrent connections')
 
 .. image:: ../images/plot_synapses_weights_custom.png

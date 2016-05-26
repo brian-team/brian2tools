@@ -11,6 +11,7 @@ from brian2tools import *
 def test_import():
     # Make sure that the expected names are there
     brian_plot
+    add_background_pattern
     plot_raster
     plot_state
     plot_rate
@@ -67,6 +68,7 @@ def test_plot_synapses():
     assert isinstance(ax, matplotlib.axes.Axes)
     close()
     ax = plot_synapses(synapses.i, synapses.j, plot_type='image')
+    add_background_pattern(ax)
     assert isinstance(ax, matplotlib.axes.Axes)
     close()
     ax = plot_synapses(synapses.i, synapses.j, plot_type='hexbin')

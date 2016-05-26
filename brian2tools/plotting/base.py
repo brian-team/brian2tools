@@ -2,6 +2,7 @@
 Base module for the plotting facilities.
 '''
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
 
 from brian2.core.variables import VariableView
@@ -17,7 +18,7 @@ from .data import plot_raster, plot_state, plot_rate
 from .morphology import plot_dendrogram
 from .synapses import plot_synapses
 
-__all__ = ['brian_plot']
+__all__ = ['brian_plot', 'add_background_pattern']
 
 logger = get_logger(__name__)
 
@@ -151,3 +152,40 @@ def brian_plot(brian_obj,
     else:
         raise NotImplementedError('Do not know how to plot object of type '
                                   '%s' % type(brian_obj))
+
+
+def add_background_pattern(axes, hatch='xxx', fill=True, fc=(0.9, 0.9, 0.9),
+                           ec=(0.8, 0.8, 0.8), zorder=-10, **kwds):
+    '''
+    Add a "hatching" pattern to the background of the axes (can be useful to
+    make a difference between "no value" and a value mapped to a color value
+    that is identical to the background color). By default, it uses a cross
+    hatching pattern in gray which can be changed by providing the respective
+    arguments. All additional keyword arguments are passed on to the
+    `~matplotlib.patches.Rectangle` intializer.
+
+    Parameters
+    ----------
+    axes : `matplotlib.axes.Axes`
+        The axes where the
+    hatch : str, optional
+        See `matplotlib.patches.Patch.set_hatch`. Defaults to `'xxx'`.
+    fill : bool, optional
+        See `matplotlib.patches.Patch.set_fill`. Defaults to `True`.
+    fc : mpl color spec or None or 'none'
+        See `matplotlib.patches.Patch.set_facecolor`. Defaults to
+        `(0.9, 0.9, 0.9)`.
+    ec : mpl color spec or None or 'none'
+        See `matplotlib.patches.Patch.set_edgecolor`. Defaults to
+        `(0.8, 0.8, 0.8)`.
+    zorder : int
+        See `matplotlib.artist.Artist.set_zorder`. Defaults to `-10`.
+    '''
+    xmin, xmax = axes.get_xlim()
+    ymin, ymax = axes.get_ylim()
+    xy = (xmin,ymin)
+    width = xmax - xmin
+    height = ymax - ymin
+    p = patches.Rectangle(xy, width, height, hatch=hatch, fill=fill, fc=fc,
+                          ec=ec, zorder=zorder, **kwds)
+    axes.add_patch(p)
