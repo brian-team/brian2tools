@@ -167,7 +167,7 @@ def add_background_pattern(axes, hatch='xxx', fill=True, fc=(0.9, 0.9, 0.9),
     Parameters
     ----------
     axes : `matplotlib.axes.Axes`
-        The axes where the
+        The axes where the background pattern should be added.
     hatch : str, optional
         See `matplotlib.patches.Patch.set_hatch`. Defaults to `'xxx'`.
     fill : bool, optional
