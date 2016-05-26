@@ -1,9 +1,10 @@
 Release notes
 =============
 
-Current development version
----------------------------
-TODO
+brian2tools 0.1.2
+-----------------
+This is mostly a bug-fix release but also adds a few new features and improvements around the plotting of synapses
+(see below).
 
 Improvements and bug fixes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,10 +15,11 @@ Improvements and bug fixes
 * Fix that `~brian2tools.plotting.base.brian_plot` was not always returning the `~matplotlib.axes.Axes` object.
 * Enable direct calls of `~brian2tools.plotting.base.brian_plot` with a synaptic variable or an indexed
   `~brian2.monitors.statemonitor.StateMonitor` (to only plot a subset of recorded cells).
+* Do not plot `0` as a value for non-existing synapses in `image` and `hexbin`-style plots.
 * A new function `~brian2tools.plotting.base.add_background_pattern` to add a hatching pattern to the figure background
   (for colormaps that include the background color).
 
-Testing, suggestions and bug reports (ordered alphabetically, apologies to anyone we forgot...):
+Testing, suggestions and bug reports:
 
 * Ibrahim Ozturk
 
