@@ -4,6 +4,7 @@ Module to plot synaptic connections.
 from collections import Counter
 
 import numpy as np
+import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -11,6 +12,71 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 __all__ = ['plot_synapses']
 
 
+# Helper functions
+def _int_connection_matrix(sources, targets, values):
+    '''
+    Return a 2D connection matrix filled with integer values (typically the
+    number of synapses) in the form of a masked matrix (values equal to 0 are
+    masked)
+
+    Parameters
+    ----------
+    sources : ndarray of int
+        The indices of the source neurons for each value.
+    targets : ndarray of int
+        The indices of the target neurons for each value.
+    values : ndarray of int or int
+        The value for each (source, target) pair.
+
+    Returns
+    -------
+    matrix : ma.MaskedArray
+        The connection matrix, masked for 0 values
+    '''
+    assert np.min(values) > 0 and np.max(values) < 256
+    full_matrix = np.zeros((np.max(targets) - np.min(targets) + 1,
+                            np.max(sources) - np.min(sources) + 1),
+                           dtype=np.uint8)
+    full_matrix[targets - np.min(targets),
+                sources - np.min(sources)] = values
+    return ma.masked_equal(full_matrix, 0, copy=False)
+
+
+def _float_connection_matrix(sources, targets, values):
+    '''
+    Return a 2D connection matrix filled with floating point values (synaptic
+    weights, delays, ...) in the form of a masked matrix (entries without value
+    are set to NaN and masked).
+
+    Parameters
+    ----------
+    sources : ndarray of int
+        The indices of the source neurons for each value.
+    targets : ndarray of int
+        The indices of the target neurons for each value.
+    values : ndarray of float
+        The value for each (source, target) pair.
+
+    Returns
+    -------
+    matrix : ma.MaskedArray
+        The connection matrix, masked for NaN values
+    '''
+    full_matrix = np.ones((np.max(targets) - np.min(targets) + 1,
+                           np.max(sources) - np.min(sources) + 1)) * np.nan
+    full_matrix[targets - np.min(targets), sources - np.min(sources)] = values
+    masked_matrix = ma.masked_invalid(full_matrix, copy=False)
+    return masked_matrix
+
+
+def _discrete_color_mapping(user_cmap, n_synapses):
+    cmap = mpl.cm.get_cmap(user_cmap, np.max(n_synapses))
+    bounds = np.arange(np.max(n_synapses) + 1) + 0.5
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+    return bounds, cmap, norm
+
+
+# Plot functions
 def plot_synapses(sources, targets, values=None, var_unit=None,
                   var_name=None, plot_type='scatter', axes=None, **kwds):
     '''
@@ -101,42 +167,29 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
                                       "implemented for 'hexbin' plots.")
         unique_sources, unique_targets = zip(*connection_count.keys())
         n_synapses = list(connection_count.values())
-
+        bounds, cmap, norm = _discrete_color_mapping(kwds.pop('cmap', None),
+                                                     n_synapses)
+        # Make the plot
         if plot_type == 'scatter':
             marker = kwds.pop('marker', ',')
-            cmap = mpl.cm.get_cmap(kwds.pop('cmap', None), max(n_synapses))
-            bounds = np.arange(max(n_synapses) + 1) + 0.5
-            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
             axes.scatter(unique_sources, unique_targets, marker=marker,
-                         c=n_synapses, edgecolor=edgecolor, cmap=cmap, norm=norm,
-                         **kwds)
-        elif plot_type == 'image':
+                         c=n_synapses, edgecolor=edgecolor, cmap=cmap,
+                         norm=norm, **kwds)
+        else:
             assert np.max(n_synapses) < 256
-            full_matrix = np.zeros((np.max(unique_sources) - np.min(unique_sources) + 1,
-                                    np.max(unique_targets) - np.min(unique_targets) + 1),
-                                   dtype=np.uint8)
-            full_matrix[unique_sources - np.min(unique_sources),
-                        unique_targets - np.min(unique_targets)] = n_synapses
-            cmap = mpl.cm.get_cmap(kwds.pop('cmap', None),
-                                   max(n_synapses) + 1)
-            bounds = np.arange(max(n_synapses) + 2) - 0.5
-            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+            matrix = _int_connection_matrix(unique_sources, unique_targets,
+                                                 n_synapses)
             origin = kwds.pop('origin', 'lower')
-            axes.imshow(full_matrix, origin=origin, cmap=cmap, norm=norm,
-                        **kwds)
-        elif plot_type == 'hexbin':
-            cmap = mpl.cm.get_cmap(kwds.pop('cmap', None),
-                                   max(n_synapses) + 1)
-            bounds = np.arange(max(n_synapses) + 2) - 0.5
-            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-            axes.hexbin(sources, targets, cmap=cmap, norm=norm, **kwds)
+            interpolation = kwds.pop('interpolation', 'nearest')
+            axes.imshow(matrix, origin=origin, interpolation=interpolation,
+                        cmap=cmap, norm=norm, **kwds)
 
+        # Add the colorbar
         locatable_axes = make_axes_locatable(axes)
         cax = locatable_axes.append_axes('right', size='5%', pad=0.05)
         mpl.colorbar.ColorbarBase(cax, cmap=cmap,
                                   norm=norm,
-                                  ticks=bounds-0.5,
-                                  spacing='proportional')
+                                  ticks=bounds-0.5)
         cax.set_ylabel('number of synapses')
     else:
         if plot_type == 'scatter':
@@ -145,24 +198,26 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             plotted = axes.scatter(sources, targets, marker=marker, c=color,
                                    edgecolor=edgecolor, **kwds)
         elif plot_type == 'image':
-            full_matrix = np.zeros((np.max(sources) - np.min(sources) + 1,
-                                    np.max(targets) - np.min(targets) + 1))
             if values is not None:
-                full_matrix[sources-np.min(sources), targets-np.min(targets)] = values
+                matrix = _float_connection_matrix(sources, targets, values)
             else:
-                full_matrix[sources - np.min(sources), targets - np.min(targets)] = 1
+                matrix = _int_connection_matrix(sources, targets, 1)
             origin = kwds.pop('origin', 'lower')
             interpolation = kwds.pop('interpolation', 'nearest')
-            if values is None:
-                vmin = kwds.pop('vmin', 0)
-            else:
-                vmin = kwds.pop('vmin', None)
-            plotted = axes.imshow(full_matrix, origin=origin, interpolation=interpolation,
-                                    vmin=vmin, **kwds)
+            vmin = kwds.pop('vmin', 1 if values is None else None)
+            plotted = axes.imshow(matrix, origin=origin,
+                                  interpolation=interpolation,
+                                  vmin=vmin, **kwds)
         elif plot_type == 'hexbin':
-            plotted = axes.hexbin(sources, targets, C=values, **kwds)
+            if values is None:  # Counting synapses
+                mincnt = kwds.pop('mincnt', 1)
+            else:
+                mincnt = kwds.pop('mincnt', None)
+            plotted = axes.hexbin(sources, targets, C=values, mincnt=mincnt,
+                                  **kwds)
 
         if values is not None or plot_type == 'hexbin':
+            # Add a colorbar
             locatable_axes = make_axes_locatable(axes)
             cax = locatable_axes.append_axes('right', size='7.5%', pad=0.05)
             plt.colorbar(plotted, cax=cax)
@@ -175,9 +230,11 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
                     label += ' (%s)' % str(var_unit)
                 cax.set_ylabel(label)
 
-    axes.set_xlim(-1, max(sources)+1)
-    axes.set_ylim(-1, max(targets)+1)
+    axes.set_xlim(-1, max(sources) + 1)
+    axes.set_ylim(-1, max(targets) + 1)
     axes.set_xlabel('source neuron index')
     axes.set_ylabel('target neuron index')
 
     return axes
+
+

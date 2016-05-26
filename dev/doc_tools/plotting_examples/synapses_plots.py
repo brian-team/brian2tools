@@ -27,15 +27,16 @@ plt.savefig(os.path.join(fig_dir, 'plot_synapses_connections.svg'))
 close()
 
 subplot(1, 2, 1)
-plot_synapses(synapses.i, synapses.j, synapses.w)
+brian_plot(synapses.w)
 subplot(1, 2, 2)
-plot_synapses(synapses.i, synapses.j, synapses.delay)
+brian_plot(synapses.delay)
 tight_layout()
 plt.savefig(os.path.join(fig_dir, 'plot_synapses_weights_delays.svg'))
 close()
 
 ax = plot_synapses(synapses.i, synapses.j, synapses.w, var_name='synaptic weights',
-                   plot_type='image', cmap='hot')
+                   plot_type='scatter', cmap='hot')
+add_background_pattern(ax)
 ax.set_title('Recurrent connections')
 synapses.connect(j='i+k for k in sample(-10, 10, p=0.5) if k != 0',
                  skip_if_invalid=True)  # ignore values outside of the limits
@@ -53,5 +54,3 @@ many_synapses.connect(j='i+k for k in range(-2000, 2000) if rand() < exp(-(k/100
 brian_plot(many_synapses)
 plt.savefig(os.path.join(fig_dir, 'brian_plot_synapses_big.png'))
 close()
-
-

@@ -2,10 +2,13 @@
 Base module for the plotting facilities.
 '''
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
 
+from brian2.core.variables import VariableView
 from brian2.spatialneuron.morphology import Morphology
 from brian2.monitors import SpikeMonitor, StateMonitor, PopulationRateMonitor
+from brian2.monitors.statemonitor import StateMonitorView
 from brian2.units.fundamentalunits import Quantity
 from brian2.units.stdunits import ms
 from brian2.utils.logger import get_logger
@@ -15,7 +18,7 @@ from .data import plot_raster, plot_state, plot_rate
 from .morphology import plot_dendrogram
 from .synapses import plot_synapses
 
-__all__ = ['brian_plot']
+__all__ = ['brian_plot', 'add_background_pattern']
 
 logger = get_logger(__name__)
 
@@ -85,6 +88,18 @@ def brian_plot(brian_obj,
         if 'var_unit' not in kwds and isinstance(values, Quantity):
             kwds['var_unit'] = values._get_best_unit()
         return plot_state(brian_obj.t, values, axes=axes, **kwds)
+    elif isinstance(brian_obj, StateMonitorView):
+        monitor = brian_obj.monitor
+        if len(monitor.record_variables) != 1:
+            raise TypeError('brian_plot only works for a StateMonitor that '
+                            'records a single variable.')
+        var_name = monitor.record_variables[0]
+        values = getattr(brian_obj, var_name).T
+        if 'var_name' not in kwds:
+            kwds['var_name'] = var_name
+        if 'var_unit' not in kwds and isinstance(values, Quantity):
+            kwds['var_unit'] = values._get_best_unit()
+        return plot_state(brian_obj.t, values, axes=axes, **kwds)
     elif isinstance(brian_obj, PopulationRateMonitor):
         smooth_rate = brian_obj.smooth_rate(width=1*ms)
         if 'rate_unit' not in kwds:
@@ -94,7 +109,7 @@ def brian_plot(brian_obj,
         if kwds:
             logger.warn('plot_dendrogram does not take any additional keyword '
                         'arguments, ignoring them.')
-        plot_dendrogram(brian_obj, axes=axes)
+        return plot_dendrogram(brian_obj, axes=axes)
     elif isinstance(brian_obj, Synapses):
         if len(brian_obj) == 0:
             raise TypeError('Synapses object does not have any synapses.')
@@ -108,7 +123,69 @@ def brian_plot(brian_obj,
             plot_type = 'scatter'
         else:
             plot_type = 'hexbin'
-        plot_synapses(brian_obj.i, brian_obj.j, plot_type=plot_type, axes=axes)
+        return plot_synapses(brian_obj.i, brian_obj.j, plot_type=plot_type,
+                             axes=axes)
+    # brian_obj.group can be a weak proxy, we can therefore not use isinstance
+    elif (isinstance(brian_obj, VariableView) and
+              issubclass(brian_obj.group.__class__, Synapses)):
+        # synaptic variable
+        synapses = brian_obj.group
+        sources = synapses.i[:]
+        targets = synapses.j[:]
+        min_sources, max_sources = np.min(sources), np.max(sources)
+        min_targets, max_targets = np.min(targets), np.max(targets)
+        source_range = max_sources - min_sources
+        target_range = max_targets - min_targets
+        if source_range < 1000 and target_range < 1000:
+            plot_type = 'image'
+        elif len(brian_obj) < 10000:
+            plot_type = 'scatter'
+        else:
+            plot_type = 'hexbin'
+        values = brian_obj[:]
+        if 'var_name' not in kwds:
+            kwds['var_name'] = brian_obj.name
+        if 'var_unit' not in kwds and isinstance(values, Quantity):
+            kwds['var_unit'] = values._get_best_unit()
+        return plot_synapses(sources, targets, values, plot_type=plot_type,
+                             axes=axes, **kwds)
     else:
         raise NotImplementedError('Do not know how to plot object of type '
                                   '%s' % type(brian_obj))
+
+
+def add_background_pattern(axes, hatch='xxx', fill=True, fc=(0.9, 0.9, 0.9),
+                           ec=(0.8, 0.8, 0.8), zorder=-10, **kwds):
+    '''
+    Add a "hatching" pattern to the background of the axes (can be useful to
+    make a difference between "no value" and a value mapped to a color value
+    that is identical to the background color). By default, it uses a cross
+    hatching pattern in gray which can be changed by providing the respective
+    arguments. All additional keyword arguments are passed on to the
+    `~matplotlib.patches.Rectangle` initializer.
+
+    Parameters
+    ----------
+    axes : `matplotlib.axes.Axes`
+        The axes where the background pattern should be added.
+    hatch : str, optional
+        See `matplotlib.patches.Patch.set_hatch`. Defaults to `'xxx'`.
+    fill : bool, optional
+        See `matplotlib.patches.Patch.set_fill`. Defaults to `True`.
+    fc : mpl color spec or None or 'none'
+        See `matplotlib.patches.Patch.set_facecolor`. Defaults to
+        `(0.9, 0.9, 0.9)`.
+    ec : mpl color spec or None or 'none'
+        See `matplotlib.patches.Patch.set_edgecolor`. Defaults to
+        `(0.8, 0.8, 0.8)`.
+    zorder : int
+        See `matplotlib.artist.Artist.set_zorder`. Defaults to `-10`.
+    '''
+    xmin, xmax = axes.get_xlim()
+    ymin, ymax = axes.get_ylim()
+    xy = (xmin, ymin)
+    width = xmax - xmin
+    height = ymax - ymin
+    p = patches.Rectangle(xy, width, height, hatch=hatch, fill=fill, fc=fc,
+                          ec=ec, zorder=zorder, **kwds)
+    axes.add_patch(p)
