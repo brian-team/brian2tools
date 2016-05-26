@@ -7,6 +7,9 @@ those simulations.
 .. image:: https://travis-ci.org/brian-team/brian2tools.svg?branch=master
     :target: https://travis-ci.org/brian-team/brian2tools
 
+.. image:: https://img.shields.io/pypi/v/brian2tools
+        :target: https://pypi.python.org/pypi/brian2tools
+
 .. image:: https://anaconda.org/brian-team/brian2tools/badges/version.svg
     :target: https://anaconda.org/brian-team/brian2tools
 
