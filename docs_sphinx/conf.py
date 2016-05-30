@@ -402,6 +402,10 @@ intersphinx_mapping = {'python': ('https://docs.python.org/', None),
                        'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
                        'mayavi': ('http://docs.enthought.com/mayavi/mayavi/', None)}
 
+# Configure linking to github
+issuetracker = 'github'
+issuetracker_project = 'brian-team/brian2tools'
+
 # Create api docs
 def run_apidoc(_):
     import sphinx.apidoc as apidoc
