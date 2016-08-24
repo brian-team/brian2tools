@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<Lems xmlns="http://www.neuroml.org/lems/0.7.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.neuroml.org/lems/0.7.3 https://raw.githubusercontent.com/LEMS/LEMS/development/Schemas/LEMS/LEMS_v0.7.3.xsd">
+  <Constant dimension="conductance" name="nS" symbol="nS" value="1e-09"/>
+  <Constant dimension="current" name="pA" symbol="pA" value="1e-12"/>
+  <Constant dimension="volume" name="um3" symbol="um3" value="1e-18"/>
+  <Constant dimension="area" name="um2" symbol="um2" value="1e-12"/>
+  <Constant dimension="length" name="mm" symbol="mm" value="0.001"/>
+  <Constant dimension="current" name="nA" symbol="nA" value="1e-09"/>
+  <Constant dimension="capacitance" name="uF" symbol="uF" value="1e-06"/>
+  <Constant dimension="volume" name="mm3" symbol="mm3" value="1e-09"/>
+  <Constant dimension="area" name="mm2" symbol="mm2" value="1e-06"/>
+  <Constant dimension="length" name="um" symbol="um" value="1e-06"/>
+  <Constant dimension="voltage" name="mV" symbol="mV" value="0.001"/>
+  <Constant dimension="capacitance" name="pF" symbol="pF" value="1e-12"/>
+  <Constant dimension="conductance" name="uS" symbol="uS" value="1e-06"/>
+  <Constant dimension="time" name="ms" symbol="ms" value="0.001"/>
+  <Constant dimension="capacitance" name="nF" symbol="nF" value="1e-09"/>
+  <Constant dimension="resistance" name="Mohm" symbol="Mohm" value="1000000.0"/>
+  <Constant dimension="resistance" name="kohm" symbol="kohm" value="1000.0"/>
+  <Constant dimension="current" name="uA" symbol="uA" value="1e-06"/>
+</Lems>
