@@ -7,4 +7,3 @@ User's guide
    installation
    plotting
    exporter_user
-   exporter_developer

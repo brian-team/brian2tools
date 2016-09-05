@@ -1,5 +1,5 @@
-Brian2NeuroML exporter - developer guide
-========================================
+Brian2NeuroML exporter
+======================
 
 .. contents::
     Overview
