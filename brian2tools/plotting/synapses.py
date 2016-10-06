@@ -194,7 +194,7 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
     else:
         if plot_type == 'scatter':
             marker = kwds.pop('marker', ',')
-            color = kwds.pop('color', values if values is not None else 'none')
+            color = kwds.pop('color', values if values is not None else None)
             plotted = axes.scatter(sources, targets, marker=marker, c=color,
                                    edgecolor=edgecolor, **kwds)
         elif plot_type == 'image':
