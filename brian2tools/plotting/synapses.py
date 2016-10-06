@@ -7,6 +7,7 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 __all__ = ['plot_synapses']
@@ -182,7 +183,10 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             origin = kwds.pop('origin', 'lower')
             interpolation = kwds.pop('interpolation', 'nearest')
             axes.imshow(matrix, origin=origin, interpolation=interpolation,
-                        cmap=cmap, norm=norm, **kwds)
+                        cmap=cmap, norm=norm,
+                        extent=(min(unique_sources) - 0.5, max(unique_sources) + 0.5,
+                                min(unique_targets) - 0.5, max(unique_targets) + 0.5),
+                        **kwds)
 
         # Add the colorbar
         locatable_axes = make_axes_locatable(axes)
@@ -194,7 +198,7 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
     else:
         if plot_type == 'scatter':
             marker = kwds.pop('marker', ',')
-            color = kwds.pop('color', values if values is not None else 'none')
+            color = kwds.pop('color', values if values is not None else None)
             plotted = axes.scatter(sources, targets, marker=marker, c=color,
                                    edgecolor=edgecolor, **kwds)
         elif plot_type == 'image':
@@ -207,7 +211,10 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             vmin = kwds.pop('vmin', 1 if values is None else None)
             plotted = axes.imshow(matrix, origin=origin,
                                   interpolation=interpolation,
-                                  vmin=vmin, **kwds)
+                                  vmin=vmin,
+                                  extent=(min(sources) - 0.5, max(sources) + 0.5,
+                                          min(targets) - 0.5, max(targets) + 0.5),
+                                  **kwds)
         elif plot_type == 'hexbin':
             if values is None:  # Counting synapses
                 mincnt = kwds.pop('mincnt', 1)
@@ -230,11 +237,11 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
                     label += ' (%s)' % str(var_unit)
                 cax.set_ylabel(label)
 
-    axes.set_xlim(-1, max(sources) + 1)
-    axes.set_ylim(-1, max(targets) + 1)
+    axes.set_xlim(-0.5, max(sources) + 0.5)
+    axes.set_ylim(-0.5, max(targets) + 0.5)
     axes.set_xlabel('source neuron index')
     axes.set_ylabel('target neuron index')
-
+    # Prevent floating point values on the axes (e.g. when zooming in)
+    axes.xaxis.set_major_locator(MaxNLocator(integer=True))
+    axes.yaxis.set_major_locator(MaxNLocator(integer=True))
     return axes
-
-
