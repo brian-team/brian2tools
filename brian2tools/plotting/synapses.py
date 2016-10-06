@@ -183,8 +183,8 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             interpolation = kwds.pop('interpolation', 'nearest')
             axes.imshow(matrix, origin=origin, interpolation=interpolation,
                         cmap=cmap, norm=norm,
-                        extent=(min(unique_sources), max(unique_sources),
-                                min(unique_targets), max(unique_targets)),
+                        extent=(min(unique_sources) - 0.5, max(unique_sources) + 0.5,
+                                min(unique_targets) - 0.5, max(unique_targets) + 0.5),
                         **kwds)
 
         # Add the colorbar
@@ -211,8 +211,8 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             plotted = axes.imshow(matrix, origin=origin,
                                   interpolation=interpolation,
                                   vmin=vmin,
-                                  extent=(min(sources), max(sources),
-                                          min(targets), max(targets)),
+                                  extent=(min(sources) - 0.5, max(sources) + 0.5,
+                                          min(targets) - 0.5, max(targets) + 0.5),
                                   **kwds)
         elif plot_type == 'hexbin':
             if values is None:  # Counting synapses
@@ -236,8 +236,8 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
                     label += ' (%s)' % str(var_unit)
                 cax.set_ylabel(label)
 
-    axes.set_xlim(-1, max(sources) + 1)
-    axes.set_ylim(-1, max(targets) + 1)
+    axes.set_xlim(-0.5, max(sources) + 0.5)
+    axes.set_ylim(-0.5, max(targets) + 0.5)
     axes.set_xlabel('source neuron index')
     axes.set_ylabel('target neuron index')
 
