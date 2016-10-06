@@ -7,6 +7,7 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 __all__ = ['plot_synapses']
@@ -240,7 +241,7 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
     axes.set_ylim(-0.5, max(targets) + 0.5)
     axes.set_xlabel('source neuron index')
     axes.set_ylabel('target neuron index')
-
+    # Prevent floating point values on the axes (e.g. when zooming in)
+    axes.xaxis.set_major_locator(MaxNLocator(integer=True))
+    axes.yaxis.set_major_locator(MaxNLocator(integer=True))
     return axes
-
-
