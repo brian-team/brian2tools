@@ -182,7 +182,10 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             origin = kwds.pop('origin', 'lower')
             interpolation = kwds.pop('interpolation', 'nearest')
             axes.imshow(matrix, origin=origin, interpolation=interpolation,
-                        cmap=cmap, norm=norm, **kwds)
+                        cmap=cmap, norm=norm,
+                        extent=(min(unique_sources), max(unique_sources),
+                                min(unique_targets), max(unique_targets)),
+                        **kwds)
 
         # Add the colorbar
         locatable_axes = make_axes_locatable(axes)
@@ -207,7 +210,10 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             vmin = kwds.pop('vmin', 1 if values is None else None)
             plotted = axes.imshow(matrix, origin=origin,
                                   interpolation=interpolation,
-                                  vmin=vmin, **kwds)
+                                  vmin=vmin,
+                                  extent=(min(sources), max(sources),
+                                          min(targets), max(targets)),
+                                  **kwds)
         elif plot_type == 'hexbin':
             if values is None:  # Counting synapses
                 mincnt = kwds.pop('mincnt', 1)
