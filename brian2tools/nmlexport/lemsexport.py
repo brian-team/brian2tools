@@ -1,3 +1,7 @@
+import numpy as np
+import re
+import os
+
 from brian2 import *
 from brian2.groups.neurongroup import NeuronGroup, Thresholder, Resetter,\
                                       StateUpdater
@@ -12,17 +16,11 @@ from brian2.utils.stringtools import get_identifiers
 
 import lems.api as lems
 
-from lemsrendering import *
-from supporting import read_nml_units, read_nml_dims, brian_unit_to_lems,\
-                       name_to_unit, NeuroMLSimulation, NeuroMLSimpleNetwork,\
-                       NeuroMLTarget, NeuroMLPoissonGenerator
-from cgmhelper import *
-
-import numpy as np
-import warnings
-import re
-import os
-import pdb
+from .lemsrendering import *
+from .supporting import (read_nml_units, read_nml_dims, brian_unit_to_lems,
+                         name_to_unit, NeuroMLSimulation, NeuroMLSimpleNetwork,
+                         NeuroMLTarget, NeuroMLPoissonGenerator)
+from .cgmhelper import *
 
 __all__ = []
 

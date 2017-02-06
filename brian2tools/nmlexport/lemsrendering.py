@@ -1,5 +1,3 @@
-from brian2.core.functions import DEFAULT_FUNCTIONS, DEFAULT_CONSTANTS
-
 from brian2.parsing.rendering import NodeRenderer
 
 class LEMSRenderer(NodeRenderer):

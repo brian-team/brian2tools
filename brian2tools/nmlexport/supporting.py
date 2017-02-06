@@ -1,9 +1,10 @@
-from brian2.units.allunits import all_units
-from brian2 import get_or_create_dimension
-import xml.dom.minidom as minidom
-
 import re
 import os
+import xml.dom.minidom as minidom
+
+from brian2.units.allunits import all_units
+from brian2 import get_or_create_dimension
+
 
 name_to_unit = {u.dispname: u for u in all_units}
 
