@@ -492,29 +492,3 @@ class NeuroMLTarget(object):
 
     def __repr__(self):
         return self.target.toprettyxml('  ', '\n')
-
-if __name__ == '__main__':
-    # test units parser
-    from brian2 import *
-    testlist = ["1 mV", "1.234mV", "1.2e-4 mV", "1.23e-5A", "1.23e4A",
-                "1.45E-8 m", "1.23E-8m2", "60", "6000", "123000",
-                "-1.00000008E8", "0.07 per_ms", "10pS"]
-    for i in testlist:
-        from_string(i)
-    print '+',
-    # test NeuroMLSimulation
-    nmlsim = NeuroMLSimulation('a', 'b')
-    nmlsim.add_display('ex')
-    nmlsim.add_line('line1', 'v')
-    nmlsim.add_line('line2', 'w')
-    nmlsim.add_outputfile('of1')
-    nmlsim.add_outputcolumn('1', '[3]')
-    nmlsim.add_eventoutputfile('eof1')
-    nmlsim.add_eventselection('1', '[5]')
-    nmlsim.build()
-    print '+',
-    # test NeuroMLSimpleNetwork
-    nmlnet = NeuroMLSimpleNetwork("net")
-    nmlnet.add_component("i0", "lf", a=3, b=4)
-    nmlnet.build()
-    print '+',

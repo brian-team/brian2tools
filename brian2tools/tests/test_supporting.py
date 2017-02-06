@@ -1,11 +1,7 @@
-import os
-import sys
-sys.path.append(os.path.dirname(os.getcwd()))
 from brian2 import *
-from brian2tools.nmlexport import *
 from brian2tools.nmlexport.supporting import *
 
-from numpy.testing import assert_raises, assert_equal, assert_array_equal
+from numpy.testing import assert_raises, assert_equal
 
 simulation_tag_output = '''<Simulation id="a" length="1s" step="0.1ms" target="b">
   <Display id="ex" timeScale="1ms" title="" xmax="1000" xmin="0" ymax="11" ymin="0">
@@ -25,6 +21,8 @@ simplenetwork_tag_output = '''<network id="net">
   <Component a="3" b="4" id="i0" type="lf"/>
 </network>
 '''
+
+
 def test_units_parser():
     testlist = ["1 mV", "1.234mV", "1.2e-4 mV", "1.23e-5A", "1.23e4A",
                 "1.45E-8 m", "1.23E-8m2", "60", "6000", "123000",
@@ -35,9 +33,11 @@ def test_units_parser():
     for t, r in zip(testlist, reslist):
         assert_equal(r, from_string(t))
 
+
 def test_brian_unit_to_lems():
     assert_equal(brian_unit_to_lems(20.*mV), "20.*mV")
     assert_equal(brian_unit_to_lems(0*ms), "0")
+
 
 def test_neuromlsimulation():
     nmlsim = NeuroMLSimulation('a', 'b')
@@ -54,6 +54,7 @@ def test_neuromlsimulation():
     nmlsim.build()
     strrepr = nmlsim.__repr__()
     assert_equal(strrepr, simulation_tag_output)
+
 
 def test_simplenetwork():
     nmlnet = NeuroMLSimpleNetwork("net")
