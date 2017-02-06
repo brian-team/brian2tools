@@ -1,19 +1,19 @@
-import unittest
 import os
-import sys
 import platform
 import tempfile
-import numpy as np
 from subprocess import call
-from brian2 import *
-from brian2tools.nmlexport import *
-import matplotlib.pyplot as plt
 
-from numpy.testing import assert_raises, assert_equal, assert_array_equal
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy.testing import assert_allclose
+
+# We avoid "from brian2 import *", as this would also import Brian's test
+# function which will then be collected by py.test
+from brian2 import set_device, NeuronGroup, StateMonitor, SpikeMonitor, run
+from brian2 import second, ms, mV
 
 plain_numbers_from_list = lambda x: str(x)[1:-1].replace(',','')
 
-plot = False
 RECORDING_BRIAN_FILENAME = "recording"
 LEMS_OUTPUT_FILENAME     = "ifcgmtest.xml"
 
@@ -54,7 +54,7 @@ def simulation1(flag_device=False, path="", rec_idx=idx_to_record):
     else:
         return None
 
-def test_simulation1():
+def test_simulation1(plot=False):
     """
     Test example 1: simulation1_lif.py
     """
@@ -63,7 +63,7 @@ def test_simulation1():
     tempdir = tempfile.mkdtemp()
     outbrian = simulation1(False, path=tempdir)
     outnml = simulation1(True, path=tempdir)
-
+    set_device('runtime')
     if JNML_PATH:
         os.chdir(JNML_PATH)
     outcommand = call("jnml {path} -nogui".format(path=os.path.join(current_path, xml_filename)),
@@ -79,7 +79,7 @@ def test_simulation1():
     timevec = np.asarray(timevec)
     valuesvec = np.asarray(valuesvec).T
     for i in range(len(idx_to_record)):
-        assert np.allclose(outbrian[i, :], valuesvec[i, 1:], atol=1e-02)==True
+        assert_allclose(outbrian[i, :], valuesvec[i, 1:], atol=1e-02)
 
     if plot:
         plt.subplot(3,2,1)

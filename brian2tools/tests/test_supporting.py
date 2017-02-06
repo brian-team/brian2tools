@@ -1,4 +1,6 @@
-from brian2 import *
+# We avoid "from brian2 import *", as this would also import Brian's test
+# function which will then be collected by py.test
+from brian2 import mV, amp, metre, psiemens, ms
 from brian2tools.nmlexport.supporting import *
 
 from numpy.testing import assert_raises, assert_equal

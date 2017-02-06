@@ -1,18 +1,17 @@
-import numpy as np
 import re
 import os
 
-from brian2 import *
-from brian2.groups.neurongroup import NeuronGroup, Thresholder, Resetter,\
-                                      StateUpdater
-from brian2.equations.equations import PARAMETER, DIFFERENTIAL_EQUATION,\
-                                       SUBEXPRESSION
-from brian2.core.network import *
-from brian2.core.namespace import get_local_namespace, DEFAULT_UNITS
-from brian2.devices.device import Device, RuntimeDevice, all_devices
-from brian2.utils.logger import get_logger
-from brian2.units.fundamentalunits import _siprefixes
-from brian2.utils.stringtools import get_identifiers
+from brian2.groups.neurongroup import Thresholder, Resetter, StateUpdater
+from brian2.synapses.synapses import Synapses
+from brian2.monitors.statemonitor import StateMonitor
+from brian2.input.poissoninput import PoissonInput
+from brian2.core.network import Network
+from brian2.core.magic import collect
+from brian2.devices.device import RuntimeDevice
+
+from brian2.units.fundamentalunits import is_dimensionless
+from brian2.units import mmetre, ms
+
 
 import lems.api as lems
 
