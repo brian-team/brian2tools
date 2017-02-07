@@ -12,6 +12,11 @@ from brian2.units import second, Unit, Quantity
 from brian2.utils.stringtools import get_identifiers
 from brian2.utils.logger import get_logger
 
+# Make a "basestring class" for Python 3 that can be used with isinstance
+try:
+    basestring
+except NameError:
+    basestring = (str, bytes)
 
 # Helper functions to convert the objects into string descriptions
 
@@ -40,7 +45,7 @@ def get_namespace_dict(identifiers, neurongroup, run_namespace):
     variables = neurongroup.resolve_all(identifiers, run_namespace)
     namespace = {key: Quantity(value.get_value(),
                                dim=value.unit.dimensions)
-                 for key, value in variables.iteritems()
+                 for key, value in variables.items()
                  if (isinstance(value, Constant) and
                      not key in DEFAULT_UNITS)}
     return namespace

@@ -401,7 +401,7 @@ class NeuroMLSimpleNetwork(object):
         component = self.doc.createElement('Component')
         component.setAttribute("id", id_)
         component.setAttribute("type", type_)
-        for attr_name, attr_value in attributes.iteritems():
+        for attr_name, attr_value in attributes.items():
             component.setAttribute(str(attr_name), str(attr_value))
         self.components.append(component)
 

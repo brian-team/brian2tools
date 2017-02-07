@@ -674,7 +674,7 @@ class LEMSDevice(RuntimeDevice):
             descriptions.append((obj.name, one_description))
             if type(obj) in [StateMonitor, SpikeMonitor]:
                 monitors.append(obj)
-            for key, value in one_namespace.iteritems():
+            for key, value in one_namespace.items():
                 if key in merged_namespace and value != merged_namespace[key]:
                     raise ValueError('name "%s" is used inconsistently')
                 merged_namespace[key] = value
