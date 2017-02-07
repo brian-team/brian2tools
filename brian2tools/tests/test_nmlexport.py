@@ -4,8 +4,8 @@ from subprocess import call
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.testing import assert_allclose, assert_raises, assert_equal
-from pytest import mark
+from numpy.testing import assert_allclose, assert_equal
+from pytest import mark, raises
 # We avoid "from brian2 import *", as this would also import Brian's test
 # function which will then be collected by py.test
 from brian2 import set_device, NeuronGroup, StateMonitor, SpikeMonitor, run
@@ -137,14 +137,17 @@ def test_brian_unit_to_lems():
 
 def test_neuromlsimulation():
     nmlsim = NeuroMLSimulation('a', 'b')
-    assert_raises(AssertionError, lambda: nmlsim.add_line('line1', 'v'))
+    with raises(AssertionError):
+        nmlsim.add_line('line1', 'v')
     nmlsim.add_display('ex')
     nmlsim.add_line('line1', 'v')
     nmlsim.add_line('line2', 'w')
-    assert_raises(AssertionError, lambda: nmlsim.add_outputcolumn('1', '[3]'))
+    with raises(AssertionError):
+        nmlsim.add_outputcolumn('1', '[3]')
     nmlsim.add_outputfile('of1')
     nmlsim.add_outputcolumn('1', '[3]')
-    assert_raises(AssertionError, lambda: nmlsim.add_eventselection('1', '[5]'))
+    with raises(AssertionError):
+        nmlsim.add_eventselection('1', '[5]')
     nmlsim.add_eventoutputfile('eof1')
     nmlsim.add_eventselection('1', '[5]')
     nmlsim.build()
