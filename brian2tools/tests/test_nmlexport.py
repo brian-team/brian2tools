@@ -1,12 +1,11 @@
 import os
-import platform
 import tempfile
 from subprocess import call
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.testing import assert_allclose, assert_raises, assert_equal
-
+from pytest import mark
 # We avoid "from brian2 import *", as this would also import Brian's test
 # function which will then be collected by py.test
 from brian2 import set_device, NeuronGroup, StateMonitor, SpikeMonitor, run
@@ -19,10 +18,9 @@ plain_numbers_from_list = lambda x: str(x)[1:-1].replace(',','')
 RECORDING_BRIAN_FILENAME = "recording"
 LEMS_OUTPUT_FILENAME     = "ifcgmtest.xml"
 
-if platform.system()=='Windows':
-    JNML_PATH = "C:/jNeuroMLJar"
-else:
-    JNML_PATH = ""
+# We assume that JNML_HOME has been set
+JNML_PATH = os.environ.get('JNML_HOME', None)
+
 xml_filename = "ifcgmtest.xml"
 idx_to_record = [2, 55, 98]
 output_jnml_file = "recording_ifcgmtest"
@@ -57,7 +55,8 @@ def simulation1(flag_device=False, path="", rec_idx=idx_to_record):
     else:
         return None
 
-
+@mark.skipif(JNML_PATH is None,
+             reason='Cannot run jnml, set the JNML_HOME environment variable')
 def test_simulation1(plot=False):
     """
     Test example 1: simulation1_lif.py
@@ -68,8 +67,7 @@ def test_simulation1(plot=False):
     outbrian = simulation1(False, path=tempdir)
     outnml = simulation1(True, path=tempdir)
     set_device('runtime')
-    if JNML_PATH:
-        os.chdir(JNML_PATH)
+    os.chdir(JNML_PATH)
     outcommand = call("jnml {path} -nogui".format(path=os.path.join(current_path, xml_filename)),
                       shell=True)
 
