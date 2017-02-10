@@ -657,8 +657,7 @@ class LEMSDevice(RuntimeDevice):
     def synaptic_pathway_before_run(self, pathway, run_namespace):
         pass  # No spike queue initialization necessary
 
-    def network_run(self, network, duration, report=None, report_period=10*second,
-                    namespace=None, profile=True, level=0):
+    def network_run(self, network, duration, namespace=None, level=0, **kwds):
         network._clocks = {obj.clock for obj in network.objects}
         # Get the local namespace
         if namespace is None:
