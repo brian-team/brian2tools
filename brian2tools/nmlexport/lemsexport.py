@@ -1,5 +1,6 @@
 import re
 import os
+import shutil
 
 from brian2.groups.neurongroup import Thresholder, Resetter, StateUpdater
 from brian2.synapses.synapses import Synapses
@@ -599,6 +600,9 @@ class NMLExporter(object):
         """
         Exports model to file *filename*
         """
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
         if len(filename.split(".")) == 1:
             filename += ".xml"
         xmlstring = self._dommodel.toprettyxml("  ", "\n")
@@ -728,23 +732,24 @@ class LEMSDevice(RuntimeDevice):
             for assignment in assignments:
                 if not assignment[2] in initializers:
                     initializers[assignment[2]] = assignment[-1]
+        dirname, filename = os.path.split(filename)
+        dirname = os.path.abspath(dirname)
         if len(self.runs) > 1:
             raise NotImplementedError("Currently only single run is supported.")
         if len(filename.split(".")) != 1:
-            filename_ = 'recording_' + filename.split(".")[0]
+            filename_ = os.path.join(dirname, 'recording_' + filename.split(".")[0])
         else:
-            filename_ = 'recording_' + filename
+            filename_ = os.path.join(dirname, 'recording_' + filename)
         exporter = NMLExporter()
         exporter.create_lems_model(self.network, namespace=namespace,
                                                  initializers=initializers,
                                                  recordingsname=filename_)
-        exporter.export_to_file(filename)
+        exporter.export_to_file(os.path.join(dirname, filename))
         # currently NML2/LEMS model requires units stored as constants
         # in a separate file
         if lems_const_save:
-            with open(os.path.join(nmlcdpath, LEMS_CONSTANTS_XML), 'r') as f:
-                with open(LEMS_CONSTANTS_XML, 'w') as fout:
-                    fout.write(f.read())
+            shutil.copyfile(os.path.join(nmlcdpath, LEMS_CONSTANTS_XML),
+                            os.path.join(dirname, LEMS_CONSTANTS_XML))
 
 
 lems_device = LEMSDevice()
