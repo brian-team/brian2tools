@@ -1,10 +1,10 @@
-Brian2NeuroML exporter
-======================
+NeuroML exporter
+================
 
-This is a short overview of Brian2 supporting package providing functionality of exporting
-a model to NeuroML2/LEMS format. 
+This is a short overview of the `~brian2tools.nmlexport` package, providing
+functionality to export Brian 2 models to NeuroML2.
 
-The NeuroML is a XML based description that provides a common data format 
+NeuroML is a XML-based description that provides a common data format
 for defining and exchanging descriptions of neuronal cell and network models 
 (`NML project website <https://neuroml.org/>`_).
 
@@ -15,13 +15,13 @@ for defining and exchanging descriptions of neuronal cell and network models
 Working example
 ---------------
 
-As a demonstration we use simple unconnected Integrate&Fire neurons model with refractoriness
-and given initial values.
+As a demonstration, we use a simple unconnected Integrate & Fire neuron model
+with refractoriness and given initial values.
 
 .. code:: python
 
     from brian2 import *
-    import brian2lems
+    import brian2tools.nmlexport
 
     set_device('neuroml2', filename="nml2model.xml")
 
@@ -44,20 +44,18 @@ and given initial values.
 
     run(duration)
 
-The use of exporter is pretty straightforward. You need to import a device
-parsing brian2 code from module ``brian2lems``.
+The use of the exporter requires only a few changes to an existing Brian 2
+script. In addition to the standard ``brian2`` import at the beginning of your
+script, you need to import the `brian2tools.nmlexport` package. You can then set
+a "device" called ``neuroml2`` which will generate NeuroML2/LEMS code instead of
+executing your model. You will also have to specify a keyword argument
+``filename`` with the desired name of the output file.
 
-The next thing is to set the device called ``neuroml2`` which generates NeuroML2/LEMS code.
-Note that you need to specify named argument ``filename`` with a name of your model.
+The above code will result in a file ``nml2model.xml`` and an additional file
+``LEMSUnitsConstants.xml`` with units definitions in form of constants
+(necessary due to the way units are handled in LEMS equations).
 
-.. code:: python
-
-    import brian2lems
-
-    set_device('neuroml2', filename="nml2model.xml")
-
-The result of the above code have form of of file ``filename`` and extra file ``LEMSUnitsConstants.xml``
-with units definition in a form of constants (needed to properly parse equations).
+The file ``nml2model.xml`` will look like this:
 
 .. code:: xml
 
@@ -125,44 +123,53 @@ with units definition in a form of constants (needed to properly parse equations
       <Target component="sim1"/>
     </Lems>
 
-One important thing to notice is that the exporting device creates a new ``ComponentType`` for each
-cell definition implemented as a brian2 ``NeuronGroup``. Later that particular ``ComponentType`` is initialized as a new one
-(here called ``neuron1Multi``) by ``MultiInstantiate`` and eventually a network (``neuron1MultiNet``) 
-is created out of a defined component (``neuron1Multipop``).
+The exporting device creates a new ``ComponentType`` for each cell definition
+implemented as a Brian 2 ``NeuronGroup``. Later that particular ``ComponentType``
+is bundled with the initial value assignment into a a new ``ComponentType``
+(here called ``neuron1Multi``) by ``MultiInstantiate`` and eventually a network
+(``neuron1MultiNet``) is created out of a defined ``Component``
+(``neuron1Multipop``).
 
-Note also that the integration method does not matter for the NeuroML export,
+Note that the integration method does not matter for the NeuroML export,
 as NeuroML/LEMS only describes the model not how it is numerically integrated.
 
-To validate the output we recommend to use a tool `jNeuroML <https://github.com/NeuroML/jNeuroML>`_.
-Make sure that the ``jnml`` have access to ``NeuroML2CoreTypes`` folder.
+To validate the output, you can use the tool `jNeuroML <https://github.com/NeuroML/jNeuroML>`_.
+Make sure that ``jnml`` has access to the ``NeuroML2CoreTypes`` folder by
+setting the ``JNML_HOME`` environment variable.
 
-After successful installation of the package, type in your terminal:
+With ``jnml`` installed you can run the simulation as follows:
 
 .. code:: bash
 
-    jnml filename.xml
-
-to run the simulation.
+    jnml nml2model.xml
 
 
 Supported Features
 ------------------
 
-Currently exporter supports such brian2 objects like:
+Currently, the NeuroML2 export is restricted to simple neural models and only
+supports the following classes (and a single run statement per script):
 
-- ``NeuronGroup`` - Used to specify definition of a cell. Mechanism like threshold, reset or refractoriness are taken into account. Moreover, you may set your model parameters (like ``v0`` above) arbitrary initial values.
+- ``NeuronGroup`` - The definition of a neuronal model. Mechanisms like
+  threshold, reset and refractoriness are taken into account. Moreover, you may
+  set the initial values of the model parameters (like ``v0`` above).
+- ``StateMonitor`` - If your script uses a ``StateMonitor`` to record variables,
+  each recorded variable is transformed into to a ``Line`` tag of the
+  ``Display`` in the NeuroML2 simulation and an ``OutputFile`` tag is added to
+  the model. The name of the output file is ``recording_<<filename>>.dat``.
 
-- ``StateMonitor`` - If you use StateMonitor to record some variables, it is transformed to ``Line`` at the ``Display`` of  NeuroML2 simulation and an ``OutputFile`` tag is added to the model. A name of the output file is ``recording_<<filename>>.dat``.
-
-- ``SpikeMonitor`` - SpikeMonitor is parsed to ``EventOutputFile`` with name ``recording_<<filename>>.spikes``.
+- ``SpikeMonitor`` - A ``SpikeMonitor`` is transformed into an
+  ``EventOutputFile`` tag, storing the spikes to a file named
+  ``recording_<<filename>>.spikes``.
 
 Limitations
 -----------
 
-Things to be implemented in the future:
+As stated above, the NeuroML2 export is currently quite limited. In particular,
+none of the following Brian 2 features are supported:
 
-- synapses
-
-- network input
-
-- multiple runs of simulation
+- Synapses
+- Network input (``PoissonGroup``, ``SpikeGeneratorGroup``, etc.)
+- Multicompartmental neurons (``SpatialNeuronGroup``)
+- Non-standard simulation protocols (multiple runs, ``store``/``restore``
+  mechanism, etc.).
