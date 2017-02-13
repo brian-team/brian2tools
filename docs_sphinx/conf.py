@@ -65,21 +65,28 @@ author = u'Brian authors'
 # We mock modules that are not needed just for building the documentation
 import sys
 try:
-    from unittest.mock import Mock
+    from unittest.mock import Mock, MagicMock
 except ImportError:
-    from mock import Mock
+    from mock import Mock, MagicMock
 
 MOCK_MODULES = ['matplotlib.colors', 'matplotlib.patches', 'matplotlib.pyplot', 'matplotlib',
                 'mpl_toolkits', 'mpl_toolkits.axes_grid1',
                 'numpy', 'numpy.ma',
                 'brian2',
-                'brian2.core', 'brian2.core.variables',
-                'brian2.monitors', 'brian2.monitors.statemonitor',
+                'brian2.core', 'brian2.core.magic', 'brian2.core.namespace', 'brian2.core.network', 'brian2.core.variables',
+                'brian2.devices', 'brian2.devices.device',
+                'brian2.equations', 'brian2.equations.equations',
+                'brian2.groups', 'brian2.groups.neurongroup',
+                'brian2.input', 'brian2.input.poissoninput',
+                'brian2.monitors', 'brian2.monitors.statemonitor', 'brian2.monitors.spikemonitor',
+                'brian2.parsing', 'brian2.parsing.rendering',
                 'brian2.spatialneuron', 'brian2.spatialneuron.morphology', 'brian2.spatialneuron.spatialneuron',
                 'brian2.synapses', 'brian2.synapses.synapses',
-                'brian2.units', 'brian2.units.fundamentalunits', 'brian2.units.stdunits',
-                'brian2.utils', 'brian2.utils.logger']
+                'brian2.units', 'brian2.units.allunits', 'brian2.units.fundamentalunits', 'brian2.units.stdunits',
+                'brian2.utils', 'brian2.utils.logger', 'brian2.utils.stringtools']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+sys.modules['brian2.units.allunits'].all_units = MagicMock()
+sys.modules['brian2.devices.device'].all_devices = MagicMock()
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

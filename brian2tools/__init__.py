@@ -4,6 +4,7 @@ Tools for use with the Brian 2 simulator.
 import os
 
 from .plotting import *
+from .nmlexport import *
 from .tests import run as test
 
 try:
