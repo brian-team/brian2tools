@@ -1,23 +1,27 @@
-Brian2NeuroML exporter
-======================
+NeuroML exporter
+================
 
 .. contents::
     Overview
     :local:
 
-Main work of the exporter is done in ``lemsexport.py`` module. 
+The main work of the exporter is done in the `~brian2tools.nmlexport.lemsexport`
+module.
+
 It consists of two main classes:
 
-- ``NMLExporter`` - responsible for building NeuroML2/LEMS model.
+- `~brian2tools.nmlexport.lemsexport.NMLExporter` - responsible for building
+  the NeuroML2/LEMS model.
 
-- ``LEMSDevice`` - responsible for code generation. It gathers all variables needed to parse model and calls ``NMLExporter`` with well-prepared parameters.
+- `~brian2tools.nmlexport.lemsexport.LEMSDevice` - responsible for code
+  generation. It gathers all variables needed to describe the model and calls
+  ``NMLExporter`` with well-prepared parameters.
 
 NMLExporter
 -----------
-
-The whole process of building NeuroML model starts when calling 
-``create_lems_model`` method. It selects crucial brian2 object to further 
-parsing and passes them to respective methods.
+The whole process of building NeuroML model starts with calling the
+``create_lems_model`` method. It selects crucial Brian 2 objects to further
+parse and pass them to respective methods.
 
 .. code:: python
 
@@ -54,29 +58,28 @@ parsing and passes them to respective methods.
             self.add_neurongroup(obj, e, namespace, initializers)
 
 Neuron Group
-~~~~~~~~~~~~~
-
+~~~~~~~~~~~~
 A method ``add_neurongroup`` requires more attention. This is the method 
 responsible for building cell model in LEMS (as so-called ``ComponentType``) 
 and initializing it when necessary. 
 
 In order to build a whole network of cells with different initial values, 
-we need to use ``MultiInstantiate`` LEMS tag. A method ``make_multiinstantiate`` 
-can do this job. It iterates over all parameters and analyses equation 
-to find those with iterator variable ``i``. Such a variable are initialized 
-in ``MultiInstantiate`` loop at the beginning of a simulation.
+we need to use the ``MultiInstantiate`` LEMS tag. A method ``make_multiinstantiate``
+does this job. It iterates over all parameters and analyses equation
+to find those with iterator variable ``i``. Such variables are initialized
+in a ``MultiInstantiate`` loop at the beginning of a simulation.
 
 More details about the methods described above can be found in the code comments.
 
 DOM structure
 ~~~~~~~~~~~~~
 
-Until this point the whole model is stored in ``self._model``, because 
-method ``add_neurongroup`` takes advantage of ``pylems`` module to create 
+Until this point the whole model is stored in `NMLExporter._model`, because
+the method ``add_neurongroup`` takes advantage of ``pylems`` module to create
 a XML structure. After that we export it to ``self._dommodel`` and rather 
-use NeuroML2 specific content. To extend it one may use ``self._extend_dommodel()`` 
-method, giving as parameter a proper DOM structure (build for instance 
-using python ``xml.dom.minidom``).
+use NeuroML2 specific content. To extend it one may use
+``self._extend_dommodel()`` method, giving as parameter a proper DOM structure
+(built for instance using python ``xml.dom.minidom``).
 
 .. code:: python
 
@@ -118,12 +121,12 @@ At the end of the model parsing, a simulation tag is built and added with a targ
         target = target.build()
         self._extend_dommodel(target)
 
-You may get a final DOM structure calling ``model``` property or export 
-it to XML file by calling ``export_to_file()`` method of ``NMLExporter`` object.
+You may access the final DOM structure by accessing the ``model``` property or
+export it to a XML file by calling the ``export_to_file()`` method of the
+``NMLExporter`` object.
 
 Model namespace
 ~~~~~~~~~~~~~~~
-
 In many places of the code a dictionary ``self._model_namespace`` is used. 
 As LEMS used identifiers ``id`` to name almost all of its components, we 
 want to be consistent in naming them. The dictionary stores names of 
@@ -131,19 +134,20 @@ model's components and allows to refer it later in the code.
 
 LEMSDevice
 ----------
-
-LEMSDevice allows to take advantage of Brian2 code generation mechanism. 
+``LEMSDevice`` allows you to take advantage of Brian 2's code generation mechanism.
 It makes usage of the module easier, as it means for user that they just 
-need to import ``brian2lems.lemsexport`` and set device ``neuroml2`` like this:
+need to import ``brian2tools.nmlexport`` and set the device
+``neuroml2`` like this:
 
 .. code:: python
 
-    import brian2lems.lemsexport
+    import brian2lems.nmlexport
 
     set_device('neuroml2', filename="ifcgmtest.xml")
 
 In the class init a flag ``self.build_on_run`` was set to ``True`` which 
-means that exporter starts working after running brian2 simulation.
+means that exporter starts working immediately after encountering the ``run``
+statement.
 
 .. code:: python
 
@@ -181,7 +185,6 @@ create a name of the recording files and eventually build the exporter.
 
 LEMS Unit Constants
 ~~~~~~~~~~~~~~~~~~~
-
 Last lines of the method are saving ``LemsConstantUnit.xml`` file 
 alongside with our model file. This is due to the fact that in some places 
 of mathematical expressions LEMS requires unitless variables, e.g. instead of 
@@ -198,21 +201,23 @@ constants in a separate file which is included in the model file header.
 
 Other modules
 -------------
-
-If you want to know more about other scripts included in package ( ``lemsrendering.py``, 
-``supporting.py``, ``cgmhelper.py``), please read their docstrings or comments included in the code.
+If you want to know more about other scripts included in package
+( `~brian2tools.nmlexport.lemsrendering`, `~brian2tools.nmlexport.supporting`,
+`~brian2tools.nmlexport.cgmhelper`), please read their docstrings or comments
+included in the code.
 
 
 TODO
 ----
-
 - synapses support;
 
 First attempt to make synapses export work was made during GSOC period. The problem with that
 feature is related to the fact that NeuroML and brian2 internal synapses implementation differs substantially.
 For instance, in NeuroML there are no predefined rules for connections, but user needs to explicitly define a synapse.
-Moreover, in brian2, for efficiency reasons, postsynaptic spikes are defined by default,
-which is different from NeuroML approach, where not much attention is paid to simulation speed.
+Moreover, in Brian 2, for efficiency reasons, postsynaptic potentials are
+normally modeled in the post-synaptic cell (for linearly summating synapses,
+this is equivalent but much more efficient), whereas in NeuroML they are modeled
+as part of the synapse (simulation speed is not an issue here).
 
 - network input support;
 
