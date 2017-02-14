@@ -637,7 +637,10 @@ class DummyCodeObject(object):
 
 class LEMSDevice(RuntimeDevice):
     '''
-    The `Device` used for LEMS/NeuroML2 code genration.
+    The `Device` used for LEMS/NeuroML2 code generation.
+
+    Use ``set_device('neuroml2', filename='myfilename.xml')`` to transform a
+    Brian 2 script into a NeuroML2/LEMS description of the model.
     '''
     def __init__(self):
         super(LEMSDevice, self).__init__()

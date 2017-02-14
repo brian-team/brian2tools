@@ -4,8 +4,9 @@ brian2tools documentation
 The `brian2tools` package is a collection of useful tools for
 the `Brian 2 simulator <https://brian2.readthedocs.org>`_. The project
 is still in its infancy but it already provides helpful functions
-for plotting. In the future it will be extended to also provide
-analysis and export/import functions.
+for plotting and exporting a neural model to the
+`NeuroML2 format <https://neuroml.org/neuromlv2>`_. In the future it will be
+extended to also provide analysis and additional export/import functions.
 
 Please contact us at
 ``brian-development@googlegroups.com`` (https://groups.google.com/forum/#!forum/brian-development)
@@ -40,4 +41,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
