@@ -1,6 +1,27 @@
 Release notes
 =============
 
+brian2tools 0.2
+---------------
+This release adds initial support to export Brian 2 simulations to the
+`NeuroML2 <https://neuroml.org/neuromlv2>`_ and
+`LEMS <http://lems.github.io/LEMS/>`_ format. This feature has been added by
+Dominik Krzemiński (`@dokato <https://github.com/dokato>`_) as part of the
+`Google Summer of Code <https://summerofcode.withgoogle.com/>`_ 2016 under the
+umbrella of the `INCF <https://www.incf.org/>`_ organization. It currently
+allows to export neuronal models (with threshold, reset and refractory
+definition), but not synaptic models or multi-compartmental neurons. See the
+:doc:`user/exporter_user` documentation for details.
+
+Contributions
+~~~~~~~~~~~~~
+* Dominik Krzemiński (`@dokato <https://github.com/dokato>`_)
+* Marcel Stimberg (`@mstimberg <https://github.com/mstimberg>`_)
+
+We also thank Padraig Gleeson (`@pgleeson <https://github.com/pgleeson/>`_) for
+help and guidance concerning NeuroML2 and LEMS.
+
+
 brian2tools 0.1.2
 -----------------
 This is mostly a bug-fix release but also adds a few new features and improvements around the plotting of synapses
@@ -22,6 +43,7 @@ Improvements and bug fixes
 Testing, suggestions and bug reports:
 
 * Ibrahim Ozturk
+
 
 brian2tools 0.1
 ---------------
