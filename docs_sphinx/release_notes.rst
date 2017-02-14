@@ -1,8 +1,8 @@
 Release notes
 =============
 
-brian2tools 0.2
----------------
+brian2tools 0.2.1
+-----------------
 This release adds initial support to export Brian 2 simulations to the
 `NeuroML2 <https://neuroml.org/neuromlv2>`_ and
 `LEMS <http://lems.github.io/LEMS/>`_ format. This feature has been added by

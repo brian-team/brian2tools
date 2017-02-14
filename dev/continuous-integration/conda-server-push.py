@@ -1,11 +1,16 @@
 import sys
 import os
 import glob
+import subprocess
 import time
 import yaml
 
-from conda_build.config import config
-from conda_build.main_convert import main as main_convert
+try:
+    from conda_build.config import config
+except ImportError:
+    from conda_build.config import Config
+    config = Config()
+
 from binstar_client.scripts.cli import main
 from binstar_client.errors import BinstarError
 
@@ -21,10 +26,11 @@ release = 'dev' not in binary_package
 if not release:
     sys.exit(0)
 
-# Fake a command line call
-sys.argv = ['conda-convert', binary_package, '-p', 'all',
-            '-o', os.path.join(config.bldpkgs_dir, '..')]
-main_convert()
+# Call convert via command line
+
+args = ['conda-convert', binary_package, '-p', 'all',
+        '-o', os.path.join(config.bldpkgs_dir, '..')]
+subprocess.check_call(args)
 
 ### Upload packages for all platforms
 token = os.environ['BINSTAR_TOKEN']
