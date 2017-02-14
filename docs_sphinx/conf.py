@@ -69,7 +69,7 @@ try:
 except ImportError:
     from mock import Mock, MagicMock
 
-MOCK_MODULES = ['matplotlib.colors', 'matplotlib.patches', 'matplotlib.pyplot', 'matplotlib',
+MOCK_MODULES = ['matplotlib', 'matplotlib.colors', 'matplotlib.patches', 'matplotlib.pyplot', 'matplotlib.ticker',
                 'mpl_toolkits', 'mpl_toolkits.axes_grid1',
                 'numpy', 'numpy.ma',
                 'brian2',
