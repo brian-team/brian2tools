@@ -22,7 +22,7 @@ os.system('git tag -a -m "Release brian2tools %s" %s' % (version, version))
 os.chdir('../..')
 if os.path.exists('dist'):
     shutil.rmtree('dist')
-os.system('%s setup.py sdist --formats=zip,gztar,bztar bdist_wheel' % sys.executable)
+os.system('%s setup.py sdist --formats=gztar bdist_wheel' % sys.executable)
 
 # print commands necessary for pushing
 print('')
