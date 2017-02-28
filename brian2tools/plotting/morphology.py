@@ -29,7 +29,7 @@ def _plot_morphology2D(morpho, axes, colors, show_diameter=False,
     else:
         coords = morpho.coordinates/um
         if show_diameter:
-            coords_2d = coords[:, :2]/um
+            coords_2d = coords[:, :2]
             directions = np.diff(coords_2d, axis=0)
             orthogonal = np.vstack([-directions[:, 1], directions[:, 0]])
             orthogonal = np.vstack([orthogonal.T, orthogonal[:, -1:].T])
