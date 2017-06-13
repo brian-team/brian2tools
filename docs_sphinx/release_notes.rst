@@ -1,6 +1,11 @@
 Release notes
 =============
 
+brian2tools 0.2.1.1
+-------------------
+A maintenance release that adds conda packages for Python 3.6. Also fixes a
+small bug in morphology plotting.
+
 brian2tools 0.2.1
 -----------------
 This release adds initial support to export Brian 2 simulations to the
