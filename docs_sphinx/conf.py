@@ -72,6 +72,7 @@ except ImportError:
 MOCK_MODULES = ['matplotlib', 'matplotlib.colors', 'matplotlib.patches', 'matplotlib.pyplot', 'matplotlib.ticker',
                 'mpl_toolkits', 'mpl_toolkits.axes_grid1',
                 'numpy', 'numpy.ma',
+                'lems', 'lems.api',
                 'brian2',
                 'brian2.core', 'brian2.core.magic', 'brian2.core.namespace', 'brian2.core.network', 'brian2.core.variables',
                 'brian2.devices', 'brian2.devices.device',
