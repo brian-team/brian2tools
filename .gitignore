@@ -77,4 +77,3 @@ target/
 
 # Installation and auto-generated files
 brian2tools.egg-info
-brian2tools/version.py

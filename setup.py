@@ -10,7 +10,6 @@ from setuptools import setup, find_packages
 if sys.version_info < (2, 7):
     raise RuntimeError('Only Python versions >= 2.7 are supported')
 
-
 def readme():
     with open('README.rst') as f:
         return f.read()
@@ -19,8 +18,7 @@ def readme():
 # figures out a version based on git tags
 setup(name='brian2tools',
       url='https://github.com/brian-team/brian2tools',
-      use_scm_version={'write_to': 'brian2tools/version.py'},
-      setup_requires=['setuptools_scm'],
+      version='0.2.1.1+dev',
       packages=find_packages(),
       package_data={'brian2tools.nmlexport': ['LEMSUnitsConstants.xml',
                                               'NeuroMLCoreDimensions.xml']},
@@ -52,8 +50,3 @@ setup(name='brian2tools',
       ],
       keywords='visualization neuroscience'
       )
-
-# If we are building a conda package, we write the version number to a file
-if 'CONDA_BUILD' in os.environ and 'RECIPE_DIR' in os.environ:
-    from setuptools_scm import get_version
-    get_version(write_to='__conda_version__.txt')
