@@ -9,6 +9,17 @@ from brian2.units.fundamentalunits import Quantity
 __all__ = ['plot_raster', 'plot_state', 'plot_rate']
 
 
+def _get_best_unit(value):
+    '''
+    Helper function to work with older Brian 2 versions and avoid deprecation
+    warnings on newer versions.
+    '''
+    try:
+        return value.get_best_unit()
+    except AttributeError:
+        return value._get_best_unit()
+
+
 def plot_raster(spike_indices, spike_times, time_unit=ms,
                 axes=None, **kwds):
     '''
@@ -92,7 +103,7 @@ def plot_state(times, values, time_unit=ms, var_unit=None, var_name=None,
     axes = _setup_axes_matplotlib(axes)
     if var_unit is None:
         if isinstance(values, Quantity):
-            var_unit = values._get_best_unit()
+            var_unit = _get_best_unit(values)
     if var_unit is not None:
         values /= var_unit
     axes.plot(times / time_unit, values, **kwds)

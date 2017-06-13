@@ -10,6 +10,8 @@ import matplotlib as mpl
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from .data import _get_best_unit
+
 __all__ = ['plot_synapses']
 
 
@@ -147,7 +149,7 @@ def plot_synapses(sources, targets, values=None, var_unit=None,
             var_name = getattr(values, 'name', None)  # works for a VariableView
         if var_unit is None:
             try:
-                var_unit = values[:]._get_best_unit()
+                var_unit = _get_best_unit(values[:])
             except AttributeError:
                 pass
         if var_unit is not None:

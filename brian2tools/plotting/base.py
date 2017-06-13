@@ -14,7 +14,7 @@ from brian2.units.stdunits import ms
 from brian2.utils.logger import get_logger
 from brian2.synapses.synapses import Synapses
 
-from .data import plot_raster, plot_state, plot_rate
+from .data import plot_raster, plot_state, plot_rate, _get_best_unit
 from .morphology import plot_dendrogram
 from .synapses import plot_synapses
 
@@ -86,7 +86,7 @@ def brian_plot(brian_obj,
         if 'var_name' not in kwds:
             kwds['var_name'] = brian_obj.record_variables[0]
         if 'var_unit' not in kwds and isinstance(values, Quantity):
-            kwds['var_unit'] = values._get_best_unit()
+            kwds['var_unit'] = _get_best_unit(values)
         return plot_state(brian_obj.t, values, axes=axes, **kwds)
     elif isinstance(brian_obj, StateMonitorView):
         monitor = brian_obj.monitor
@@ -98,12 +98,12 @@ def brian_plot(brian_obj,
         if 'var_name' not in kwds:
             kwds['var_name'] = var_name
         if 'var_unit' not in kwds and isinstance(values, Quantity):
-            kwds['var_unit'] = values._get_best_unit()
+            kwds['var_unit'] = _get_best_unit(values)
         return plot_state(brian_obj.t, values, axes=axes, **kwds)
     elif isinstance(brian_obj, PopulationRateMonitor):
         smooth_rate = brian_obj.smooth_rate(width=1*ms)
         if 'rate_unit' not in kwds:
-            kwds['rate_unit'] = smooth_rate._get_best_unit()
+            kwds['rate_unit'] = _get_best_unit(smooth_rate)
         return plot_rate(brian_obj.t, smooth_rate, axes=axes, **kwds)
     elif isinstance(brian_obj, Morphology):
         if kwds:
@@ -146,7 +146,7 @@ def brian_plot(brian_obj,
         if 'var_name' not in kwds:
             kwds['var_name'] = brian_obj.name
         if 'var_unit' not in kwds and isinstance(values, Quantity):
-            kwds['var_unit'] = values._get_best_unit()
+            kwds['var_unit'] = _get_best_unit(values)
         return plot_synapses(sources, targets, values, plot_type=plot_type,
                              axes=axes, **kwds)
     else:
