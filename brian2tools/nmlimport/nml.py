@@ -44,7 +44,7 @@ def validate_morphology(segments):
         raise
 
 
-# generate morphology object from given cell
+# Generate morphology object from given cell
 def generate_morph_object(cell):
 
     # sort segment list in ascending order of id
@@ -80,7 +80,7 @@ def generate_morph_object(cell):
     return Morphology.from_points(points, spherical_soma=False)
 
 
-# return morphology object present in cell specified by cell_id
+# Return morphology object present in cell specified by cell_id
 def load_morph_from_cells(cells, cell_id=None):
     if cell_id == None:
         return generate_morph_object(cells[0])
@@ -96,7 +96,7 @@ def load_morph_from_cells(cells, cell_id=None):
     raise ValueError(err)
 
 
-# returns final morphology object
+# Returns final morphology object
 def load_morphology(nml_file, cell_id=None):
 
     # Generate absolute path if not provided already

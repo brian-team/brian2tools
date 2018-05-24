@@ -1,20 +1,20 @@
 from pprint import pformat
 
-# return segment type depending on proximal and distal diameter
-def get_segment_type(segment=None):
+# Return segment type depending on proximal and distal diameter
+def get_segment_type(segment):
     if segment.proximal.diameter==segment.distal.diameter:
         return "cylinder"
     return "section"
 
 
-# get parent segment
+# Get parent segment
 def get_parent_segment(segment,segments):
     for s in segments:
         if s.id==segment.parent.segments:
             return s
 
 
-# check if distal of first segment joins with proximal of next segment
+# Check if distal of first segment joins with proximal of next segment
 def are_segments_joined(segment1,segment2):
     if segment2.parent==None:
         if segment1.proximal.x==segment2.proximal.x \
@@ -26,7 +26,7 @@ def are_segments_joined(segment1,segment2):
            and segment1.proximal.z==segment2.distal.z
 
 
-# shift coordinates for further processing
+# Shift coordinates for further processing
 def shiftCoords(x):
     if x:
         if x[0]:
@@ -36,7 +36,7 @@ def shiftCoords(x):
     return x
 
 
-# pretty format data
+# Pretty format data
 def formatter(datum):
     a = pformat(datum)
     if len(a) > 160:
