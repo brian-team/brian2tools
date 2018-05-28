@@ -1,6 +1,6 @@
 import neuroml.loaders as loaders
 from neuroml.utils import validate_neuroml2
-from brian2 import *
+from brian2 import Morphology
 from brian2.utils.logger import get_logger
 from os.path import abspath
 from .helper import *
@@ -17,7 +17,7 @@ def validate_morphology(segments):
     try:
         start_segment = None
         for segment in segments:
-            if segment.parent != None:
+            if segment.parent is not None:
                 seg_parent = get_parent_segment(segment, segments)
 
                 if not are_segments_joined(segment, seg_parent):
@@ -26,11 +26,11 @@ def validate_morphology(segments):
                                               format(formatter(segment),
                                                      formatter(seg_parent)))
 
-            elif start_segment != None:
-                raise ValidationException("Two segments with parent id "
-                                          "as -1 (i.e no parent): {0} and {1}".
-                                          format(formatter(start_segment)
-                                                 , formatter(segment)))
+            elif start_segment is not None:
+                raise ValidationException(
+                    "Two segments with parent id as -1 (i.e no parent): {0} and {1}".
+                        format(formatter(start_segment)
+                               , formatter(segment)))
             else:
                 start_segment = segment
                 logger.info(
@@ -65,12 +65,19 @@ def get_tuple_points(segments):
 
     # generate initial tuple
     seg = segments[0]
-    point = (seg.id, seg.name, seg.proximal.x , seg.proximal.y, seg.proximal.z, seg.proximal.diameter, -1 if seg.parent == None else seg.parent.segments)
+    point = (seg.id, seg.name, seg.proximal.x, seg.proximal.y, seg.proximal.z,
+             seg.proximal.diameter,
+             -1 if seg.parent is None else seg.parent.segments)
+
     points = points + (point,)
 
     # iterate over morphology segments
     for segment in segments:
-        point = (segment.id + 1, segment.name, segment.distal.x , segment.distal.y, segment.distal.z, segment.distal.diameter, 0 if segment.parent == None else segment.parent.segments + 1)
+        point = (
+            segment.id + 1, segment.name, segment.distal.x, segment.distal.y,
+            segment.distal.z, segment.distal.diameter,
+            0 if segment.parent is None else segment.parent.segments + 1)
+
         points = points + (point,)
 
     logger.info("Sequence of points sent to `from_points` function: \n{0}"
@@ -81,23 +88,22 @@ def get_tuple_points(segments):
 
 # Return morphology object present in cell specified by cell_id
 def load_morph_from_cells(cells, cell_id=None):
-    if cell_id == None:
+    if cell_id is None:
         return generate_morph_object(cells[0])
     for cell in cells:
-        if (cell_id == cell.id):
+        if cell_id == cell.id:
             return generate_morph_object(cell)
 
-    err = ("The cell id you specified {0} doesn't exist."
-           " Present cell id's are:\n {1}".format(formatter(cell_id),
-                                                  formatter([cell.id for cell in
-                                                             cells])))
+    err = (
+        "The cell id you specified {0} doesn't exist. Present cell id's are:\n {1}".format(
+            formatter(cell_id), formatter([cell.id for cell in cells])))
     logger.error('Value error: %s' % err)
 
     raise ValueError(err)
 
 
 # Returns final morphology object
-def load_morphology(nml_file, cell_id=None):
+def load_morphology(nml_file, cell_id= None):
     # Generate absolute path if not provided already
     nml_file = abspath(nml_file)
 
@@ -109,8 +115,8 @@ def load_morphology(nml_file, cell_id=None):
     doc = loaders.NeuroMLLoader.load(nml_file)
     logger.info("Loaded morphology file from: {0}".format(nml_file))
 
-    if size(doc.cells) > 1:
-        if cell_id != None:
+    if len(doc.cells) > 1:
+        if cell_id is not None:
             return load_morph_from_cells(doc.cells, cell_id=cell_id)
         morphologies = {}
         for cell in doc.cells:
@@ -118,5 +124,5 @@ def load_morphology(nml_file, cell_id=None):
                                                           cell_id=cell.id)
         return morphologies
 
-    elif size(doc.cells) == 1:
+    elif len(doc.cells) == 1:
         return load_morph_from_cells(doc.cells, cell_id=cell_id)
