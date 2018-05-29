@@ -15,7 +15,7 @@ def get_parent_segment(segment, segments):
             return s
 
 
-# Check if distal of first segment joins with proximal of next segment
+# Checks if distal of first segment connects with proximal of second segment
 def are_segments_joined(segment1, segment2):
     if segment2.parent is None:
         if segment1.proximal.x == segment2.proximal.x \
@@ -23,12 +23,12 @@ def are_segments_joined(segment1, segment2):
                 and segment1.proximal.z == segment2.proximal.z:
             return True
     return segment1.proximal.x == segment2.distal.x \
-           and segment1.proximal.y == segment2.distal.y \
-           and segment1.proximal.z == segment2.distal.z
+        and segment1.proximal.y == segment2.distal.y \
+        and segment1.proximal.z == segment2.distal.z
 
 
 # Shift coordinates for further processing
-def shiftCoords(x):
+def shift_coords(x):
     if x:
         if x[0]:
             x[:] = [a - x[0] for a in x]
