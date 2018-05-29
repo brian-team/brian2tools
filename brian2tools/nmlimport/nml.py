@@ -4,6 +4,7 @@ from brian2 import Morphology
 from brian2.utils.logger import get_logger
 from os.path import abspath
 from .helper import *
+from copy import deepcopy
 
 logger = get_logger(__name__)
 
@@ -21,16 +22,15 @@ def validate_morphology(segments):
                 seg_parent = get_parent_segment(segment, segments)
 
                 if not are_segments_joined(segment, seg_parent):
-                    raise ValidationException("{0} and its parent "
-                                              "segment {1} are not connected!!".
-                                              format(formatter(segment),
-                                                     formatter(seg_parent)))
+                    raise ValidationException(
+                        "{0} and its parent segment {1} are not connected!!".
+                        format(formatter(segment), formatter(seg_parent)))
 
             elif start_segment is not None:
                 raise ValidationException(
-                    "Two segments with parent id as -1 (i.e no parent): {0} and {1}".
-                        format(formatter(start_segment)
-                               , formatter(segment)))
+                    "Two segments with parent id as -1 (i.e no parent): "
+                    "{0} and {1}".
+                    format(formatter(start_segment), formatter(segment)))
             else:
                 start_segment = segment
                 logger.info(
@@ -95,25 +95,27 @@ def load_morph_from_cells(cells, cell_id=None):
             return generate_morph_object(cell)
 
     err = (
-        "The cell id you specified {0} doesn't exist. Present cell id's are:\n {1}".format(
-            formatter(cell_id), formatter([cell.id for cell in cells])))
-    logger.error('Value error: %s' % err)
+        "The cell id you specified {0} doesn't exist. Present cell id's "
+        "are:\n {1}"
+        .format(formatter(cell_id), formatter([cell.id for cell in cells])))
 
+    logger.error('Value error: %s' % err)
     raise ValueError(err)
 
 
 # Returns final morphology object
-def load_morphology(nml_file, cell_id= None):
-    # Generate absolute path if not provided already
-    nml_file = abspath(nml_file)
+def load_morphology(file, is_obj=False, cell_id=None):
+    if not is_obj:
+        # Generate absolute path if not provided already
+        file = abspath(file)
 
     # Validating NeuroML file
-    validate_neuroml2(nml_file)
+    validate_neuroml2(deepcopy(file))
     logger.info("Validated provided .nml file")
 
     # Load nml file
-    doc = loaders.NeuroMLLoader.load(nml_file)
-    logger.info("Loaded morphology file from: {0}".format(nml_file))
+    doc = loaders.NeuroMLLoader.load(file)
+    logger.info("Loaded morphology")
 
     if len(doc.cells) > 1:
         if cell_id is not None:
