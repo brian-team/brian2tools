@@ -17,9 +17,16 @@ def validate_morphology(segments):
     """
     Validates if the segments are connected to each other or not.
 
-    :param list segments: list of segments present in a morphology
-    :return: None
+    Parameters
+    ----------
+    segments : list
+        list of segments present in a morphology
+
+    Returns
+    -------
+    None
     """
+
     try:
         start_segment = None
         for segment in segments:
@@ -52,11 +59,19 @@ def validate_morphology(segments):
 
 def get_tuple_points(segments):
     """
-    Generates a tuple of points corresponding to each segment.
+     Generates a tuple of points corresponding to each segment.
 
-    :param list segments: list of segments present in a morphology
-    :return: a tuple of points
+    Parameters
+    ----------
+    segments : list
+        list of segments present in a morphology
+
+    Returns
+    -------
+    tuple
+        a tuple of points
     """
+
     points = ()
 
     # validate morphology
@@ -89,10 +104,17 @@ def generate_morph_object(cell):
     """
     Generate morphology object from a given cell.
 
-    :param dict cell: a python cell object.
-    :return: morphology obtained from the cell.
-    """
+    Parameters
+    ----------
+    cell : dict
+        a python cell object.
 
+    Returns
+    -------
+    Morphology
+        morphology obtained from the cell.
+    """
+    
     # sort segment list in ascending order of id
     sorted_segments = sorted(cell.morphology.segments, key=lambda x: x.id)
     logger.info("Sorted segments are: {0}".format(formatter(sorted_segments)))
@@ -105,10 +127,19 @@ def load_morph_from_cells(cells, cell_id=None):
     """
     Returns morphology object present in cell specified by cell_id.
 
-    :param dict cells: a dict of cell objects.
-    :param str cell_id: id of a cell whose morphology we need.
-    :return: morphology object obtained from the cell.
+    Parameters
+    ----------
+    cells : list
+        a list of cell objects.
+    cell_id : str
+        id of a cell whose morphology is required.
+
+    Returns
+    -------
+    Morphology
+        morphology object obtained from the cell.
     """
+
     if cell_id is None:
         return generate_morph_object(cells[0])
     for cell in cells:
@@ -131,10 +162,19 @@ def load_morphology(file, is_obj=False, cell_id=None):
     When passing a file object to load morphology, make sure *is_obj* param
     is set to True.
 
-    :param str file: file location or file object, depending on *is_obj* parameter.
-    :param bool is_obj: set True if value passed to *file* parameter is a file object.
-    :param str cell_id: id of a cell whose morphology we need.
-    :return: a morphology object obtained from the cell.
+    Parameters
+    ----------
+    file : str
+        file location or file object, depending on *is_obj* parameter.
+    is_obj : bool
+        set True if value passed to *file* parameter is a file object.
+    cell_id : str
+        id of a cell whose morphology we need.
+
+    Returns
+    -------
+    Morphology
+        a morphology object obtained from the cell.
     """
 
     if not is_obj:
