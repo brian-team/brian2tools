@@ -114,7 +114,7 @@ def generate_morph_object(cell):
     Morphology
         morphology obtained from the cell.
     """
-    
+
     # sort segment list in ascending order of id
     sorted_segments = sorted(cell.morphology.segments, key=lambda x: x.id)
     logger.info("Sorted segments are: {0}".format(formatter(sorted_segments)))
