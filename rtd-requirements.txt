@@ -1,2 +1,2 @@
 setuptools_scm
-sphinxcontrib-issuetracker
+sphinx>=1.5

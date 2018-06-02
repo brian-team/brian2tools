@@ -40,7 +40,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.issuetracker'
+    'sphinx.ext.extlinks'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -414,8 +414,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/', None),
                        'mayavi': ('http://docs.enthought.com/mayavi/mayavi/', None)}
 
 # Configure linking to github
-issuetracker = 'github'
-issuetracker_project = 'brian-team/brian2tools'
+extlinks = {'issue': ('https://github.com/brian-team/brian2tools/issues/%s','#')}
 
 # Create api docs
 def run_apidoc(_):
