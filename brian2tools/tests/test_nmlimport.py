@@ -3,7 +3,7 @@ from neuroml.loaders import NeuroMLLoader
 from brian2.units import *
 from brian2tools.nmlimport.nml import load_morphology, get_tuple_points, \
     validate_morphology, load_morph_from_cells, ValidationException
-from os.path import abspath
+from os.path import abspath, dirname,join
 from numpy.testing import assert_equal, assert_allclose
 from pytest import raises
 
@@ -18,12 +18,14 @@ POINTS = ((0, 'soma', 0.0, 0.0, 0.0, 23.0, -1),
           (8, 'basal1', 106.07, -156.07, 0.0, 5.0, 7),
           (9, 'basal2', -106.07, -156.07, 0.0, 5.0, 7))
 
+SAMPLE = "samples/sample1.cell.nml"
+
 
 def get_nml_file(file):
     return NeuroMLLoader.load(abspath(file))
 
 
-nml_obj = get_nml_file("samples/sample1.cell.nml")
+nml_obj = get_nml_file(join(dirname(abspath(__file__)), SAMPLE))
 morph_obj = nml_obj.cells[0].morphology
 
 
@@ -52,7 +54,7 @@ def test_tuple():
 
 
 def test_load_morphology():
-    morphology = load_morphology("samples/sample1.cell.nml")
+    morphology = load_morphology(join(dirname(abspath(__file__)), SAMPLE))
     assert_allclose(morphology.distance, [8.5] * um)
     assert_allclose(morphology.length, [17.] * um)
     assert_allclose(morphology.coordinates, [[0., 0., 0.], [0., 17., 0.]] * um)

@@ -24,7 +24,6 @@ def validate_morphology(segments):
 
     Returns
     -------
-    None
     """
 
     try:
