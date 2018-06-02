@@ -155,7 +155,7 @@ def load_morph_from_cells(cells, cell_id=None):
     raise ValueError(err)
 
 
-def load_morphology(file, is_obj=False, cell_id=None):
+def load_morphology(file_obj, cell_id=None):
     """
     Generates morphology object from a file or a file object.
 
@@ -164,10 +164,8 @@ def load_morphology(file, is_obj=False, cell_id=None):
 
     Parameters
     ----------
-    file : str
-        file location or file object, depending on *is_obj* parameter.
-    is_obj : bool
-        set True if value passed to *file* parameter is a file object.
+    file_obj : str
+        .nml file location or file object containing morphology information.
     cell_id : str
         id of a cell whose morphology we need.
 
@@ -177,16 +175,16 @@ def load_morphology(file, is_obj=False, cell_id=None):
         a morphology object obtained from the cell.
     """
 
-    if not is_obj:
+    if isinstance(file_obj,str):
         # Generate absolute path if not provided already
-        file = abspath(file)
+        file_obj = abspath(file_obj)
 
     # Validating NeuroML file
-    validate_neuroml2(deepcopy(file))
+    validate_neuroml2(deepcopy(file_obj))
     logger.info("Validated provided .nml file")
 
     # Load nml file
-    doc = loaders.NeuroMLLoader.load(file)
+    doc = loaders.NeuroMLLoader.load(file_obj)
     logger.info("Loaded morphology")
 
     if len(doc.cells) > 1:
