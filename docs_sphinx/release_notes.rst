@@ -37,7 +37,7 @@ Improvements and bug fixes
 * Synaptic plots of the "image" type with `~brian2tools.plotting.synapses.plot_synapses` (also the default for
   `~brian2tools.plotting.base.brian_plot` for synapses between small numbers of neurons) where plotting a transposed
   version of the correct connection matrix that was in addition potentially cut off and therefore not showing all
-  connections (#6).
+  connections (:issue:`6`).
 * Fix that `~brian2tools.plotting.base.brian_plot` was not always returning the `~matplotlib.axes.Axes` object.
 * Enable direct calls of `~brian2tools.plotting.base.brian_plot` with a synaptic variable or an indexed
   `~brian2.monitors.statemonitor.StateMonitor` (to only plot a subset of recorded cells).
