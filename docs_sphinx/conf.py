@@ -27,7 +27,7 @@ brian2tools_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+needs_sphinx = '1.7'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -40,7 +40,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.issuetracker'
+    'sphinx.ext.extlinks'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -414,14 +414,13 @@ intersphinx_mapping = {'python': ('https://docs.python.org/', None),
                        'mayavi': ('http://docs.enthought.com/mayavi/mayavi/', None)}
 
 # Configure linking to github
-issuetracker = 'github'
-issuetracker_project = 'brian-team/brian2tools'
+extlinks = {'issue': ('https://github.com/brian-team/brian2tools/issues/%s','#')}
 
 # Create api docs
 def run_apidoc(_):
     import sphinx.apidoc as apidoc
     brian2tools_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'brian2tools'))
-    apidoc.main(argv=['sphinx-apidoc', '-f', '-e', '-M', '-o', './reference',
+    apidoc.main(argv=['-f', '-e', '-M', '-o', './reference',
                       brian2tools_dir, os.path.join(brian2tools_dir, 'tests')])
 
 def setup(app):
