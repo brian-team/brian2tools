@@ -46,6 +46,10 @@ before_install:
 - export PATH=~/miniconda/bin:$PATH
 # Update conda itself first
 - conda update --quiet --yes conda
+# Use conda-forge channel
+- conda config --remove channels defaults
+- conda config --add channels defaults
+- conda config --add channels conda-forge
 - if [[ $DOCS_ONLY == 'yes' ]]; then
     conda install --quiet --yes sphinx=1.7 setuptools_scm;
     if [ ${PYTHON:0:1} == "2" ]; then
@@ -56,7 +60,6 @@ before_install:
 
 # command to install dependencies
 install:
-  - conda update --yes conda
   - conda install --yes --quiet anaconda-client conda-build
 
 # Build documentation or build conda package and run tests
