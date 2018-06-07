@@ -45,7 +45,7 @@ before_install:
 - ./miniconda.sh -b -p ~/miniconda
 - export PATH=~/miniconda/bin:$PATH
 - if [[ $DOCS_ONLY == 'yes' ]]; then
-    conda install --quiet --yes sphinx setuptools_scm;
+    conda install --quiet --yes -c conda-forge sphinx=1.7 setuptools_scm;
     if [ ${PYTHON:0:1} == "2" ]; then
       conda install --quiet --yes mock;
     fi;

@@ -420,7 +420,7 @@ extlinks = {'issue': ('https://github.com/brian-team/brian2tools/issues/%s','#')
 def run_apidoc(_):
     import sphinx.apidoc as apidoc
     brian2tools_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'brian2tools'))
-    apidoc.main(argv=['sphinx-apidoc', '-f', '-e', '-M', '-o', './reference',
+    apidoc.main(argv=['-f', '-e', '-M', '-o', './reference',
                       brian2tools_dir, os.path.join(brian2tools_dir, 'tests')])
 
 def setup(app):
