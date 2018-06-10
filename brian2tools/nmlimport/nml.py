@@ -29,7 +29,14 @@ def validate_morphology(segments):
     try:
         start_segment = None
         for segment in segments:
+
             if segment.parent is not None:
+                if segment.parent.fraction_along != 1:
+                    raise NotImplementedError(
+                        "{0} has fraction along value {1} which is not "
+                        "supported!!".
+                        format(segment,segment.parent.fraction_along))
+
                 seg_parent = get_parent_segment(segment, segments)
 
                 if not are_segments_joined(segment, seg_parent):
