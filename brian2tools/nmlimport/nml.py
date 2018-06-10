@@ -73,6 +73,8 @@ def get_tuple_points(segments):
 
     points = ()
 
+    # adjust morphology
+    segments = adjust_morph_object(segments)
     # validate morphology
     validate_morphology(segments)
 

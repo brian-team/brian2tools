@@ -43,3 +43,16 @@ def formatter(datum):
     if len(a) > 160:
         a = a[0:160] + "[...]"
     return a
+
+
+# Generate proximal points for a segment if not present already
+def adjust_morph_object(segments):
+    for segment in segments:
+        if segment.proximal is None:
+            if segment.parent is not None:
+                parent_seg = get_parent_segment(segment, segments)
+                segment.proximal=parent_seg.distal
+            else:
+                raise ValueError("Segment {0} has no parent and no proximal "
+                                 "point".format(segment))
+    return segments
