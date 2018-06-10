@@ -7,15 +7,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--mute", help="mute morphology info",
                         action="store_true")
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-f", "--file",
+group.add_argument("-f", "--file",nargs='+',
                     help="file location",dest="file")
 group.add_argument("-d", "--directory",
                     help="directory path",dest="dir")
 parser.add_argument("--debug",help="set log level to debug",action="store_true")
 args = parser.parse_args()
 
-formatter=logging.Formatter('%(name)s - %(levelname)s - %(' \
-                             'message)s')
+formatter=logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 filhandler=logging.FileHandler("{0}/nml.log".format(os.path.dirname(os.path.abspath(
             __file__))),mode='w')
 filhandler.setLevel(logging.INFO)
@@ -25,15 +24,18 @@ logger.addHandler(filhandler)
 
 def populate():
     if args.file:
-        return [os.path.join(os.getcwd(), args.file)]
+        return [os.path.join(os.getcwd(), f) for f in args.file]
     elif args.dir:
         dir=os.path.join(os.getcwd(), args.dir)
         return [os.path.join(dir, f) for f in os.listdir(dir) if os.path.isfile(os.path.join(
-            dir, f)) and f.endswith('.cell.nml')]
+            dir, f)) and f.endswith('.nml')]
 
 def test_nml(f):
     morph=load_morphology(f)
     if not args.mute:
+        if morph is None:
+            logger.info("No morphology information in this file!!\n\n")
+            return
         logger.info("Morphology info:")
         logger.info("distance: {0}".format(morph.distance))
         logger.info("length: {0}".format(morph.length))
