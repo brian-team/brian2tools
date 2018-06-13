@@ -17,11 +17,6 @@ def get_parent_segment(segment, segments):
 
 # Checks if distal of first segment connects with proximal of second segment
 def are_segments_joined(segment1, segment2):
-    if segment2.parent is None:
-        if segment1.proximal.x == segment2.proximal.x \
-                and segment1.proximal.y == segment2.proximal.y \
-                and segment1.proximal.z == segment2.proximal.z:
-            return True
     return segment1.proximal.x == segment2.distal.x \
         and segment1.proximal.y == segment2.distal.y \
         and segment1.proximal.z == segment2.distal.z

@@ -31,7 +31,7 @@ def validate_morphology(segments):
         for segment in segments:
 
             if segment.parent is not None:
-                if segment.parent.fraction_along not in [0,1]:
+                if segment.parent.fraction_along != 1:
                     raise NotImplementedError(
                         "{0} has fraction along value {1} which is not "
                         "supported!!".
