@@ -99,12 +99,13 @@ def get_tuple_points(segments):
     # iterate over morphology segments
     for segment in segments:
         point = (
-            segment.id + 1, segment.name, segment.distal.x, segment.distal.y,
-            segment.distal.z, segment.distal.diameter,
-            0 if segment.parent is None else segment.parent.segments + 1)
+            segment.id + 1,
+            segment.name if segment.name == 'soma' else 'unknown',
+            segment.distal.x, segment.distal.y,segment.distal.z,
+            segment.distal.diameter,
+            seg.id if segment.parent is None else segment.parent.segments + 1)
 
         points = points + (point,)
-
     logger.info("Sequence of points sent to `from_points` function: \n{0}"
                 .format(formatter(points)))
 
@@ -209,3 +210,22 @@ def load_morphology(file_obj, cell_id=None):
 
     elif len(doc.cells) == 1:
         return load_morph_from_cells(doc.cells, cell_id=cell_id)
+
+
+# Returns segment ids of a segment group present in .nml file
+def get_segment_group_ids(group_id, morph):
+    id_list = []
+    for g in morph.segment_groups:
+        if g.id == group_id:
+            resolve_includes(id_list, g, morph)
+            resolve_member(id_list, g.members)
+    return id_list
+
+
+# Get resolved ids for a group in a file, ex. pass `apical_dends`,`pyr_4_sym.cell.nml`
+def get_resolved_group_ids(group, file_obj):
+    doc = loaders.NeuroMLLoader.load(file_obj)
+    m = doc.cells[0].morphology
+    grp_ids = get_segment_group_ids(group,m)
+    id_map = get_id_mappings(m.segments)
+    return [id_map[grp_id] for grp_id in grp_ids]
