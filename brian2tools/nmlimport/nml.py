@@ -88,7 +88,9 @@ def get_tuple_points(segments):
 
     # generate initial tuple
     seg = segments[0]
-    point = (seg.id, seg.name, seg.proximal.x, seg.proximal.y, seg.proximal.z,
+    point = (seg.id,
+             seg.name,
+             seg.proximal.x, seg.proximal.y, seg.proximal.z,
              seg.proximal.diameter,
              -1 if seg.parent is None else seg.parent.segments)
 

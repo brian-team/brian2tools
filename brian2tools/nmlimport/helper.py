@@ -1,5 +1,5 @@
 from pprint import pformat
-
+from collections import defaultdict
 
 # Return segment type depending on proximal and distal diameter
 def get_segment_type(segment):
@@ -51,3 +51,57 @@ def adjust_morph_object(segments):
                 raise ValueError("Segment {0} has no parent and no proximal "
                                  "point".format(segment))
     return segments
+
+
+def get_child_segments(segments):
+    children = defaultdict(list)
+    root = None
+    for segment in segments:
+        if segment.parent is None:
+            root = segment.id
+        else:
+            children[segment.parent.segments].append(segment.id)
+
+    assert root is not None
+    return children
+
+
+def perform_dfs(mapping, node, counter, children):
+    mapping[node] = counter
+    new_counter = counter + 1
+    for child in children[node]:
+        new_counter = perform_dfs(mapping, child, new_counter, children)
+    return new_counter
+
+
+# Return id mappings of segments present in .nml file
+def get_id_mappings(segments, parent_node=None, counter=0):
+    if parent_node is None:
+        for s in segments:
+            if s.parent is None:
+                parent_node = s.id
+                break
+
+    mapping = {}
+    children = get_child_segments(segments)
+    perform_dfs(mapping, parent_node, counter, children)
+    return mapping
+
+
+def get_segment_group(m, grp):
+    for g in m.segment_groups:
+        if g.id == grp:
+            return g
+
+
+def resolve_member(mem_list, members):
+    if members is not None:
+        for m in members:
+            mem_list.append(m.segments)
+
+
+def resolve_includes(l, grp, m):
+    if grp.includes is not None:
+        for g in grp.includes:
+            resolve_includes(l, get_segment_group(m, g.segment_groups), m)
+    resolve_member(l, grp.members)
