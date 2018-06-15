@@ -55,8 +55,8 @@
             </segment>
 
             <segment id="6" name="basal0">
-                <parent segment="0" fractionAlong="0.0"/>
-                <proximal x="0.0" y="0.0" z="0.0" diameter="4.0"/>
+                <parent segment="0" fractionAlong="1.0"/>
+                <proximal x="0.0" y="17.0" z="0.0" diameter="4.0"/>
                 <distal x="0.0" y="-50.0" z="0.0" diameter="4.0"/>
             </segment>
 
