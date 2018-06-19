@@ -79,15 +79,19 @@ def perform_dfs(mapping, node, counter, children):
 # Return id mappings of segments present in .nml file
 def get_id_mappings(segments, parent_node=None, counter=0):
     if parent_node is None:
-        for s in segments:
-            if s.parent is None:
-                parent_node = s.id
-                break
+        parent_node = get_root_segment(segments).id
 
     mapping = {}
     children = get_child_segments(segments)
     perform_dfs(mapping, parent_node, counter, children)
     return mapping
+
+
+def get_segment_dict(segments):
+    segdict={}
+    for s in segments:
+        segdict[s.id]=s
+    return segdict
 
 
 def get_segment_group(m, grp):
@@ -107,3 +111,9 @@ def resolve_includes(l, grp, m):
         for g in grp.includes:
             resolve_includes(l, get_segment_group(m, g.segment_groups), m)
     resolve_member(l, grp.members)
+
+
+def get_root_segment(segments):
+    for x in segments:
+        if x.parent is None:
+            return x
