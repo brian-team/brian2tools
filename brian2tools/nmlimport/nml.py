@@ -229,3 +229,88 @@ def get_resolved_group_ids(group, file_obj):
     grp_ids = get_segment_group_ids(group,m)
     id_map = get_id_mappings(m.segments)
     return [id_map[grp_id] for grp_id in grp_ids]
+
+
+
+class Section_object(object):
+    def __init__(self):
+        self.sectionList=[]
+        self.segmentList=[]
+        self.name='soma'
+
+
+
+class MorphologyTree(object):
+
+    def __init__(self,file_obj):
+        self.doc=self.get_morphology_dict(file_obj)
+        self.morph=self.doc.cells[0].morphology
+        self.segments=adjust_morph_object(self.morph.segments)
+
+        section=Section_object()
+        self.seg_dict = get_segment_dict(self.segments)
+        self.children = get_child_segments(self.segments)
+        self.root = get_root_segment(self.segments)
+        self.section = self._create_tree(section, self.root)
+        # self.printtree(self.section)
+        self.morphology_obj=self.build_morphology(self.section)
+        print(self.morphology_obj.topology())
+
+    def get_morphology_dict(self,file_obj):
+        if isinstance(file_obj, str):
+            # Generate absolute path if not provided already
+            file_obj = abspath(file_obj)
+
+            # Validating NeuroML file
+        validate_neuroml2(deepcopy(file_obj))
+        logger.info("Validated provided .nml file")
+
+        # Load nml file
+        doc = loaders.NeuroMLLoader.load(file_obj)
+        logger.info("Loaded morphology")
+        return doc
+
+    def _create_tree(self, section, seg):
+        section.segmentList.append(seg)
+        if len(self.children[seg.id])>1 or seg.name=="soma":
+            for seg_id in self.children[seg.id]:
+                sec = Section_object()
+                sec.name=self.seg_dict[seg_id].name
+                section.sectionList.append(sec)
+                self._create_tree(sec, self.seg_dict[seg_id])
+        elif len(self.children[seg.id]) == 1:
+            self._create_tree(section, self.seg_dict[self.children[seg.id][0]])
+        return section
+
+    def printtree(self, section):
+        for s in section.segmentList:
+            print(s.id)
+        print("end section")
+        print("section list: {}".format(section.sectionList))
+        for sec in section.sectionList:
+            self.printtree(sec)
+
+    def build_section(self,section,section_parent):
+        shift=section.segmentList[0].proximal
+        x,y,z=[0], [0], [0]
+        diameter=[section_parent.segmentList[-1].distal.diameter if
+                  section_parent is not None else section.segmentList[
+            0].proximal.diameter]
+
+        for s in section.segmentList:
+            x.append(s.distal.x - shift.x)
+            y.append(s.distal.y - shift.y)
+            z.append(s.distal.z - shift.z)
+            diameter.append(s.distal.diameter)
+        print(x, y, z,diameter)
+        return Section(n=len(section.segmentList),x=x*um,y=y*um,z=z*um,
+                       diameter=diameter*um)
+
+
+
+    def build_morphology(self,section,parent_section=None):
+
+        sec=self.build_section(section,parent_section)
+        for s in section.sectionList:
+            sec[s.name]=self.build_morphology(s,section)
+        return sec

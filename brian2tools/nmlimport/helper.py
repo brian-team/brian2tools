@@ -1,5 +1,7 @@
 from pprint import pformat
 from collections import defaultdict
+from brian2.spatialneuron.morphology import Section,Soma,Cylinder
+from brian2.units import *
 
 # Return segment type depending on proximal and distal diameter
 def get_segment_type(segment):
