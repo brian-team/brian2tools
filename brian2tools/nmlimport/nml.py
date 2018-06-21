@@ -5,7 +5,7 @@ from brian2.utils.logger import get_logger
 from os.path import abspath
 from .helper import *
 from copy import deepcopy
-
+import re
 logger = get_logger(__name__)
 
 
@@ -242,8 +242,10 @@ class Section_object(object):
 
 class MorphologyTree(object):
 
-    def __init__(self,file_obj):
-        self.doc=self.get_morphology_dict(file_obj)
+    def __init__(self,file_obj, name_heuristic=True):
+        self.name_heristic=name_heuristic
+        self.incremental_id=0
+        self.doc=self._get_morphology_dict(file_obj)
         self.morph=self.doc.cells[0].morphology
         self.segments=adjust_morph_object(self.morph.segments)
 
@@ -256,7 +258,7 @@ class MorphologyTree(object):
         self.morphology_obj=self.build_morphology(self.section)
         print(self.morphology_obj.topology())
 
-    def get_morphology_dict(self,file_obj):
+    def _get_morphology_dict(self, file_obj):
         if isinstance(file_obj, str):
             # Generate absolute path if not provided already
             file_obj = abspath(file_obj)
@@ -270,27 +272,47 @@ class MorphologyTree(object):
         logger.info("Loaded morphology")
         return doc
 
+    def _is_heurestically_sep(self,section,seg_id):
+        root_name=section.name.rstrip('0123456789_')
+        seg=self.seg_dict[self.children[seg_id][0]]
+        return not seg.name.startswith(root_name)
+
+    def _get_section_name(self,seg_id):
+        if not self.name_heristic:
+            self.incremental_id = self.incremental_id + 1
+            return "sec" + str(self.incremental_id)
+        return self.seg_dict[seg_id].name
+
+
     def _create_tree(self, section, seg):
+
+        def intialize_section(section,seg_id):
+            sec = Section_object()
+            sec.name = self._get_section_name(seg_id)
+            section.sectionList.append(sec)
+            return sec
         section.segmentList.append(seg)
+        # print(section.name)
         if len(self.children[seg.id])>1 or seg.name=="soma":
             for seg_id in self.children[seg.id]:
-                sec = Section_object()
-                sec.name=self.seg_dict[seg_id].name
-                section.sectionList.append(sec)
-                self._create_tree(sec, self.seg_dict[seg_id])
+                self._create_tree(intialize_section(section,seg_id),
+                                  self.seg_dict[seg_id])
         elif len(self.children[seg.id]) == 1:
-            self._create_tree(section, self.seg_dict[self.children[seg.id][0]])
+            if self.name_heristic:
+                if self._is_heurestically_sep(section, seg.id):
+                    self._create_tree(intialize_section(section,seg.id),
+                                  self.seg_dict[self.children[seg.id][0]])
+                else:
+                    seg_name=self.seg_dict[self.children[seg.id][0]].name
+                    m = re.search(r'\d+$', seg_name)
+                    section.name='{}_{}'.format(section.name,m.group())
+                    self._create_tree(section,
+                                      self.seg_dict[self.children[seg.id][0]])
+            else:
+                self._create_tree(section, self.seg_dict[self.children[seg.id][0]])
         return section
 
-    def printtree(self, section):
-        for s in section.segmentList:
-            print(s.id)
-        print("end section")
-        print("section list: {}".format(section.sectionList))
-        for sec in section.sectionList:
-            self.printtree(sec)
-
-    def build_section(self,section,section_parent):
+    def _build_section(self,section,section_parent):
         shift=section.segmentList[0].proximal
         x,y,z=[0], [0], [0]
         diameter=[section_parent.segmentList[-1].distal.diameter if
@@ -302,15 +324,21 @@ class MorphologyTree(object):
             y.append(s.distal.y - shift.y)
             z.append(s.distal.z - shift.z)
             diameter.append(s.distal.diameter)
-        print(x, y, z,diameter)
         return Section(n=len(section.segmentList),x=x*um,y=y*um,z=z*um,
                        diameter=diameter*um)
 
-
-
     def build_morphology(self,section,parent_section=None):
 
-        sec=self.build_section(section,parent_section)
+        sec=self._build_section(section,parent_section)
         for s in section.sectionList:
             sec[s.name]=self.build_morphology(s,section)
         return sec
+
+    def printtree(self, section):
+        for s in section.segmentList:
+            print(s.id)
+        print("end section")
+        print("section list: {}".format(section.sectionList))
+        for sec in section.sectionList:
+            self.printtree(sec)
+            
