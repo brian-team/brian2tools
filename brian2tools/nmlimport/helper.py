@@ -1,7 +1,5 @@
 from pprint import pformat
 from collections import defaultdict
-from brian2.spatialneuron.morphology import Section,Soma,Cylinder
-from brian2.units import *
 
 # Return segment type depending on proximal and distal diameter
 def get_segment_type(segment):
@@ -10,7 +8,7 @@ def get_segment_type(segment):
     return "section"
 
 
-# Get parent segment
+# Returns parent segment
 def get_parent_segment(segment, segments):
     for s in segments:
         if s.id == segment.parent.segments:
@@ -41,7 +39,7 @@ def formatter(datum):
         a = a[0:160] + "[...]"
     return a
 
-
+# Returns a dictionary of child segments of each segment, segment id is a key.
 def get_child_segments(segments):
     children = defaultdict(list)
     root = None
