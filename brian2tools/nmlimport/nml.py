@@ -63,199 +63,48 @@ def validate_morphology(segments):
         raise
 
 
-def get_tuple_points(segments):
+class NmlMorphology(object):
     """
-     Generates a tuple of points corresponding to each segment.
-
-    Parameters
-    ----------
-    segments : list
-        list of segments present in a morphology
-
-    Returns
-    -------
-    tuple
-        a tuple of points
+        A class that extracts and store all morphology related information
+        from a .nml file.
     """
 
-    points = ()
-
-    # adjust morphology
-    segments = adjust_morph_object(segments)
-
-    # validate morphology
-    validate_morphology(segments)
-
-    # generate initial tuple
-    seg = segments[0]
-    point = (seg.id,
-             seg.name,
-             seg.proximal.x, seg.proximal.y, seg.proximal.z,
-             seg.proximal.diameter,
-             -1 if seg.parent is None else seg.parent.segments)
-
-    points = points + (point,)
-
-    # iterate over morphology segments
-    for segment in segments:
-        point = (
-            segment.id + 1,
-            segment.name if segment.name == 'soma' else 'unknown',
-            segment.distal.x, segment.distal.y,segment.distal.z,
-            segment.distal.diameter,
-            seg.id if segment.parent is None else segment.parent.segments + 1)
-
-        points = points + (point,)
-    logger.info("Sequence of points sent to `from_points` function: \n{0}"
-                .format(formatter(points)))
-
-    return points
 
 
-def generate_morph_object(cell):
-    """
-    Generate morphology object from a given cell.
-
-    Parameters
-    ----------
-    cell : dict
-        a python cell object.
-
-    Returns
-    -------
-    Morphology
-        morphology obtained from the cell.
-    """
-
-    # sort segment list in ascending order of id
-    sorted_segments = sorted(cell.morphology.segments, key=lambda x: x.id)
-    logger.info("Sorted segments are: {0}".format(formatter(sorted_segments)))
-    points = get_tuple_points(sorted_segments)
-
-    return Morphology.from_points(points, spherical_soma=False)
-
-
-def load_morph_from_cells(cells, cell_id=None):
-    """
-    Returns morphology object present in cell specified by cell_id.
-
-    Parameters
-    ----------
-    cells : list
-        a list of cell objects.
-    cell_id : str
-        id of a cell whose morphology is required.
-
-    Returns
-    -------
-    Morphology
-        morphology object obtained from the cell.
-    """
-
-    if cell_id is None:
-        return generate_morph_object(cells[0])
-    for cell in cells:
-        if cell_id == cell.id:
-            return generate_morph_object(cell)
-
-    err = (
-        "The cell id you specified {0} doesn't exist. Present cell id's "
-        "are:\n {1}"
-        .format(formatter(cell_id), formatter([cell.id for cell in cells])))
-
-    logger.error('Value error: %s' % err)
-    raise ValueError(err)
-
-
-def load_morphology(file_obj, cell_id=None):
-    """
-    Generates morphology object from a file or a file object.
-
-    When passing a file object to load morphology, make sure *is_obj* param
-    is set to True.
-
-    Parameters
-    ----------
-    file_obj : str
-        .nml file location or file object containing morphology information.
-    cell_id : str
-        id of a cell whose morphology we need.
-
-    Returns
-    -------
-    Morphology
-        a morphology object obtained from the cell.
-    """
-
-    if isinstance(file_obj,str):
-        # Generate absolute path if not provided already
-        file_obj = abspath(file_obj)
-
-    # Validating NeuroML file
-    validate_neuroml2(deepcopy(file_obj))
-    logger.info("Validated provided .nml file")
-
-    # Load nml file
-    doc = loaders.NeuroMLLoader.load(file_obj)
-    logger.info("Loaded morphology")
-
-    if len(doc.cells) > 1:
-        if cell_id is not None:
-            return load_morph_from_cells(doc.cells, cell_id=cell_id)
-        morphologies = {}
-        for cell in doc.cells:
-            morphologies[cell.id] = load_morph_from_cells(doc.cells,
-                                                          cell_id=cell.id)
-        return morphologies
-
-    elif len(doc.cells) == 1:
-        return load_morph_from_cells(doc.cells, cell_id=cell_id)
-
-
-# Returns segment ids of a segment group present in .nml file
-def get_segment_group_ids(group_id, morph):
-    id_list = []
-    for g in morph.segment_groups:
-        if g.id == group_id:
-            resolve_includes(id_list, g, morph)
-            resolve_member(id_list, g.members)
-    return id_list
-
-
-# Get resolved ids for a group in a file, ex. pass `apical_dends`,`pyr_4_sym.cell.nml`
-def get_resolved_group_ids(group, file_obj):
-    doc = loaders.NeuroMLLoader.load(file_obj)
-    m = doc.cells[0].morphology
-    grp_ids = get_segment_group_ids(group,m)
-    id_map = get_id_mappings(m.segments)
-    return [id_map[grp_id] for grp_id in grp_ids]
-
-
-class SectionObject(object):
-    def __init__(self):
-        self.sectionList=[]
-        self.segmentList=[]
-        self.name='soma'
-
-
-class MorphologyTree(object):
+    class SectionObject(object):
+        def __init__(self):
+            self.sectionList = []
+            self.segmentList = []
+            self.name = 'soma'
 
     def __init__(self, file_obj, name_heuristic=True):
+        """
+        Initializes NmlMorphology Class
+        Parameters
+        ----------
+        file_obj: str
+            nml file path or a file object
+        name_heuristic: bool
+            If true morphology sections will be determined based on the
+            segment names and section name will be created by combining names of
+            the inner segments of the section.
+        """
         self.name_heuristic = name_heuristic
         self.incremental_id = 0
         self.doc = self._get_morphology_dict(file_obj)
         self.morph = self.doc.cells[0].morphology
-        self.segments = adjust_morph_object(self.morph.segments)
+        self.segments = self._adjust_morph_object(self.morph.segments)
 
-        section = SectionObject()
-        self.seg_dict = get_segment_dict(self.segments)
+        section = self.SectionObject()
+        self.seg_dict = self._get_segment_dict(self.segments)
         self.children = get_child_segments(self.segments)
-        self.root = get_root_segment(self.segments)
+        self.root = self._get_root_segment(self.segments)
         self.section = self._create_tree(section, self.root)
         # self.printtree(self.section)
         self.morphology_obj = self.build_morphology(self.section)
         self.resolved_grp_ids=self.get_resolved_group_ids(self.morph)
 
+    # Helper function to read .nml file and return document object
     def _get_morphology_dict(self, file_obj):
         if isinstance(file_obj, str):
             # Generate absolute path if not provided already
@@ -284,7 +133,7 @@ class MorphologyTree(object):
     def _create_tree(self, section, seg):
 
         def intialize_section(section, seg_id):
-            sec = SectionObject()
+            sec = self.SectionObject()
             sec.name = self._get_section_name(seg_id)
             section.sectionList.append(sec)
             return sec
@@ -343,6 +192,20 @@ class MorphologyTree(object):
 
     # Returns segment ids of a segment group present in .nml file
     def get_segment_group_ids(self,group_id, morph):
+
+        def resolve_member(mem_list, members):
+            if members is not None:
+                for m in members:
+                    mem_list.append(m.segments)
+
+        def resolve_includes(l, grp, m):
+            if grp.includes is not None:
+                for g in grp.includes:
+                    resolve_includes(l, self._get_segment_group(m,
+                                                            g.segment_groups),
+                                     m)
+            resolve_member(l, grp.members)
+
         id_list = []
         for g in morph.segment_groups:
             if g.id == group_id:
@@ -352,10 +215,60 @@ class MorphologyTree(object):
 
     # Get resolved ids for a group in a file, ex. pass `apical_dends`,`pyr_4_sym.cell.nml`
     def get_resolved_group_ids(self, m):
+
+        # Return id mappings of segments present in .nml file
+        def get_id_mappings(segments, parent_node=None, counter=0):
+            if parent_node is None:
+                parent_node = self._get_root_segment(segments).id
+
+            mapping = {}
+            children = get_child_segments(segments)
+            self._perform_dfs(mapping, parent_node, counter, children)
+            return mapping
+
         resolved_ids={}
         for group in m.segment_groups:
-            grp_ids = get_segment_group_ids(group.id, m)
+            grp_ids = self.get_segment_group_ids(group.id, m)
             id_map = get_id_mappings(m.segments)
             resolved_ids[group.id]= list(set([id_map[grp_id] for grp_id in
                                          grp_ids]))
         return resolved_ids
+
+
+    # Generate proximal points for a segment if not present already
+    def _adjust_morph_object(self,segments):
+        for segment in segments:
+            if segment.proximal is None:
+                if segment.parent is not None:
+                    parent_seg = get_parent_segment(segment, segments)
+                    segment.proximal = parent_seg.distal
+                else:
+                    raise ValueError(
+                        "Segment {0} has no parent and no proximal "
+                        "point".format(segment))
+        return segments
+
+    def _perform_dfs(self,mapping, node, counter, children):
+        mapping[node] = counter
+        new_counter = counter + 1
+        for child in children[node]:
+            new_counter = self._perform_dfs(mapping, child, new_counter,
+                                           children)
+        return new_counter
+
+    def _get_segment_dict(self,segments):
+        segdict = {}
+        for s in segments:
+            segdict[s.id] = s
+        return segdict
+
+    def _get_segment_group(self,m, grp):
+        for g in m.segment_groups:
+            if g.id == grp:
+                return g
+
+    def _get_root_segment(self,segments):
+        for x in segments:
+            if x.parent is None:
+                return x
+
