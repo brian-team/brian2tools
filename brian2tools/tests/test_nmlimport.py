@@ -1,8 +1,8 @@
 from copy import deepcopy
 from neuroml.loaders import NeuroMLLoader
 from brian2.units import *
-from brian2tools.nmlimport.nml import load_morphology, get_tuple_points, \
-    validate_morphology, load_morph_from_cells, ValidationException
+from brian2tools.nmlimport.nml import NmlMorphology,validate_morphology,  \
+                                                    ValidationException
 from os.path import abspath, dirname,join
 from numpy.testing import assert_equal, assert_allclose
 from pytest import raises
@@ -43,19 +43,21 @@ def test_validation():
         validate_morphology(b.segments)
 
 
-def test_load_morph_cells():
-    with raises(ValueError, match='The cell id you specified'):
-        load_morph_from_cells(nml_obj.cells, cell_id='foo')
+def test_resolved_group_ids():
+    nml_object = NmlMorphology(join(dirname(abspath(__file__)), SAMPLE))
+    assert_equal(nml_object.resolved_grp_ids['dendrite_group'],
+                 [1, 2, 3, 4, 5, 6, 7, 8])
 
-
-def test_tuple():
-    points = get_tuple_points(morph_obj.segments)
-    assert_equal(points, POINTS)
-
+def test_section_child_segment_list():
+    nml_object = NmlMorphology(join(dirname(abspath(__file__)), SAMPLE))
+    assert_equal([x.id for x in nml_object.section.sectionList[0].sectionList[
+        0].segmentList],[2, 3, 4])
 
 def test_load_morphology():
-    morphology = load_morphology(join(dirname(abspath(__file__)), SAMPLE))
+    nml_object = NmlMorphology(join(dirname(abspath(__file__)), SAMPLE))
+    morphology=nml_object.morphology_obj
     assert_allclose(morphology.distance, [8.5] * um)
     assert_allclose(morphology.length, [17.] * um)
     assert_allclose(morphology.coordinates, [[0., 0., 0.], [0., 17., 0.]] * um)
     assert_allclose(morphology.area, [1228.36272755] * um2)
+

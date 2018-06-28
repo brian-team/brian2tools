@@ -2,6 +2,8 @@ import neuroml.loaders as loaders
 from neuroml.utils import validate_neuroml2
 from brian2 import Morphology
 from brian2.utils.logger import get_logger
+from brian2.spatialneuron.morphology import Section,Soma,Cylinder
+from brian2.units import *
 from os.path import abspath
 from .helper import *
 from copy import deepcopy
