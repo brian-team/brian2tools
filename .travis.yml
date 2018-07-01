@@ -72,7 +72,7 @@ script:
     sphinx-build docs_sphinx docs;
   else
     export SRCDIR=$(pwd);
-    conda build --quiet -c brian-team dev/conda-recipe;
+    conda build --quiet -c conda-forge dev/conda-recipe;
   fi
 
 after_success:
