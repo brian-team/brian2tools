@@ -1,6 +1,6 @@
 import argparse
 import os, sys
-from brian2tools.nmlimport.nml import load_morphology
+from brian2tools.nmlimport.nml import NmlMorphology
 import logging
 
 parser = argparse.ArgumentParser()
@@ -31,7 +31,7 @@ def populate():
             dir, f)) and f.endswith('.nml')]
 
 def test_nml(f):
-    morph=load_morphology(f)
+    morph=NmlMorphology(f).morphology_obj
     if not args.mute:
         if morph is None:
             logger.info("No morphology information in this file!!\n\n")
