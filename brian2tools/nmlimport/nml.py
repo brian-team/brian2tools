@@ -87,7 +87,9 @@ class NmlMorphology(object):
         name_heuristic: bool
             If true morphology sections will be determined based on the
             segment names and section name will be created by combining names of
-            the inner segments of the section.
+            the inner segments of the section else if set to False,
+            all linearly connected segments combines and form a
+            section and naming convention `sec{unique integer}` is followed.
         """
         self.name_heuristic = name_heuristic
         self.incremental_id = 0
