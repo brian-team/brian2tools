@@ -106,7 +106,7 @@ section and naming convention `sec{unique integer}` is followed.
     from brian2tools.plotting.morphology import plot_morphology
     plot_morphology(morphology)
 
-.. figure:: ../output.png
+.. figure:: ../images/pyramidal_morphology.png
    :scale: 80 %
    :alt: Pyramidal cell's morphology plot.
 
