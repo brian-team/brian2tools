@@ -1,13 +1,16 @@
+import re
+from os.path import abspath
+from copy import deepcopy
+
 import neuroml.loaders as loaders
 from neuroml.utils import validate_neuroml2
 from brian2 import Morphology
 from brian2.utils.logger import get_logger
-from brian2.spatialneuron.morphology import Section,Soma,Cylinder
+from brian2.spatialneuron.morphology import Section
 from brian2.units import *
-from os.path import abspath
+
 from .helper import *
-from copy import deepcopy
-import re
+
 logger = get_logger(__name__)
 
 
@@ -38,14 +41,6 @@ def validate_morphology(segments):
                         "{0} has fraction along value {1} which is not "
                         "supported!!".
                         format(segment,segment.parent.fraction_along))
-
-                seg_parent = get_parent_segment(segment, segments)
-
-                if not are_segments_joined(segment, seg_parent):
-                    raise ValidationException(
-                        "{0} and its parent segment {1} are not connected!!".
-                        format(formatter(segment), formatter(seg_parent)))
-
             elif start_segment is not None:
                 raise ValidationException(
                     "Two segments with parent id as -1 (i.e no parent): "
