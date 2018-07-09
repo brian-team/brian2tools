@@ -1,11 +1,13 @@
 from copy import deepcopy
+from os.path import abspath, dirname,join
+
 from neuroml.loaders import NeuroMLLoader
 from brian2.units import *
-from brian2tools.nmlimport.nml import NmlMorphology,validate_morphology,  \
-                                                    ValidationException
-from os.path import abspath, dirname,join
 from numpy.testing import assert_equal, assert_allclose
 from pytest import raises
+
+from brian2tools.nmlimport.nml import NMLMorphology,validate_morphology,  \
+                                                    ValidationException
 
 POINTS = ((0, 'soma', 0.0, 0.0, 0.0, 23.0, -1),
           (1, 'soma', 0.0, 17.0, 0.0, 23.0, 0),
@@ -37,24 +39,19 @@ def test_validation():
                                            '-1'):
         validate_morphology(a.segments)
 
-    b = deepcopy(morph_obj)
-    b.segments[0].distal.x = 12
-    with raises(ValidationException, match='not connected!!'):
-        validate_morphology(b.segments)
-
 
 def test_resolved_group_ids():
-    nml_object = NmlMorphology(join(dirname(abspath(__file__)), SAMPLE))
+    nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
     assert_equal(nml_object.resolved_grp_ids['dendrite_group'],
                  [1, 2, 3, 4, 5, 6, 7, 8])
 
 def test_section_child_segment_list():
-    nml_object = NmlMorphology(join(dirname(abspath(__file__)), SAMPLE))
+    nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
     assert_equal([x.id for x in nml_object.section.sectionList[0].sectionList[
         0].segmentList],[2, 3, 4])
 
 def test_load_morphology():
-    nml_object = NmlMorphology(join(dirname(abspath(__file__)), SAMPLE))
+    nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
     morphology=nml_object.morphology_obj
     assert_allclose(morphology.distance, [8.5] * um)
     assert_allclose(morphology.length, [17.] * um)

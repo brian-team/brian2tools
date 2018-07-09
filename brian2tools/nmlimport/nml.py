@@ -60,7 +60,7 @@ def validate_morphology(segments):
         raise
 
 
-class NmlMorphology(object):
+class NMLMorphology(object):
     """
         A class that extracts and store all morphology related information
         from a .nml file.
