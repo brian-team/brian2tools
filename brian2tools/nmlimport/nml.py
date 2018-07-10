@@ -68,6 +68,10 @@ class NMLMorphology(object):
 
     class SectionObject(object):
         def __init__(self):
+            """
+            Initializes a sectionObject which is used internally to group
+            related segments.
+            """
             self.sectionList = []
             self.segmentList = []
             self.name = 'soma'
@@ -97,7 +101,6 @@ class NMLMorphology(object):
         self.children = get_child_segments(self.segments)
         self.root = self._get_root_segment(self.segments)
         self.section = self._create_tree(section, self.root)
-        # self.printtree(self.section)
         self.morphology_obj = self.build_morphology(self.section)
         self.resolved_grp_ids = self.get_resolved_group_ids(self.morph)
 
@@ -202,13 +205,28 @@ class NMLMorphology(object):
                                                grp_ids]))
         return resolved_ids
 
-    # Helper function to read .nml file and return document object
+
     def _get_morphology_dict(self, file_obj):
+        """
+        Helper function to read .nml file and return document object.
+
+        Parameters
+        ----------
+        file_obj: str
+            File path or file object.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all the information extracted from the
+            given .nml file.
+
+        """
         if isinstance(file_obj, str):
             # Generate absolute path if not provided already
             file_obj = abspath(file_obj)
 
-            # Validating NeuroML file
+        # Validating NeuroML file
         validate_neuroml2(deepcopy(file_obj))
         logger.info("Validated provided .nml file")
 
@@ -217,32 +235,73 @@ class NMLMorphology(object):
         logger.info("Loaded morphology")
         return doc
 
-    '''
-    Helper function that determines if the given segment belongs to the 
-    passed section or not as per our heuristic.
-    '''
+
     def _is_heurestically_sep(self, section, seg_id):
+        """
+        Helper function that determines if the given segment belongs to the
+        passed section or not as per our heuristic.
+
+        Parameters
+        ----------
+        section: SectionObject
+            Object of class SectionObject that contains information about
+            segments belonging to same section.
+        seg_id: int
+            segment id of given segment
+
+        Returns
+        -------
+        bool
+            Returns true if the given segment is not heurestically connected
+            to the provided section.
+        """
         root_name = section.name.rstrip('0123456789_')
         seg = self.seg_dict[self.children[seg_id][0]]
         return not seg.name.startswith(root_name)
 
-    '''
-    Helper function that generate the new section name based on whether 
-    name_heuristic is set to True or not.
-    '''
+
     def _get_section_name(self, seg_id):
+        """
+        Helper function that generate the new section name based on whether
+        name_heuristic is set to True or not.
+
+        Parameters
+        ----------
+        seg_id: int
+            segment id of concerned segment.
+
+        Returns
+        -------
+        str
+            generated section name.
+        """
         if not self.name_heuristic:
             self.incremental_id = self.incremental_id + 1
             return "sec" + str(self.incremental_id)
         return self.seg_dict[seg_id].name
 
     '''
-    Helper function that creates a section tree where each section node can 
-    have multiple child segments and each section may be connected to 
-    multiple other sections
+    
     '''
     def _create_tree(self, section, seg):
+        """
+        Helper function that creates a section tree where each section node can
+        have multiple child segments and each section may be connected to
+        multiple other sections
 
+        Parameters
+        ----------
+        section: SectionObject
+            Object of class SectionObject that contains information about
+            segments belonging to same section.
+        seg: segment object. It belongs to the given section and its
+        children's are resolved to create further tree nodes.
+
+        Returns
+        -------
+        SectionObject
+            created section tree.
+        """
         # abstracts the initialization step of a section
         def intialize_section(section, seg_id):
             sec = self.SectionObject()
@@ -273,11 +332,26 @@ class NMLMorphology(object):
         return section
 
     '''
-    This function generates Brian's morphology section from given section 
-    object of class SectionObject.
+    
     '''
 
     def _build_section(self, section, section_parent):
+        """
+        This function generates Brian's morphology section from given section
+        object of class SectionObject.
+
+        Parameters
+        ----------
+        section: SectionObject
+            given sectionObject that needs to be converted to Brian's section object.
+        section_parent: SectionObject
+            parent of the given sectionObject.
+
+        Returns
+        -------
+        Section
+            Brian's section object.
+        """
         shift = section.segmentList[0].proximal
         x, y, z = [0], [0], [0]
         diameter = [section_parent.segmentList[-1].distal.diameter if
@@ -333,8 +407,7 @@ class NMLMorphology(object):
             if x.parent is None:
                 return x
 
-        # Prints Section Tree information, for visualization.
-
+    # Prints Section Tree information, for visualization.
     def printtree(self, section):
         for s in section.segmentList:
             print(s.id)
