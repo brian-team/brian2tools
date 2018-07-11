@@ -23,8 +23,8 @@ can download it from `here <https://github
 
 .. code:: python
 
-    from brian2tools.nmlimport.nml import NmlMorphology
-    nml_object = NmlMorphology('pyr_4_sym.cell.nml', name_heuristic=True)
+    from brian2tools.nmlimport.nml import NMLMorphology
+    nml_object = NMLMorphology('pyr_4_sym.cell.nml', name_heuristic=True)
 
 This call provides us the ``nml_object`` that contains all the information
 extracted from ``.nml`` file. When ``name_heuristic`` param is set to True
@@ -35,11 +35,13 @@ segments combines to form a section and naming convention
 ``sec{unique_integer}`` is followed.
 
 |
+
 - To obtain morphology object.
 
 .. code:: python
 
-    morphology = nml_object.morphology_obj
+    >>> morphology = nml_object.morphology_obj
+
 |
 
 With this Morphology object, you can use all of Brian's functions to get information about the cell:
@@ -67,6 +69,7 @@ With this Morphology object, you can use all of Brian's functions to get informa
 
     >>> print(morphology.distance)
     [ 8.5] um
+
 |
 
 - Plot morphology using brian2tool's plot_morphology function.
@@ -100,6 +103,7 @@ dictionary that maps ``SegmentGroup`` ids to its member segment id's.
     [1, 2, 3, 4, 5, 6, 7, 8], 'apical_dends': [1, 2, 3, 4, 5],
     'middle_apical_dendrite': [3], 'thalamic_input': [5], 'basal_dends':
     [8, 6, 7], 'basal_gaba_input': [6], 'background_input': [7]}
+
 |
 
 The file ``pyr_4_sym.cell.nml`` will look something like this:

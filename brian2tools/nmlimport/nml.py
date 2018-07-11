@@ -78,17 +78,18 @@ class NMLMorphology(object):
 
     def __init__(self, file_obj, name_heuristic=True):
         """
-        Initializes NmlMorphology Class
+        Initializes NMLMorphology Class
         Parameters
         ----------
         file_obj: str
             nml file path or a file object
         name_heuristic: bool
-            If true morphology sections will be determined based on the
-            segment names and section name will be created by combining names of
-            the inner segments of the section else if set to False,
-            all linearly connected segments combines and form a
-            section and naming convention `sec{unique integer}` is followed.
+            When this parameter is set to True morphology sections
+            will be determined based on the segment names. In this case
+            Section name will be created by combining names of the inner
+            segments of the section. When set to False, all linearly
+            connected segments combines to form a section and naming
+            convention sec{unique_integer} is followed.
         """
         self.name_heuristic = name_heuristic
         self.incremental_id = 0
@@ -236,7 +237,7 @@ class NMLMorphology(object):
         return doc
 
 
-    def _is_heurestically_sep(self, section, seg_id):
+    def _is_heuristically_sep(self, section, seg_id):
         """
         Helper function that determines if the given segment belongs to the
         passed section or not as per our heuristic.
@@ -252,7 +253,7 @@ class NMLMorphology(object):
         Returns
         -------
         bool
-            Returns true if the given segment is not heurestically connected
+            Returns true if the given segment is not heuristically connected
             to the provided section.
         """
         root_name = section.name.rstrip('0123456789_')
@@ -316,7 +317,7 @@ class NMLMorphology(object):
                                   self.seg_dict[seg_id])
         elif len(self.children[seg.id]) == 1:
             if self.name_heuristic:
-                if self._is_heurestically_sep(section, seg.id):
+                if self._is_heuristically_sep(section, seg.id):
                     self._create_tree(intialize_section(section, seg.id),
                                       self.seg_dict[self.children[seg.id][0]])
                 else:
