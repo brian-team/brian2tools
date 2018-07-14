@@ -18,9 +18,10 @@ import lems.api as lems
 
 from .lemsrendering import *
 from .supporting import (read_nml_units, read_nml_dims, brian_unit_to_lems,
-                         name_to_unit, NeuroMLSimulation, NeuroMLSimpleNetwork,
+                         NeuroMLSimulation, NeuroMLSimpleNetwork,
                          NeuroMLTarget, NeuroMLPoissonGenerator)
 from .cgmhelper import *
+from brian2tools.nmlutils.utils import name_to_unit
 
 __all__ = []
 

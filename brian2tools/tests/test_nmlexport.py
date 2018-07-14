@@ -1,4 +1,3 @@
-import os
 import tempfile
 from subprocess import call
 
@@ -12,6 +11,7 @@ from brian2 import set_device, NeuronGroup, StateMonitor, SpikeMonitor, run
 from brian2 import second, mV, amp, metre, psiemens, ms
 
 from brian2tools.nmlexport.supporting import *
+from brian2tools.nmlutils.utils import from_string
 
 plain_numbers_from_list = lambda x: str(x)[1:-1].replace(',','')
 
