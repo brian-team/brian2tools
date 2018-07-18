@@ -281,9 +281,7 @@ class NMLMorphology(object):
             return "sec" + str(self.incremental_id)
         return self.seg_dict[seg_id].name
 
-    '''
-    
-    '''
+
     def _create_tree(self, section, seg):
         """
         Helper function that creates a section tree where each section node can
@@ -332,9 +330,6 @@ class NMLMorphology(object):
                                   self.seg_dict[self.children[seg.id][0]])
         return section
 
-    '''
-    
-    '''
 
     def _build_section(self, section, section_parent):
         """

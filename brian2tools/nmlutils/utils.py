@@ -56,3 +56,46 @@ def from_string(rep):
     else:
         return float(value)
 
+
+def string_to_quantity(rep):
+    """
+        Returns `Quantity` object from text representation of a value.
+
+        Parameters
+        ----------
+        rep : `str`
+            text representation of a value with unit
+
+        Returns
+        -------
+        q : `Quantity`
+            Brian Quantity object
+    """
+    if len(rep.split("_per_")) < 2:
+        post = None
+        pre = rep
+    else:
+        pre, post = rep.split("_per_")
+
+    m = re.match('-?[0-9]+\.?([0-9]+)?[eE]?-?([0-9]+)?', pre)
+    if m:
+        value = pre[0:m.end()]
+        pre = pre[m.end():]
+    numerator = None
+    deno = None
+
+    for u in pre.strip().split("_"):
+        m = re.search(r'\d+$', u)
+        if m:
+            u = u[:m.start()] + '^' + u[m.start():]
+        numerator = name_to_unit[u] if numerator is None else numerator * \
+                                                              name_to_unit[u]
+
+    if post is not None:
+        for u in post.strip().split("_"):
+            m = re.search(r'\d+$', u)
+            if m:
+                u = u[:m.start()] + '^' + u[m.start():]
+            deno = name_to_unit[u] if deno is None else deno * name_to_unit[u]
+        return float(value) * (numerator / deno)
+    return float(value) * numerator
