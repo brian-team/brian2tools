@@ -1,14 +1,17 @@
 import re
 from os.path import abspath
 from copy import deepcopy
+from functools import partial
+from collections import  OrderedDict
 
 import neuroml.loaders as loaders
 from neuroml.utils import validate_neuroml2
-from brian2 import Morphology
+
+from brian2 import Morphology,SpatialNeuron
 from brian2.utils.logger import get_logger
 from brian2.spatialneuron.morphology import Section
 from brian2.units import *
-
+from brian2tools.nmlutils.utils import string_to_quantity
 from .helper import *
 
 logger = get_logger(__name__)
@@ -104,6 +107,11 @@ class NMLMorphology(object):
         self.section = self._create_tree(section, self.root)
         self.morphology_obj = self.build_morphology(self.section)
         self.resolved_grp_ids = self.get_resolved_group_ids(self.morph)
+
+        #biophysical Properties
+        self.properties=self.get_properties(self.doc.cells[
+                                            0].biophysical_properties)
+        self.neuron=self.get_spatial_neuron()
 
 
     def build_morphology(self, section, parent_section=None):
@@ -411,3 +419,36 @@ class NMLMorphology(object):
         print("section list: {}".format(section.sectionList))
         for sec in section.sectionList:
             self.printtree(sec)
+
+    def get_properties(self, bio_prop):
+        prop = {}
+
+        def get_dict(obj_list, keep_str=False):
+            d = {}
+            for o in obj_list:
+                d[o.segment_groups] = string_to_quantity(o.value)
+            return d
+
+        self.Ri = get_dict(bio_prop.intracellular_properties.resistivities)
+        self.Cm = get_dict(bio_prop.membrane_properties.specific_capacitances)
+        self.threshold = string_to_quantity(
+            bio_prop.membrane_properties.spike_threshes[0].value)
+        self.threshold_string = 'v > {}'.format('*'.join(
+            bio_prop.membrane_properties.spike_threshes[0].value.split(' ')))
+
+        prop["threshold"] = self.threshold_string
+        prop["refractory"] = self.threshold_string
+        prop["Cm"] = self.Cm[list(self.Cm.keys())[0]] if len(
+            self.Cm) == 1 else 0.9 * uF / cm ** 2
+        prop["Ri"] = self.Ri[list(self.Ri.keys())[0]] if len(
+            self.Ri) == 1 else 150 * ohm * cm
+
+        return prop
+
+    def get_spatial_neuron(self):
+        return partial(SpatialNeuron, morphology=self.morphology_obj,
+                       **self.properties)
+
+    def set_neuron_properties(self, neuron_prop, value_dict):
+        for segment_group, value in value_dict.items():
+            neuron_prop[self.resolved_grp_ids[segment_group]] = value
