@@ -108,11 +108,12 @@ class NMLMorphology(object):
         self.morphology_obj = self.build_morphology(self.section)
         self.resolved_grp_ids = self.get_resolved_group_ids(self.morph)
 
-        #biophysical Properties
-        self.properties=self.get_properties(self.doc.cells[
-                                            0].biophysical_properties)
-        self.neuron=self.get_spatial_neuron()
-
+        # biophysical Properties
+        self.properties = self._get_properties(self.doc.cells[
+                                                   0].biophysical_properties)
+        self.neuron = self.get_spatial_neuron()
+        self.erevs, self.cond_densities = self._get_channel_props(
+            self.doc.cells[0].biophysical_properties.membrane_properties.channel_densities)
 
     def build_morphology(self, section, parent_section=None):
         """
@@ -420,7 +421,7 @@ class NMLMorphology(object):
         for sec in section.sectionList:
             self.printtree(sec)
 
-    def get_properties(self, bio_prop):
+    def _get_properties(self, bio_prop):
         prop = {}
 
         def get_dict(obj_list, keep_str=False):
@@ -452,3 +453,11 @@ class NMLMorphology(object):
     def set_neuron_properties(self, neuron_prop, value_dict):
         for segment_group, value in value_dict.items():
             neuron_prop[self.resolved_grp_ids[segment_group]] = value
+
+    def _get_channel_props(self, channels):
+        cd = {}
+        ed = {}
+        for channel in channels:
+            cd[channel.ion_channel] = string_to_quantity(channel.cond_density)
+            ed[channel.ion_channel] = string_to_quantity(channel.erev)
+        return cd, ed
