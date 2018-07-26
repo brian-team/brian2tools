@@ -1,8 +1,8 @@
 import re
-from os.path import abspath
+from os.path import abspath, dirname, join, exists
+from os import getcwd
 from copy import deepcopy
 from functools import partial
-from collections import  OrderedDict
 
 import neuroml.loaders as loaders
 from neuroml.utils import validate_neuroml2
@@ -94,9 +94,10 @@ class NMLMorphology(object):
             connected segments combines to form a section and naming
             convention sec{unique_integer} is followed.
         """
+        self.file_obj = file_obj
         self.name_heuristic = name_heuristic
         self.incremental_id = 0
-        self.doc = self._get_morphology_dict(file_obj)
+        self.doc = self._get_nml_doc(self.file_obj)
         self.morph = self.doc.cells[0].morphology
         self.segments = self._adjust_morph_object(self.morph.segments)
 
@@ -114,6 +115,9 @@ class NMLMorphology(object):
         self.neuron = self.get_spatial_neuron()
         self.erevs, self.cond_densities = self._get_channel_props(
             self.doc.cells[0].biophysical_properties.membrane_properties.channel_densities)
+
+        #included files
+        self.included_files=self._get_included_nml_files(self.doc,file_obj)
 
     def build_morphology(self, section, parent_section=None):
         """
@@ -216,7 +220,7 @@ class NMLMorphology(object):
         return resolved_ids
 
 
-    def _get_morphology_dict(self, file_obj):
+    def _get_nml_doc(self, file_obj):
         """
         Helper function to read .nml file and return document object.
 
@@ -461,3 +465,18 @@ class NMLMorphology(object):
             cd[channel.ion_channel] = string_to_quantity(channel.cond_density)
             ed[channel.ion_channel] = string_to_quantity(channel.erev)
         return cd, ed
+
+    def _get_included_nml_files(self,doc,file_obj):
+        included_files={}
+        file_dir=getcwd()
+        if isinstance(file_obj, str):
+            file_dir=dirname(abspath(file_obj))
+
+        for f in doc.includes:
+            file_path=join(file_dir,f.href)
+            if exists(file_path):
+                included_files[f.href]=self._get_nml_doc(file_path)
+            else:
+                logger.warn("Included file `{}` does not exist at path `{"
+                            "}`".format(f.href,file_path))
+        return included_files
