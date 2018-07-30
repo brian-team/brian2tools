@@ -461,9 +461,15 @@ class NMLMorphology(object):
     def _get_channel_props(self, channels):
         cd = {}
         ed = {}
-        for channel in channels:
-            cd[channel.ion_channel] = string_to_quantity(channel.cond_density)
-            ed[channel.ion_channel] = string_to_quantity(channel.erev)
+        for c in channels:
+            if c.ion_channel not in cd:
+                cd[c.ion_channel]={}
+            if c.ion_channel not in ed:
+                ed[c.ion_channel]={}
+
+            cd[c.ion_channel][c.segment_groups] = string_to_quantity(
+                c.cond_density)
+            ed[c.ion_channel][c.segment_groups] = string_to_quantity(c.erev)
         return cd, ed
 
     def _get_included_nml_files(self,doc,file_obj):
