@@ -117,7 +117,94 @@ class NMLMorphology(object):
             self.doc.cells[0].biophysical_properties.membrane_properties.channel_densities)
 
         #included files
-        self.included_files=self._get_included_nml_files(self.doc,file_obj)
+        # self.included_files=self._get_included_nml_files(self.doc,file_obj)
+    #
+
+    def _get_nml_doc(self, file_obj):
+        """
+        Helper function to read .nml file and return document object.
+
+        Parameters
+        ----------
+        file_obj: str
+            File path or file object.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all the information extracted from the
+            given .nml file.
+
+        """
+
+        def merge_dicts(parent, child):
+            z = child.copy()
+            z.update(parent)
+            return z
+
+        def append_doc(doc, included_doc):
+            print(vars(included_doc))
+            print(vars(doc))
+
+            doc_vars=vars(doc)
+            for key,value in vars(included_doc).items():
+                updated_val = Noneupdated_val=None
+                if value: # checks for empty list/dict
+                    if key not in doc_vars:
+                        updated_val=value
+                        # doc[key]=value
+                    else:
+                        if not doc_vars[key]: #if list/dict in doc is empty
+                            updated_val=value
+                            print(key)
+                            # doc[key]=value
+                        elif isinstance(doc_vars[key],list):
+                            doc_vars[key]+=value
+                            updated_val=doc_vars[key]
+                        elif isinstance(doc_vars[key], dict):
+                            doc_vars[key] =merge_dicts(doc_vars[key],value)
+                            updated_val=doc_vars[key]
+                        else:
+                            updated_val=doc_vars[key]
+                    setattr(doc,key,updated_val)
+
+            print(vars(doc))
+
+        # included_files = {}
+        file_dir = getcwd()
+        if isinstance(file_obj, str):
+            file_dir = dirname(abspath(file_obj))
+
+        if isinstance(file_obj, str):
+            # Generate absolute path if not provided already
+            file_obj = abspath(file_obj)
+
+        # Validating NeuroML file
+        validate_neuroml2(deepcopy(file_obj))
+        logger.info("Validated provided .nml file")
+
+        # Load nml file
+        doc = loaders.NeuroMLLoader.load(file_obj)
+        logger.info("Loaded morphology")
+
+        if not doc.includes:
+            return doc
+        else:
+            for f in doc.includes:
+                file_path = join(file_dir, f.href)
+                if exists(file_path):
+                    included_doc = self._get_nml_doc(file_path)
+                    print("included")
+                    append_doc(doc, included_doc)
+                else:
+                    included_doc = None
+                    logger.warn(
+                        "Included file `{}` does not exist at path `{"
+                        "}`".format(f.href, file_path))
+
+
+        return doc
+
 
     def build_morphology(self, section, parent_section=None):
         """
@@ -219,35 +306,6 @@ class NMLMorphology(object):
                                                grp_ids]))
         return resolved_ids
 
-
-    def _get_nml_doc(self, file_obj):
-        """
-        Helper function to read .nml file and return document object.
-
-        Parameters
-        ----------
-        file_obj: str
-            File path or file object.
-
-        Returns
-        -------
-        dict
-            A dictionary containing all the information extracted from the
-            given .nml file.
-
-        """
-        if isinstance(file_obj, str):
-            # Generate absolute path if not provided already
-            file_obj = abspath(file_obj)
-
-        # Validating NeuroML file
-        validate_neuroml2(deepcopy(file_obj))
-        logger.info("Validated provided .nml file")
-
-        # Load nml file
-        doc = loaders.NeuroMLLoader.load(file_obj)
-        logger.info("Loaded morphology")
-        return doc
 
 
     def _is_heuristically_sep(self, section, seg_id):
@@ -472,17 +530,3 @@ class NMLMorphology(object):
             ed[c.ion_channel][c.segment_groups] = string_to_quantity(c.erev)
         return cd, ed
 
-    def _get_included_nml_files(self,doc,file_obj):
-        included_files={}
-        file_dir=getcwd()
-        if isinstance(file_obj, str):
-            file_dir=dirname(abspath(file_obj))
-
-        for f in doc.includes:
-            file_path=join(file_dir,f.href)
-            if exists(file_path):
-                included_files[f.href]=self._get_nml_doc(file_path)
-            else:
-                logger.warn("Included file `{}` does not exist at path `{"
-                            "}`".format(f.href,file_path))
-        return included_files
