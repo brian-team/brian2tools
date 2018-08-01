@@ -11,6 +11,7 @@ from brian2 import Morphology,SpatialNeuron
 from brian2.utils.logger import get_logger
 from brian2.spatialneuron.morphology import Section
 from brian2.units import *
+from brian2.equations.equations import Equations
 from brian2tools.nmlutils.utils import string_to_quantity
 from .helper import *
 
@@ -116,9 +117,6 @@ class NMLMorphology(object):
         self.erevs, self.cond_densities = self._get_channel_props(
             self.doc.cells[0].biophysical_properties.membrane_properties.channel_densities)
 
-        #included files
-        # self.included_files=self._get_included_nml_files(self.doc,file_obj)
-    #
 
     def _get_nml_doc(self, file_obj):
         """
@@ -143,21 +141,14 @@ class NMLMorphology(object):
             return z
 
         def append_doc(doc, included_doc):
-            print(vars(included_doc))
-            print(vars(doc))
-
             doc_vars=vars(doc)
             for key,value in vars(included_doc).items():
-                updated_val = Noneupdated_val=None
                 if value: # checks for empty list/dict
                     if key not in doc_vars:
                         updated_val=value
-                        # doc[key]=value
                     else:
                         if not doc_vars[key]: #if list/dict in doc is empty
                             updated_val=value
-                            print(key)
-                            # doc[key]=value
                         elif isinstance(doc_vars[key],list):
                             doc_vars[key]+=value
                             updated_val=doc_vars[key]
@@ -168,9 +159,6 @@ class NMLMorphology(object):
                             updated_val=doc_vars[key]
                     setattr(doc,key,updated_val)
 
-            print(vars(doc))
-
-        # included_files = {}
         file_dir = getcwd()
         if isinstance(file_obj, str):
             file_dir = dirname(abspath(file_obj))
@@ -194,14 +182,11 @@ class NMLMorphology(object):
                 file_path = join(file_dir, f.href)
                 if exists(file_path):
                     included_doc = self._get_nml_doc(file_path)
-                    print("included")
                     append_doc(doc, included_doc)
                 else:
-                    included_doc = None
                     logger.warn(
                         "Included file `{}` does not exist at path `{"
                         "}`".format(f.href, file_path))
-
 
         return doc
 
@@ -530,3 +515,42 @@ class NMLMorphology(object):
             ed[c.ion_channel][c.segment_groups] = string_to_quantity(c.erev)
         return cd, ed
 
+    def get_channel_equations(self,ion_channel):
+        channel_obj=None
+        for c in self.doc.ion_channel:
+            if c.id==ion_channel:
+                channel_obj=c
+                break
+        if channel_obj is None:
+            err="ion channel `{}` not found. List of ion channel present " \
+                "here:\n {}".format(ion_channel,
+                        [c.id for c in self.doc.ion_channel])
+            logger.error(err)
+            raise ValueError(err)
+
+        channel_type=channel_obj.type
+
+        if channel_type is 'ionChannelPassive':
+            eq=Equations('I = g/area*(erev - v) : amp/meter**2')
+            print(eq)
+
+        elif channel_type in ['ionChannelHH','ionChannel']:
+            new_I='I_{}'.format(ion_channel)
+            conductance=string_to_quantity(channel_obj.conductance)
+            
+            if not self.erevs[ion_channel]: # erev dict is empty
+                raise ValueError("No erev corresponding to ion channel `{}` is "
+                        "present.".format(ion_channel))
+
+            # erev remains same across ion channel
+            erev=list(self.erevs[ion_channel].values())[0]
+            eq = Equations('I = g/area*(erev - v) : amp/meter**2',
+                           I=new_I, g=conductance, erev=erev)
+
+        else:
+            raise NotImplementedError("Requested ion Channel is of type `{}`,"
+                " which is currently not supported. Currently this library "
+                "supports ion channels of type: `{}`".format(channel_type
+                ,['ionChannelPassive','ionChannelHH']))
+
+        return  eq
