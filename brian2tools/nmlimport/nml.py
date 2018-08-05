@@ -530,14 +530,76 @@ class NMLMorphology(object):
 
         channel_type=channel_obj.type
 
-        if channel_type is 'ionChannelPassive':
-            eq=Equations('I = g/area*(erev - v) : amp/meter**2')
-            print(eq)
+        if channel_type in ['ionChannelHH','ionChannel']:
+            values={}
+            def rename_var(v):
+                return '{}_{}'.format(v,ion_channel)
 
-        elif channel_type in ['ionChannelHH','ionChannel']:
+            def _gate_value_str(gate_list):
+                str_list=[]
+                s=''
+                for g in gate_list:
+                    renamed_gate=rename_var(g.id)
+                    if g.instances==1:
+                        s+="*{}".format(renamed_gate)
+                    else:
+                        s+='*{}**{}'.format(renamed_gate,g.instances)
+
+                    # gating information
+                    str_list.append("d{0}/dt = alpha_{0}*(1-{0}) - beta_{0}*{"
+                                    "0} : 1".format(renamed_gate))
+                    for r in [g.forward_rate,g.reverse_rate]:
+                        mode='alpha' if r is g.forward_rate else 'beta'
+
+                        if r.type == 'HHSigmoidRate':
+                            str_list.append("{0}_{1} = rate_{0}_{1} / (1 + exp(0 "
+                                            "- ("
+                                "v - midpoint_{0}_{1})/scale_{0}_{1})) : "
+                                "second**-1".format(mode,renamed_gate))
+
+                        elif r.type == 'HHExpRate':
+                            str_list.append(
+                                "{0}_{1} = rate_{0}_{1} * exp((v - "
+                                "midpoint_{0}_{1})/scale_{0}_{1}) : "
+                                "second**-1".format(mode, renamed_gate))
+
+                        elif r.type == 'HHExpLinearRate':
+                            str_list.append(
+                                "{0}_{1} = rate_{0}_{1} * (v - midpoint_{0}_{1}) / "
+                                "scale_{0}_{1} / (1 - exp(- (v - midpoint_{0}_{1}) / "
+                                "scale_{0}_{1})) : "
+                                "second**-1".format(mode, renamed_gate))
+                        else:
+                            raise NotImplementedError("Rate of type `{"
+                                "}` is currently not supported. Supported "
+                                "rate types are: {}".format(
+                                g.forward_rate.type,['HHSigmoidRate',
+                                                     'HHExpLinearRate','HHExpRate']))
+
+                        #add values to dictionary
+                        values['rate_{0}_{1}'.format(mode,renamed_gate)] = \
+                            string_to_quantity(r.rate)
+                        values['midpoint_{0}_{1}'.format(mode,renamed_gate)] = \
+                            string_to_quantity(r.midpoint)
+                        values['scale_{0}_{1}'.format(mode,renamed_gate)] = \
+                            string_to_quantity(r.scale)
+
+                s=s[1:] if s.startswith('*') else s
+                return s,str_list
+
+
+            gate_str,str_list=_gate_value_str(channel_obj.gates)
+            I = '{} = {}*{}*(erev - v): amp / meter ** 2'.format(rename_var(
+                'I'),rename_var('g'),gate_str)
+            values['erev']=list(self.erevs[ion_channel].values())[0]
+            str_list=[I]+str_list
+            str_list.append("{} : siemens/meter**2".format(rename_var('g')))
+            eq=Equations('\n'.join(str_list),**values)
+
+        elif channel_type =='ionChannelPassive':
             new_I='I_{}'.format(ion_channel)
             conductance=string_to_quantity(channel_obj.conductance)
-            
+
             if not self.erevs[ion_channel]: # erev dict is empty
                 raise ValueError("No erev corresponding to ion channel `{}` is "
                         "present.".format(ion_channel))
