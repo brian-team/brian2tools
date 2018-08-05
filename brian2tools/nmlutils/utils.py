@@ -71,24 +71,30 @@ def string_to_quantity(rep):
         q : `Quantity`
             Brian Quantity object
     """
-    if len(rep.split("_per_")) < 2:
-        post = None
-        pre = rep
-    else:
-        pre, post = rep.split("_per_")
 
+    pre,post=None,None
+    quant=rep.split("per")
+    quant=[a.strip('_') for a in quant]
+    if len(quant)<2:
+        pre = quant[0]
+    elif len(quant)==2:
+        pre,post=quant
+    else:
+        raise ValueError("value `{}` hae more than one `per` "
+                         "statement!!".format(rep))
     m = re.match('-?[0-9]+\.?([0-9]+)?[eE]?-?([0-9]+)?', pre)
     if m:
         value = pre[0:m.end()]
         pre = pre[m.end():]
     numerator = None
     deno = None
-
+    
     for u in pre.strip().split("_"):
         m = re.search(r'\d+$', u)
         if m:
             u = u[:m.start()] + '^' + u[m.start():]
-        numerator = name_to_unit[u] if numerator is None else numerator * \
+            if u:
+                numerator = name_to_unit[u] if numerator is None else numerator * \
                                                               name_to_unit[u]
 
     if post is not None:
@@ -97,5 +103,13 @@ def string_to_quantity(rep):
             if m:
                 u = u[:m.start()] + '^' + u[m.start():]
             deno = name_to_unit[u] if deno is None else deno * name_to_unit[u]
-        return float(value) * (numerator / deno)
-    return float(value) * numerator
+
+    if numerator:
+        if deno:
+            return float(value) * (numerator / deno)
+        return float(value) * numerator
+    else:
+        if deno:
+            return float(value) / deno
+        return float(value)
+    
