@@ -113,7 +113,6 @@ class NMLMorphology(object):
         # biophysical Properties
         self.properties = self._get_properties(self.doc.cells[
                                                    0].biophysical_properties)
-        self.neuron = self.get_spatial_neuron()
         self.erevs, self.cond_densities = self._get_channel_props(
             self.doc.cells[0].biophysical_properties.membrane_properties.channel_densities)
 
@@ -349,7 +348,8 @@ class NMLMorphology(object):
         section: SectionObject
             Object of class SectionObject that contains information about
             segments belonging to same section.
-        seg: segment object. It belongs to the given section and its
+        seg: Segment
+            Segment object belongs to the given section and its
         children's are resolved to create further tree nodes.
 
         Returns
@@ -469,9 +469,23 @@ class NMLMorphology(object):
             self.printtree(sec)
 
     def _get_properties(self, bio_prop):
+        """
+        Extract properties like threshold, refractory, Ri and Cm and returns
+        a dictionary of these properties.
+
+        Parameters
+        ----------
+        bio_prop: Biophysical_properties
+            Properties object obtained from given .nml file
+
+        Returns
+        -------
+        dict
+            Biophysical properties dictionary
+        """
         prop = {}
 
-        def get_dict(obj_list, keep_str=False):
+        def get_dict(obj_list):
             d = {}
             for o in obj_list:
                 d[o.segment_groups] = string_to_quantity(o.value)
@@ -493,69 +507,110 @@ class NMLMorphology(object):
 
         return prop
 
-    def get_spatial_neuron(self):
-        return partial(SpatialNeuron, morphology=self.morphology_obj,
-                       **self.properties)
+    def set_neuron_properties(self, neuron, value_dict):
+        """
+        Method to apply properties present in given dictionary to the
+        spatialNeuron provided.
 
-    def set_neuron_properties(self, neuron_prop, value_dict):
+        Parameters
+        ----------
+        neuron_prop: SpatialNeuron
+            SpatialNeuron object on which you want to apply these properties.
+        value_dict: dict
+            Dictionary of properties to be applied.
+        """
         for segment_group, value in value_dict.items():
-            neuron_prop[self.resolved_grp_ids[segment_group]] = value
+            neuron[self.resolved_grp_ids[segment_group]] = value
 
     def _get_channel_props(self, channels):
+        """
+        Returns dictionaries containing `channel density` and `erev` properties.
+
+        Parameters
+        ----------
+        channels: list
+            list of channels present in .nml file
+
+        Returns
+        -------
+        dict, dict
+            erev and channel density dictionary
+        """
         cd = {}
         ed = {}
         for c in channels:
             if c.ion_channel not in cd:
-                cd[c.ion_channel]={}
+                cd[c.ion_channel] = {}
             if c.ion_channel not in ed:
-                ed[c.ion_channel]={}
+                ed[c.ion_channel] = {}
 
             cd[c.ion_channel][c.segment_groups] = string_to_quantity(
                 c.cond_density)
             ed[c.ion_channel][c.segment_groups] = string_to_quantity(c.erev)
-        return cd, ed
+        return ed, cd
 
-    def get_channel_equations(self,ion_channel):
-        channel_obj=None
+    def get_channel_equations(self, ion_channel):
+        """
+        This method extracts information for the `ion_channel id` passed as
+        argument, convert required values to `quantity` objects and substitute
+        it in its corresponding template to generate ion channel equations.
+        Currently this method only support ion channels of type
+        `ionChannelHH` and `ionChannelPassive`.
+
+        Parameters
+        ----------
+        ion_channel: str
+            ion channel id.
+
+        Returns
+        -------
+        Equations
+            equation object for the given ion channel.
+        """
+        channel_obj = None
         for c in self.doc.ion_channel:
-            if c.id==ion_channel:
-                channel_obj=c
+            if c.id == ion_channel:
+                channel_obj = c
                 break
         if channel_obj is None:
-            err="ion channel `{}` not found. List of ion channel present " \
-                "here:\n {}".format(ion_channel,
-                        [c.id for c in self.doc.ion_channel])
+            err = "ion channel `{}` not found. List of ion channel present " \
+                  "here:\n {}".format(ion_channel,
+                                      [c.id for c in self.doc.ion_channel])
             logger.error(err)
             raise ValueError(err)
 
-        channel_type=channel_obj.type
+        channel_type = channel_obj.type
 
-        if channel_type in ['ionChannelHH','ionChannel']:
-            values={}
+        if channel_type in ['ionChannelHH', 'ionChannel']:
+            values = {}
+
             def rename_var(v):
-                return '{}_{}'.format(v,ion_channel)
+                return '{}_{}'.format(v, ion_channel)
 
             def _gate_value_str(gate_list):
-                str_list=[]
-                s=''
+                str_list = []
+                s = ''
+
                 for g in gate_list:
-                    renamed_gate=rename_var(g.id)
-                    if g.instances==1:
-                        s+="*{}".format(renamed_gate)
+                    renamed_gate = rename_var(g.id)
+                    if g.instances == 1:
+                        s += "*{}".format(renamed_gate)
                     else:
-                        s+='*{}**{}'.format(renamed_gate,g.instances)
+                        s += '*{}**{}'.format(renamed_gate, g.instances)
 
                     # gating information
                     str_list.append("d{0}/dt = alpha_{0}*(1-{0}) - beta_{0}*{"
                                     "0} : 1".format(renamed_gate))
-                    for r in [g.forward_rate,g.reverse_rate]:
-                        mode='alpha' if r is g.forward_rate else 'beta'
+
+                    for r in [g.forward_rate, g.reverse_rate]:
+                        mode = 'alpha' if r is g.forward_rate else 'beta'
 
                         if r.type == 'HHSigmoidRate':
-                            str_list.append("{0}_{1} = rate_{0}_{1} / (1 + exp(0 "
-                                            "- ("
+                            str_list.append(
+                                "{0}_{1} = rate_{0}_{1} / (1 + exp(0 "
+                                "- ("
                                 "v - midpoint_{0}_{1})/scale_{0}_{1})) : "
-                                "second**-1".format(mode,renamed_gate))
+                                "second**-1".format(mode, renamed_gate))
 
                         elif r.type == 'HHExpRate':
                             str_list.append(
@@ -570,49 +625,46 @@ class NMLMorphology(object):
                                 "scale_{0}_{1})) : "
                                 "second**-1".format(mode, renamed_gate))
                         else:
-                            raise NotImplementedError("Rate of type `{"
-                                "}` is currently not supported. Supported "
-                                "rate types are: {}".format(
-                                g.forward_rate.type,['HHSigmoidRate',
-                                                     'HHExpLinearRate','HHExpRate']))
+                            raise NotImplementedError(
+                                "Rate of type `{}` is currently not supported. Supported "
+                                "rate types are: {}".format(g.forward_rate.type,
+                                ['HHSigmoidRate','HHExpLinearRate','HHExpRate']))
 
-                        #add values to dictionary
-                        values['rate_{0}_{1}'.format(mode,renamed_gate)] = \
+                        # add values to dictionary
+                        values['rate_{0}_{1}'.format(mode, renamed_gate)] = \
                             string_to_quantity(r.rate)
-                        values['midpoint_{0}_{1}'.format(mode,renamed_gate)] = \
+                        values['midpoint_{0}_{1}'.format(mode, renamed_gate)] = \
                             string_to_quantity(r.midpoint)
-                        values['scale_{0}_{1}'.format(mode,renamed_gate)] = \
+                        values['scale_{0}_{1}'.format(mode, renamed_gate)] = \
                             string_to_quantity(r.scale)
 
-                s=s[1:] if s.startswith('*') else s
-                return s,str_list
+                s = s[1:] if s.startswith('*') else s
+                return s, str_list
 
+            gate_str, str_list = _gate_value_str(channel_obj.gates)
 
-            gate_str,str_list=_gate_value_str(channel_obj.gates)
             I = '{} = {}*{}*(erev - v): amp / meter ** 2'.format(rename_var(
-                'I'),rename_var('g'),gate_str)
-            values['erev']=list(self.erevs[ion_channel].values())[0]
-            str_list=[I]+str_list
+                'I'), rename_var('g'), gate_str)
+            values['erev'] = list(self.erevs[ion_channel].values())[0]
+            str_list = [I] + str_list
             str_list.append("{} : siemens/meter**2".format(rename_var('g')))
-            eq=Equations('\n'.join(str_list),**values)
+            eq = Equations('\n'.join(str_list), **values)
 
-        elif channel_type =='ionChannelPassive':
-            new_I='I_{}'.format(ion_channel)
-            conductance=string_to_quantity(channel_obj.conductance)
+        elif channel_type == 'ionChannelPassive':
+            new_I = 'I_{}'.format(ion_channel)
+            conductance = string_to_quantity(channel_obj.conductance)
 
-            if not self.erevs[ion_channel]: # erev dict is empty
-                raise ValueError("No erev corresponding to ion channel `{}` is "
-                        "present.".format(ion_channel))
+            if not self.erevs[ion_channel]:  # erev dict is empty
+                raise ValueError("No erev corresponding to ion channel `{}` is present.".format(ion_channel))
 
             # erev remains same across ion channel
-            erev=list(self.erevs[ion_channel].values())[0]
-            eq = Equations('I = g/area*(erev - v) : amp/meter**2',
-                           I=new_I, g=conductance, erev=erev)
+            erev = list(self.erevs[ion_channel].values())[0]
+            eq = Equations('I = g/area*(erev - v) : amp/meter**2', I=new_I, g=conductance, erev=erev)
 
         else:
             raise NotImplementedError("Requested ion Channel is of type `{}`,"
-                " which is currently not supported. Currently this library "
-                "supports ion channels of type: `{}`".format(channel_type
-                ,['ionChannelPassive','ionChannelHH']))
+                                      " which is currently not supported. Currently this library "
+                                      "supports ion channels of type: `{}`".format(
+                                    channel_type, ['ionChannelPassive', 'ionChannelHH']))
 
-        return  eq
+        return eq
