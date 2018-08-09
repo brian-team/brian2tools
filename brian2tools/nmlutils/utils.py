@@ -88,21 +88,23 @@ def string_to_quantity(rep):
         pre = pre[m.end():]
     numerator = None
     deno = None
-    
-    for u in pre.strip().split("_"):
-        m = re.search(r'\d+$', u)
-        if m:
-            u = u[:m.start()] + '^' + u[m.start():]
+
+    if pre is not None:
+        for u in pre.strip().split("_"):
+            m = re.search(r'\d+$', u)
+            if m:
+                u = u[:m.start()] + '^' + u[m.start():]
             if u:
                 numerator = name_to_unit[u] if numerator is None else numerator * \
-                                                              name_to_unit[u]
+                                                                  name_to_unit[u]
 
     if post is not None:
         for u in post.strip().split("_"):
             m = re.search(r'\d+$', u)
             if m:
                 u = u[:m.start()] + '^' + u[m.start():]
-            deno = name_to_unit[u] if deno is None else deno * name_to_unit[u]
+            if u:
+                deno = name_to_unit[u] if deno is None else deno * name_to_unit[u]
 
     if numerator:
         if deno:
@@ -112,4 +114,3 @@ def string_to_quantity(rep):
         if deno:
             return float(value) / deno
         return float(value)
-    
