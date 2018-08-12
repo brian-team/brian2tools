@@ -159,3 +159,54 @@ value of 0.5 would mean the segment is connected to the middle point of its pare
 segment. Currently ``nmlimport`` library supports ``fractionAlong`` value to be
 0 or 1 only, as there is no predefined way to connect a segment at
 some inbetween point of its parent segment in ``Brian``.
+
+
+Extracting channel properties and Equations
+-------------------------------------------
+
+The generated ``nml_object`` contains dictionary that have biophysical
+information like threshold, refractory, Ri and Cm etc.
+
+With this ``nml_object``, you can view all the properties extracted:
+
+.. code:: python
+
+    >>> print(nml_object.properties) # threshold, refractory etc.
+    {'threshold': 'v > 0*mV', 'refractory': 'v > 0*mV',
+    'Cm': 2.84 * ufarad / cmetre2,'Ri': 0.2 * kohm * cmetre}
+
+    >>> print(nml_object.erevs) # erev property
+    {'Ca_pyr': {'soma_group': 80. * mvolt}, 'Kahp_pyr': {'soma_group': -75. *
+     mvolt}, 'Kdr_pyr': {'soma_group': -75. * mvolt}, 'LeakConductance_pyr':
+     {'all': -66. * mvolt}, 'Na_pyr': {'soma_group': 55. * mvolt}}
+
+    >>> print(nml_object.cond_densities) # cond_density property
+    {'Ca_pyr': {'soma_group': 10. * msiemens / cmetre2}, 'Kahp_pyr':
+    {'soma_group': 25. * siemens / meter ** 2}, 'Kdr_pyr':  {'soma_group': 80
+    . * msiemens / cmetre2}, 'LeakConductance_pyr': {'all': 1.420051 *
+    siemens / meter ** 2},  'Na_pyr': {'soma_group': 120. * msiemens / cmetre2}}
+
+|
+
+To get channel equations for a particular channel, ex. ``Na_pyr``:
+
+.. code:: python
+
+    >>> print(nml_object.get_channel_equations("Na_pyr"))
+    alpha_m_Na_pyr = (1.28 * khertz) * (v - (-46.9 * mvolt)) / (4. * mvolt) / (1 - exp(- (v - (-46.9 * mvolt)) / (4. * mvolt))) : hertz
+    alpha_h_Na_pyr = (128. * hertz) * exp((v - (-43. * mvolt))/(-18. * mvolt)) : hertz
+    beta_m_Na_pyr = (1.4 * khertz) * (v - (-19.9 * mvolt)) / (-5. * mvolt) / (1 - exp(- (v - (-19.9 * mvolt)) / (-5. * mvolt))) : hertz
+    beta_h_Na_pyr = (4. * khertz) / (1 + exp(0 - (v - (-20. * mvolt))/(5. * mvolt))) : hertz
+    I_Na_pyr = g_Na_pyr*m_Na_pyr**2*h_Na_pyr*((55. * mvolt) - v) : amp / meter ** 2
+    dm_Na_pyr/dt = alpha_m_Na_pyr*(1-m_Na_pyr) - beta_m_Na_pyr*m_Na_pyr : 1
+    dh_Na_pyr/dt = alpha_h_Na_pyr*(1-h_Na_pyr) - beta_h_Na_pyr*h_Na_pyr : 1
+    g_Na_pyr : siemens / meter ** 2
+
+
+.. note::
+
+    If your ``.nml file`` includes other .nml files, make sure they
+    are present in the same folder as your main .nml file. If the files are
+    not present, a warning will be thrown and execution will proceed as normal.
+
+
