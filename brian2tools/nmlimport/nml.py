@@ -1,18 +1,17 @@
 import re
-from os.path import abspath, dirname, join, exists
 from os import getcwd
 from copy import deepcopy
-from functools import partial
+from os.path import abspath, dirname, join, exists
 
 import neuroml.loaders as loaders
 from neuroml.utils import validate_neuroml2
-
-from brian2 import Morphology,SpatialNeuron
+from brian2 import Morphology, SpatialNeuron
 from brian2.utils.logger import get_logger
 from brian2.spatialneuron.morphology import Section
 from brian2.units import *
 from brian2.equations.equations import Equations
 from brian2tools.nmlutils.utils import string_to_quantity
+
 from .helper import *
 
 logger = get_logger(__name__)
@@ -40,16 +39,16 @@ def validate_morphology(segments):
         for segment in segments:
 
             if segment.parent is not None:
-                if segment.parent.fraction_along not in [0,1]:
+                if segment.parent.fraction_along not in [0, 1]:
                     raise NotImplementedError(
                         "{0} has fraction along value {1} which is not "
                         "supported!!".
-                        format(segment,segment.parent.fraction_along))
+                            format(segment, segment.parent.fraction_along))
             elif start_segment is not None:
                 raise ValidationException(
                     "Two segments with parent id as -1 (i.e no parent): "
                     "{0} and {1}".
-                    format(formatter(start_segment), formatter(segment)))
+                        format(formatter(start_segment), formatter(segment)))
             else:
                 start_segment = segment
                 logger.info(
@@ -114,8 +113,8 @@ class NMLMorphology(object):
         self.properties = self._get_properties(self.doc.cells[
                                                    0].biophysical_properties)
         self.erevs, self.cond_densities = self._get_channel_props(
-            self.doc.cells[0].biophysical_properties.membrane_properties.channel_densities)
-
+            self.doc.cells[
+                0].biophysical_properties.membrane_properties.channel_densities)
 
     def _get_nml_doc(self, file_obj):
         """
@@ -140,23 +139,23 @@ class NMLMorphology(object):
             return z
 
         def append_doc(doc, included_doc):
-            doc_vars=vars(doc)
-            for key,value in vars(included_doc).items():
-                if value: # checks for empty list/dict
+            doc_vars = vars(doc)
+            for key, value in vars(included_doc).items():
+                if value:  # checks for empty list/dict
                     if key not in doc_vars:
-                        updated_val=value
+                        updated_val = value
                     else:
-                        if not doc_vars[key]: #if list/dict in doc is empty
-                            updated_val=value
-                        elif isinstance(doc_vars[key],list):
-                            doc_vars[key]+=value
-                            updated_val=doc_vars[key]
+                        if not doc_vars[key]:  # if list/dict in doc is empty
+                            updated_val = value
+                        elif isinstance(doc_vars[key], list):
+                            doc_vars[key] += value
+                            updated_val = doc_vars[key]
                         elif isinstance(doc_vars[key], dict):
-                            doc_vars[key] =merge_dicts(doc_vars[key],value)
-                            updated_val=doc_vars[key]
+                            doc_vars[key] = merge_dicts(doc_vars[key], value)
+                            updated_val = doc_vars[key]
                         else:
-                            updated_val=doc_vars[key]
-                    setattr(doc,key,updated_val)
+                            updated_val = doc_vars[key]
+                    setattr(doc, key, updated_val)
 
         file_dir = getcwd()
         if isinstance(file_obj, str):
@@ -188,7 +187,6 @@ class NMLMorphology(object):
                         "}`".format(f.href, file_path))
 
         return doc
-
 
     def build_morphology(self, section, parent_section=None):
         """
@@ -290,8 +288,6 @@ class NMLMorphology(object):
                                                grp_ids]))
         return resolved_ids
 
-
-
     def _is_heuristically_sep(self, section, seg_id):
         """
         Helper function that determines if the given segment belongs to the
@@ -315,7 +311,6 @@ class NMLMorphology(object):
         seg = self.seg_dict[self.children[seg_id][0]]
         return not seg.name.startswith(root_name)
 
-
     def _get_section_name(self, seg_id):
         """
         Helper function that generate the new section name based on whether
@@ -335,7 +330,6 @@ class NMLMorphology(object):
             self.incremental_id = self.incremental_id + 1
             return "sec" + str(self.incremental_id)
         return self.seg_dict[seg_id].name
-
 
     def _create_tree(self, section, seg):
         """
@@ -357,6 +351,7 @@ class NMLMorphology(object):
         SectionObject
             created section tree.
         """
+
         # abstracts the initialization step of a section
         def intialize_section(section, seg_id):
             sec = self.SectionObject()
@@ -385,7 +380,6 @@ class NMLMorphology(object):
                 self._create_tree(section,
                                   self.seg_dict[self.children[seg.id][0]])
         return section
-
 
     def _build_section(self, section, section_parent):
         """
@@ -628,7 +622,9 @@ class NMLMorphology(object):
                             raise NotImplementedError(
                                 "Rate of type `{}` is currently not supported. Supported "
                                 "rate types are: {}".format(g.forward_rate.type,
-                                ['HHSigmoidRate','HHExpLinearRate','HHExpRate']))
+                                                            ['HHSigmoidRate',
+                                                             'HHExpLinearRate',
+                                                             'HHExpRate']))
 
                         # add values to dictionary
                         values['rate_{0}_{1}'.format(mode, renamed_gate)] = \
@@ -655,16 +651,19 @@ class NMLMorphology(object):
             conductance = string_to_quantity(channel_obj.conductance)
 
             if not self.erevs[ion_channel]:  # erev dict is empty
-                raise ValueError("No erev corresponding to ion channel `{}` is present.".format(ion_channel))
+                raise ValueError(
+                    "No erev corresponding to ion channel `{}` is present.".format(
+                        ion_channel))
 
             # erev remains same across ion channel
             erev = list(self.erevs[ion_channel].values())[0]
-            eq = Equations('I = g/area*(erev - v) : amp/meter**2', I=new_I, g=conductance, erev=erev)
+            eq = Equations('I = g/area*(erev - v) : amp/meter**2', I=new_I,
+                           g=conductance, erev=erev)
 
         else:
             raise NotImplementedError("Requested ion Channel is of type `{}`,"
                                       " which is currently not supported. Currently this library "
                                       "supports ion channels of type: `{}`".format(
-                                    channel_type, ['ionChannelPassive', 'ionChannelHH']))
+                channel_type, ['ionChannelPassive', 'ionChannelHH']))
 
         return eq

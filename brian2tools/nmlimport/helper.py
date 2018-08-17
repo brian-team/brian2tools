@@ -16,6 +16,7 @@ def formatter(datum):
         a = a[0:160] + "[...]"
     return a
 
+
 # Returns a dictionary of child segments of each segment, segment id is a key.
 def get_child_segments(segments):
     children = defaultdict(list)
@@ -28,4 +29,3 @@ def get_child_segments(segments):
 
     assert root is not None
     return children
-

@@ -20,6 +20,7 @@ def from_string(rep):
     q : `Quantity`
         Brian Quantity object
     """
+
     # match value
     m = re.match('-?[0-9]+\.?([0-9]+)?[eE]?-?([0-9]+)?', rep)
     if m:
@@ -27,18 +28,21 @@ def from_string(rep):
         rep = rep[m.end():]
     else:
         raise ValueError("Empty value given")
+
     # match unit
     m = re.match(' ?([a-zA-Z]+)', rep)
     unit = None
     per = None
     if m:
         unit = rep[0:m.end()].strip()
+
         # special case with per
         if unit == 'per':
             mper = re.match(' ?per_([a-zA-Z]+)', rep)
             per = rep[0:mper.end()].strip()[4:]
             m = mper
         rep = rep[m.end():]
+
     # match exponent
     m = re.match('-?([0-9]+)?', rep)
     exponent = None

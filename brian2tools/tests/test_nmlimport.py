@@ -1,15 +1,14 @@
 from copy import deepcopy
-from os.path import abspath, dirname,join
+from os.path import abspath, dirname, join
 
 from neuroml.loaders import NeuroMLLoader
 from brian2.units import *
 from numpy.testing import assert_equal, assert_allclose
 from pytest import raises
 
-from brian2tools.nmlimport.nml import NMLMorphology,validate_morphology,  \
-                                                    ValidationException
+from brian2tools.nmlimport.nml import NMLMorphology, validate_morphology, \
+    ValidationException
 from brian2tools.nmlutils.utils import string_to_quantity
-from brian2.equations.equations import Equations
 
 POINTS = ((0, 'soma', 0.0, 0.0, 0.0, 23.0, -1),
           (1, 'soma', 0.0, 17.0, 0.0, 23.0, 0),
@@ -47,14 +46,16 @@ def test_resolved_group_ids():
     assert_equal(nml_object.resolved_grp_ids['dendrite_group'],
                  [1, 2, 3, 4, 5, 6, 7, 8])
 
+
 def test_section_child_segment_list():
     nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
     assert_equal([x.id for x in nml_object.section.sectionList[0].sectionList[
-        0].segmentList],[2, 3, 4])
+        0].segmentList], [2, 3, 4])
+
 
 def test_load_morphology():
     nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
-    morphology=nml_object.morphology_obj
+    morphology = nml_object.morphology_obj
     assert_allclose(morphology.distance, [8.5] * um)
     assert_allclose(morphology.length, [17.] * um)
     assert_allclose(morphology.coordinates, [[0., 0., 0.], [0., 17., 0.]] * um)
@@ -65,26 +66,30 @@ def test_string_to_quantities():
     testlist = ["1 mV", "1.234mV", "1.2e-4 mV", "1.23e-5A", "1.23e4A",
                 "1.45E-8 m", "1.23E-8m2", "60", "0.2 kohm_cm", "1.28e3per_s",
                 "-1.00000008E8", "0.07 per_ms", "10pS"]
-    reslist = [ 1*mV, 1.234*mV, 1.2e-4*mV, 1.23e-5*amp, 1.23e4*amp,
-                1.45e-8*metre, 1.23e-8*metre**2, 60, 0.2 * kohm * cmetre,
-                1.28 *kHz, -1.00000008e8, 0.07/ms, 10*psiemens]
+    reslist = [1 * mV, 1.234 * mV, 1.2e-4 * mV, 1.23e-5 * amp, 1.23e4 * amp,
+               1.45e-8 * metre, 1.23e-8 * metre ** 2, 60, 0.2 * kohm * cmetre,
+               1.28 * kHz, -1.00000008e8, 0.07 / ms, 10 * psiemens]
     for t, r in zip(testlist, reslist):
         assert_equal(r, string_to_quantity(t))
 
+
 def test_get_properties():
     nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
-    d={'threshold': 'v > 0*mV', 'refractory': 'v > 0*mV', 'Cm': string_to_quantity("2.84 uF_per_cm2"),
-       'Ri': string_to_quantity("0.2 kohm_cm")}
-    assert_equal(nml_object.properties,d)
+    d = {'threshold': 'v > 0*mV', 'refractory': 'v > 0*mV',
+         'Cm': string_to_quantity("2.84 uF_per_cm2"),
+         'Ri': string_to_quantity("0.2 kohm_cm")}
+    assert_equal(nml_object.properties, d)
+
 
 def test_channel_properties():
     nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
 
     # test cond density dict
-    assert_equal(nml_object.cond_densities['Ca_pyr'],{'soma_group': 10. * msiemens / cm2})
-    assert_equal(nml_object.cond_densities['Kahp_pyr'],{'soma_group': 25. * siemens /
-                                                         meter ** 2})
+    assert_equal(nml_object.cond_densities['Ca_pyr'],
+                 {'soma_group': 10. * msiemens / cm2})
+    assert_equal(nml_object.cond_densities['Kahp_pyr'],
+                 {'soma_group': 25. * siemens /
+                                meter ** 2})
     # test erev dict
-    assert_equal(nml_object.erevs['Ca_pyr'],{'soma_group': 80. * mvolt})
-    assert_equal(nml_object.erevs['Kahp_pyr'],{'soma_group': -75. * mvolt})
-
+    assert_equal(nml_object.erevs['Ca_pyr'], {'soma_group': 80. * mvolt})
+    assert_equal(nml_object.erevs['Kahp_pyr'], {'soma_group': -75. * mvolt})
