@@ -12,7 +12,7 @@ from brian2.monitors.statemonitor import StateMonitorView
 from brian2.units.fundamentalunits import Quantity
 from brian2.units.stdunits import ms
 from brian2.utils.logger import get_logger
-from brian2.synapses.synapses import Synapses
+from brian2.synapses.synapses import Synapses, SynapticPathway
 
 from .data import plot_raster, plot_state, plot_rate, _get_best_unit
 from .morphology import plot_dendrogram
@@ -127,7 +127,7 @@ def brian_plot(brian_obj,
                              axes=axes)
     # brian_obj.group can be a weak proxy, we can therefore not use isinstance
     elif (isinstance(brian_obj, VariableView) and
-              issubclass(brian_obj.group.__class__, Synapses)):
+          issubclass(brian_obj.group.__class__, (Synapses, SynapticPathway))):
         # synaptic variable
         synapses = brian_obj.group
         sources = synapses.i[:]
