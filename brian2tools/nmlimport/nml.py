@@ -490,8 +490,7 @@ class NMLMorphology(object):
         self.Cm = get_dict(bio_prop.membrane_properties.specific_capacitances)
         self.threshold = string_to_quantity(
             bio_prop.membrane_properties.spike_threshes[0].value)
-        self.threshold_string = 'v > {}'.format('*'.join(
-            bio_prop.membrane_properties.spike_threshes[0].value.split(' ')))
+        self.threshold_string = 'v > {}'.format(repr(self.threshold))
 
         prop["threshold"] = self.threshold_string
         prop["refractory"] = self.threshold_string
