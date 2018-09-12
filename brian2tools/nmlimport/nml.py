@@ -2,6 +2,7 @@ import re
 from os import getcwd
 from copy import deepcopy
 from os.path import abspath, dirname, join, exists
+import itertools
 
 import neuroml.loaders as loaders
 from neuroml.utils import validate_neuroml2
@@ -562,18 +563,26 @@ class NMLMorphology(object):
             equation object for the given ion channel.
         """
         channel_obj = None
-        for c in self.doc.ion_channel:
+        for c in itertools.chain(self.doc.ion_channel, self.doc.ion_channel_hhs):
             if c.id == ion_channel:
                 channel_obj = c
                 break
         if channel_obj is None:
-            err = "ion channel `{}` not found. List of ion channel present " \
-                  "here:\n {}".format(ion_channel,
-                                      [c.id for c in self.doc.ion_channel])
+            err = ("ion channel `{}` not found. List of ion channel present "
+                   "here:\n {}").format(ion_channel,
+                                        [c.id for c in
+                                         itertools.chain(getattr(self.doc, 'ion_channel', []),
+                                                         getattr(self.doc, 'ion_channel_hhs', []))])
             logger.error(err)
             raise ValueError(err)
 
-        channel_type = channel_obj.type
+        if channel_obj in getattr(self.doc, 'ion_channel', []):
+            channel_type = channel_obj.type
+        else:
+            if len(channel_obj.gates) == 0 and channel_obj.species is None:
+                channel_type = 'ionChannelPassive'
+            else:
+                channel_type = 'ionChannelHH'
 
         if channel_type in ['ionChannelHH', 'ionChannel']:
             values = {}
@@ -593,8 +602,8 @@ class NMLMorphology(object):
                         s += '*{}**{}'.format(renamed_gate, g.instances)
 
                     # gating information
-                    str_list.append("d{0}/dt = alpha_{0}*(1-{0}) - beta_{0}*{"
-                                    "0} : 1".format(renamed_gate))
+                    str_list.append("d{0}/dt = alpha_{0}*(1-{0}) - beta_{0}*"
+                                    "{0} : 1".format(renamed_gate))
 
                     for r in [g.forward_rate, g.reverse_rate]:
                         mode = 'alpha' if r is g.forward_rate else 'beta'
@@ -637,7 +646,8 @@ class NMLMorphology(object):
                 s = s[1:] if s.startswith('*') else s
                 return s, str_list
 
-            gate_str, str_list = _gate_value_str(channel_obj.gates)
+            gate_str, str_list = _gate_value_str(itertools.chain(channel_obj.gates,
+                                                                 channel_obj.gate_hh_rates))
 
             I = '{} = {}*{}*(erev - v): amp / meter ** 2'.format(rename_var(
                 'I'), rename_var('g'), gate_str)
