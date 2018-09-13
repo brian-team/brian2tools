@@ -259,11 +259,6 @@ class NMLMorphology(object):
         morphology) of all segments in each SegmentGroup present in given
         morphology object.
 
-        Parameters
-        ----------
-        m: Morphology
-            Morphology object whose resolved group ids we need.
-
         Returns
         -------
         dict
@@ -488,20 +483,20 @@ class NMLMorphology(object):
 
         self.Ri = get_dict(bio_prop.intracellular_properties.resistivities)
         self.Cm = get_dict(bio_prop.membrane_properties.specific_capacitances)
-        self.threshold = string_to_quantity(
-            bio_prop.membrane_properties.spike_threshes[0].value)
-        self.threshold_string = 'v > {}'.format(repr(self.threshold))
-
-        prop["threshold"] = self.threshold_string
-        prop["refractory"] = self.threshold_string
-        prop["Cm"] = self.Cm[list(self.Cm.keys())[0]] if len(
-            self.Cm) == 1 else 0.9 * uF / cm ** 2
-        prop["Ri"] = self.Ri[list(self.Ri.keys())[0]] if len(
-            self.Ri) == 1 else 150 * ohm * cm
+        if len(bio_prop.membrane_properties.spike_threshes) == 1:
+            self.threshold = string_to_quantity(
+                bio_prop.membrane_properties.spike_threshes[0].value)
+            self.threshold_string = 'v > {}'.format(repr(self.threshold))
+            prop["threshold"] = self.threshold_string
+            prop["refractory"] = self.threshold_string
+        if len(self.Cm) == 1:
+            prop["Cm"] = self.Cm[list(self.Cm.keys())[0]]
+        if len(self.Ri) == 1:
+            prop["Ri"] = self.Ri[list(self.Ri.keys())[0]]
 
         return prop
 
-    def set_neuron_properties(self, neuron, value_dict):
+    def set_neuron_properties(self, neuron, name, value_dict):
         """
         Method to apply properties present in given dictionary to the
         spatialNeuron provided.
@@ -510,11 +505,15 @@ class NMLMorphology(object):
         ----------
         neuron_prop: SpatialNeuron
             SpatialNeuron object on which you want to apply these properties.
+        name : str
+            Name of the property that should be set.
         value_dict: dict
             Dictionary of properties to be applied.
         """
         for segment_group, value in value_dict.items():
-            neuron[self.resolved_grp_ids[segment_group]] = value
+            ids = self.resolved_grp_ids[segment_group]
+            if len(ids):
+                getattr(neuron, name)[ids] = value
 
     def _get_channel_props(self, channels):
         """
@@ -606,7 +605,10 @@ class NMLMorphology(object):
 
                     for r in [g.forward_rate, g.reverse_rate]:
                         mode = 'alpha' if r is g.forward_rate else 'beta'
-
+                        if r is None:
+                            raise NotImplementedError('Only gates defined with '
+                                                      'forward and reverse rates '
+                                                      'are supported at the moment.')
                         if r.type == 'HHSigmoidRate':
                             str_list.append(
                                 "{0}_{1} = rate_{0}_{1} / (1 + exp(0 "
@@ -629,7 +631,7 @@ class NMLMorphology(object):
                         else:
                             raise NotImplementedError(
                                 "Rate of type `{}` is currently not supported. Supported "
-                                "rate types are: {}".format(g.forward_rate.type,
+                                "rate types are: {}".format(r.type,
                                                             ['HHSigmoidRate',
                                                              'HHExpLinearRate',
                                                              'HHExpRate']))
