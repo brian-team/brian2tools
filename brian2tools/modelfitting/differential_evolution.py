@@ -1,9 +1,6 @@
 """
 Vectorized differential evolution
-
 Adapted from scipy's code
-
-
 differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
@@ -28,9 +25,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     methods) to find the minimium, and can search large areas of candidate
     space, but often requires larger numbers of function evaluations than
     conventional gradient based techniques.
-
     The algorithm is due to Storn and Price [1]_.
-
     Parameters
     ----------
     func : callable
@@ -48,7 +43,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         completely specify the objective function.
     strategy : str, optional
         The differential evolution strategy to use. Should be one of:
-
             - 'best1bin'
             - 'best1exp'
             - 'rand1exp'
@@ -59,7 +53,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
-
         The default is 'best1bin'.
     maxiter : int, optional
         The maximum number of times the entire population is evolved.
@@ -108,15 +101,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     init : string, optional
         Specify how the population initialization is performed. Should be
         one of:
-
             - 'latinhypercube'
             - 'random'
-
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
         maximize coverage of the available parameter space. 'random' initializes
         the population randomly - this has the drawback that clustering can
         occur, preventing the whole of parameter space being covered.
-
     Returns
     -------
     res : OptimizeResult
@@ -126,7 +116,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes. If `polish`
         was employed, then OptimizeResult also contains the `jac` attribute.
-
     Notes
     -----
     Differential evolution is a stochastic population based method that is
@@ -138,11 +127,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     strategy two members of the population are randomly chosen. Their difference
     is used to mutate the best member (the `best` in `best1bin`), :math:`b_0`,
     so far:
-
     .. math::
-
         b' = b_0 + mutation * (population[rand0] - population[rand1])
-
     A trial vector is then constructed. Starting with a randomly chosen 'i'th
     parameter the trial is sequentially filled (in modulo) with parameters from
     `b'` or the original candidate. The choice of whether to use `b'` or the
@@ -158,23 +144,18 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     values, with higher `mutation` and (dithering), but lower `recombination`
     values. This has the effect of widening the search radius, but slowing
     convergence.
-
     .. versionadded:: 0.15.0
-
     Examples
     --------
     Let us consider the problem of minimizing the Rosenbrock function. This
     function is implemented in `rosen` in `scipy.optimize`.
-
     >>> from scipy.optimize import rosen, differential_evolution
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(rosen, bounds)
     >>> result.x, result.fun
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
-
     Next find the minimum of the Ackley function
     (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
-
     >>> from scipy.optimize import differential_evolution
     >>> import numpy as np
     >>> def ackley(x):
@@ -185,7 +166,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result = differential_evolution(ackley, bounds)
     >>> result.x, result.fun
     (array([ 0.,  0.]), 4.4408920985006262e-16)
-
     References
     ----------
     .. [1] Storn, R and Price, K, Differential Evolution - a Simple and
@@ -210,7 +190,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 class DifferentialEvolutionSolver(object):
 
     """This class implements the differential evolution solver
-
     Parameters
     ----------
     func : callable
@@ -228,7 +207,6 @@ class DifferentialEvolutionSolver(object):
         completely specify the objective function.
     strategy : str, optional
         The differential evolution strategy to use. Should be one of:
-
             - 'best1bin'
             - 'best1exp'
             - 'rand1exp'
@@ -239,9 +217,7 @@ class DifferentialEvolutionSolver(object):
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
-
         The default is 'best1bin'
-
     maxiter : int, optional
         The maximum number of times the entire population is evolved. The
         maximum number of function evaluations is:
@@ -293,7 +269,6 @@ class DifferentialEvolutionSolver(object):
     init : string, optional
         Specify which type of population initialization is performed. Should be
         one of:
-
             - 'latinhypercube'
             - 'random'
     """
@@ -421,11 +396,11 @@ class DifferentialEvolutionSolver(object):
         rng = self.random_number_generator
         self.population = rng.random_sample(self.population.shape)
 
+
     @property
     def x(self):
         """
         The best solution from the solver
-
         Returns
         -------
         x - ndarray
@@ -436,7 +411,6 @@ class DifferentialEvolutionSolver(object):
     def solve(self):
         """
         Runs the DifferentialEvolutionSolver.
-
         Returns
         -------
         res : OptimizeResult
@@ -695,7 +669,6 @@ class DifferentialEvolutionSolver(object):
 
 def _make_random_gen(seed):
     """Turn seed into a np.random.RandomState instance
-
     If seed is None, return the RandomState singleton used by np.random.
     If seed is an int, return a new RandomState instance seeded with seed.
     If seed is already a RandomState instance, return it.

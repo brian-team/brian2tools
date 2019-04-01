@@ -1,6 +1,5 @@
 '''
 Main module for model fitting
-
 TODO:
 * Deal with variable duration traces
 * User-defined error
@@ -11,14 +10,13 @@ TODO:
 * Extend to IF models (threshold, reset etc)
 '''
 from numpy import mean, ones, array
-
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION, Equations,
                                         SingleEquation, PARAMETER)
 from brian2.input import TimedArray
-from brian2 import NeuronGroup, StateMonitor, store, restore, run, defaultclock, second
+from brian2 import NeuronGroup, StateMonitor, store, restore, run, defaultclock, second, Quantity
 from brian2.stateupdaters.base import StateUpdateMethod
 
-from .differential_evolution import differential_evolution
+from differential_evolution import differential_evolution
 
 __all__=['fit_traces']
 
@@ -35,46 +33,32 @@ def fit_traces(model = None,
                **params):
     '''
     Fits a model to a set of traces.
-
     Parameters
     ----------
     model : `~brian2.equations.Equations` or string
         The equations describing the model.
-
     input_var : string
         Input variable name.
-
     output_var : string
         Output variable name.
-
     input : input data as a 2D array
-
     output : output data as a 2D array
-
     dt : time step
-
     tol : float, optional
         Stop criterion of the differential evolution algorithm.
-
     maxiter : int, optional
         Maximum number of iterations.
-
     popsize : int, optional
         Number of population samples per parameter.
-
     method: string, optional
         Integration method
-
     t_start: starting time of error measurement.
-
     Returns
     -------
     A dictionary of parameter values, fits as a 2D array, and error (RMS).
-
     '''
 
     parameter_names = model.parameter_names
-
     # Check parameter names
     for param in params.keys():
         if (param not in model.parameter_names):
@@ -88,12 +72,12 @@ def fit_traces(model = None,
         raise Exception('dt (sampling frequency of the input) must be set')
     defaultclock.dt = dt
 
+
     # Check input variable
     if input_var not in model.identifiers:
         raise Exception("%s is not an identifier in the model" % input_var)
     Nsteps, Ntraces = input.shape
     duration = Nsteps*dt
-
     # Check output variable
     if output_var not in model.names:
         raise Exception("%s is not a model variable" % output_var)
@@ -109,7 +93,7 @@ def fit_traces(model = None,
     model_without_diffeq = Equations([eq for eq in model.ordered
                                       if eq.type != DIFFERENTIAL_EQUATION])
     # Add a parameter for each differential equation
-    diffeq_params = Equations([SingleEquation(PARAMETER, varname, model.units[varname])
+    diffeq_params = Equations([SingleEquation(PARAMETER, varname, model.dimensions[varname])
                                for varname in model.diff_eq_names])
 
     # Our new model:
@@ -179,6 +163,6 @@ def fit_traces(model = None,
     run(duration, namespace = {})
     fits = M_out.get_states()[output_var]
 
-    error = (res.fun)**.5 * model.units[output_var]
+    error = Quantity(res.fun ** .5, dim=model.dimensions[output_var])
 
     return d, fits, error
