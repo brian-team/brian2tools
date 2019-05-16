@@ -78,7 +78,16 @@ def test_get_properties():
     d = {'threshold': 'v > 0*mV', 'refractory': 'v > 0*mV',
          'Cm': string_to_quantity("2.84 uF_per_cm2"),
          'Ri': string_to_quantity("0.2 kohm_cm")}
-    assert_equal(nml_object.properties, d)
+    assert_equal(set(nml_object.properties.keys()), set(d.keys()))
+    assert_equal(nml_object.properties['Cm'], d['Cm'])
+    assert_equal(nml_object.properties['Ri'], d['Ri'])
+    for key in ['threshold', 'refractory']:
+        value = nml_object.properties[key]
+        components = value.split('>')
+        assert len(components) == 2
+        assert components[0].strip() == 'v'
+        # Compare the strings as quantities (e.g. 0*mV == 0.*volt)
+        assert_equal(eval(components[1].strip()), eval(d[key].split('>')[1]))
 
 
 def test_channel_properties():
