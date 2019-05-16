@@ -1,6 +1,6 @@
 package:
   name: brian2tools
-  version: "{{ load_setup_py_data().get('version') }}"
+  version: "0.2.1.1"
 
 requirements:
   build:
