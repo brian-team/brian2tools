@@ -44,12 +44,12 @@ before_install:
 - chmod +x miniconda.sh
 - ./miniconda.sh -b -p ~/miniconda
 - export PATH=~/miniconda/bin:$PATH
-# Update conda itself first
-- conda update --quiet --yes conda
 # Use conda-forge channel
 - conda config --remove channels defaults
 - conda config --add channels defaults
 - conda config --add channels conda-forge
+# Update everything
+- conda update --quiet --yes --all
 - if [[ $DOCS_ONLY == 'yes' ]]; then
     conda install --quiet --yes sphinx=1.7 setuptools_scm;
     if [ ${PYTHON:0:1} == "2" ]; then
