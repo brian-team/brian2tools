@@ -53,11 +53,12 @@ before_install:
 # Update everything again...
 - conda update --quiet --yes --all
 - if [[ $DOCS_ONLY == 'yes' ]]; then
-    conda install --quiet --yes sphinx=1.7 setuptools_scm;
+    conda install --quiet --yes sphinx=1.7 setuptools_scm pip;
     if [ ${PYTHON:0:1} == "2" ]; then
       conda install --quiet --yes mock;
     fi;
     python setup.py sdist;
+    pip install .;
   fi
 
 # command to install dependencies
