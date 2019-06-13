@@ -47,8 +47,7 @@ before_install:
 # Update conda and python
 - conda update --quiet --yes conda python
 # Use conda-forge channel
-- conda config --remove channels defaults
-- conda config --add channels defaults
+- conda config --set channel_priority strict
 - conda config --add channels conda-forge
 # Update everything again...
 - conda update --quiet --yes --all
