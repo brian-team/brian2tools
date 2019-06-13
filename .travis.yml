@@ -45,7 +45,7 @@ before_install:
 - ./miniconda.sh -b -p ~/miniconda
 - export PATH=~/miniconda/bin:$PATH
 # Update conda and python
-- conda update --quiet --yes conda python
+- conda install --quiet --yes 'conda>=4.6'
 # Use conda-forge channel
 - conda config --set channel_priority strict
 - conda config --add channels conda-forge
