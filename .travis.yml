@@ -50,6 +50,7 @@ before_install:
 - conda config --add channels conda-forge
 # Update everything again...
 - conda update --quiet --yes --all
+- conda activate;
 - if [[ $DOCS_ONLY == 'yes' ]]; then
     conda install --quiet --yes sphinx=1.7 setuptools_scm pip;
     if [ ${PYTHON:0:1} == "2" ]; then
@@ -61,7 +62,7 @@ before_install:
 
 # command to install dependencies
 install:
-  - conda install --yes --quiet anaconda-client conda-build
+  - conda install --yes --quiet anaconda-client conda-build conda-verify
 
 # Build documentation or build conda package and run tests
 script:
