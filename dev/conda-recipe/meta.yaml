@@ -6,6 +6,7 @@ requirements:
   build:
     - python
     - setuptools >=6.0
+    - pip
   run:
     - python
     - brian2 >=2.0
@@ -31,7 +32,7 @@ source:
   path: ../..
 
 build:
-  script: python setup.py install --single-version-externally-managed --record=record.txt
+  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
 about:
   url: https://brian2tools.readthedocs.io
