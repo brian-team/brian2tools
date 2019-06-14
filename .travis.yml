@@ -63,7 +63,7 @@ before_install:
 
 # command to install dependencies
 install:
-  - conda install --yes --quiet anaconda-client conda-build conda-verify
+  - conda install --yes --quiet anaconda-client conda-build=3.16 conda-verify
 
 # Build documentation or build conda package and run tests
 script:
