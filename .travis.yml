@@ -43,10 +43,10 @@ before_install:
   fi
 - chmod +x miniconda.sh
 - ./miniconda.sh -b -p ~/miniconda
+# Update conda and initialize it
+- ~/miniconda/bin/conda install --quiet --yes -c conda-forge 'conda>=4.6' 'conda-env>=2.6'
 - ~/miniconda/bin/conda init bash
 - exec $SHELL
-# Update conda and python
-- conda install --quiet --yes -c conda-forge 'conda>=4.6' 'conda-env>=2.6'
 # Use conda-forge channel
 - conda config --add channels conda-forge
 # Update everything again...
