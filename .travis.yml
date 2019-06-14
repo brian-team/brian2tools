@@ -47,7 +47,6 @@ before_install:
 # Update conda and python
 - conda install --quiet --yes -c conda-forge 'conda>=4.6' 'conda-env>=2.6'
 # Use conda-forge channel
-- conda config --set channel_priority strict
 - conda config --add channels conda-forge
 # Update everything again...
 - conda update --quiet --yes --all
