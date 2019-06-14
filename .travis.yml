@@ -43,7 +43,8 @@ before_install:
   fi
 - chmod +x miniconda.sh
 - ./miniconda.sh -b -p ~/miniconda
-- export PATH=~/miniconda/bin:$PATH
+- conda init bash
+- exec $SHELL
 # Update conda and python
 - conda install --quiet --yes -c conda-forge 'conda>=4.6' 'conda-env>=2.6'
 # Use conda-forge channel
