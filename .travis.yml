@@ -43,7 +43,7 @@ before_install:
   fi
 - chmod +x miniconda.sh
 - ./miniconda.sh -b -p ~/miniconda
-- conda init bash
+- ~/miniconda/bin/conda init bash
 - exec $SHELL
 # Update conda and python
 - conda install --quiet --yes -c conda-forge 'conda>=4.6' 'conda-env>=2.6'
