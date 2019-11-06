@@ -2,7 +2,7 @@ NeuroML importer
 ================
 
 This is a short overview of the `~brian2tools.nmlimport` package, providing
-functionality to import Brian's morphology from a .nml file.
+functionality to import a morphology from a ``.nml`` file.
 
 NeuroML is a XML-based description that provides a common data format
 for defining and exchanging descriptions of neuronal cell and network models
@@ -15,10 +15,9 @@ for defining and exchanging descriptions of neuronal cell and network models
 Working example
 ---------------
 
-As a demonstration, we will use the nmlimport library to generate morphology and
+As a demonstration, we will use the ``nmlimport`` library to generate a morphology and
 extract other related information from the ``pyr_4_sym.cell.nml`` nml file. You
-can download it from `here <https://github
-.com/OpenSourceBrain/ACnet2/blob/master/neuroConstruct/generatedNeuroML2/pyr_4_sym.cell.nml>`_.
+can download it from `OpenSourceBrain's ACnet2 project <https://raw.githubusercontent.com/OpenSourceBrain/ACnet2/master/neuroConstruct/generatedNeuroML2/pyr_4_sym.cell.nml>`_.
 
 
 .. code:: python
@@ -27,16 +26,15 @@ can download it from `here <https://github
     nml_object = NMLMorphology('pyr_4_sym.cell.nml', name_heuristic=True)
 
 This call provides us the ``nml_object`` that contains all the information
-extracted from ``.nml`` file. When ``name_heuristic`` param is set to True
+extracted from ``.nml`` file. When ``name_heuristic`` is set to ``True``,
 morphology sections will be determined based on the segment names. In
-this case Section name will be created by combining names of the inner
-segments of the section. When set to False, all linearly connected
-segments combines to form a section and naming convention
-``sec{unique_integer}`` is followed.
+this case `~.Section` names will be created by combining names of the inner
+segments of the section. When set to ``False``, all linearly connected
+segments combine to form a section with the name ``sec{unique_integer}``.
 
 |
 
-- To obtain morphology object.
+- To obtain a `~.Morphology` object:
 
 .. code:: python
 
@@ -44,7 +42,8 @@ segments combines to form a section and naming convention
 
 |
 
-With this Morphology object, you can use all of Brian's functions to get information about the cell:
+With this `~.Morphology` object, you can use all of Brian's functions to get information
+about the cell:
 
 .. code:: python
 
@@ -72,7 +71,7 @@ With this Morphology object, you can use all of Brian's functions to get informa
 
 |
 
-- Plot morphology using brian2tool's plot_morphology function.
+- You can plot the morphology using brian2tool's `~.plot_morphology` function:
 
 .. code:: python
 
@@ -88,15 +87,16 @@ With this Morphology object, you can use all of Brian's functions to get informa
 Handling SegmentGroup
 ---------------------
 
-SegmentGroup is a method to group multiple segments under single entity.
-This can later be used to apply operations on all segments of a SegmentGroup.
-To get the resolved group ids of an nml ``SegmentGroup``. This returns a
-dictionary that maps ``SegmentGroup`` ids to its member segment id's.
-
+In NeuroML, a ``SegmentGroup`` groups multiple segments into a single object, e.g. to
+represent a specific dendrite of a cell. This can later be used to apply operations
+on all segments of a group. The segment groups are stored in a dictionary, mapping the
+name of the group to the indices within the `~.Morphology`. Note that these indices
+are often identical to the ``id`` values used in the NeuroML file, but they do not have
+to be.
 
 .. code:: python
 
-    >>> print(nml_object.resolved_grp_ids)
+    >>> print(nml_object.segment_groups)
     {'soma': [0], 'apical0': [1], 'apical2': [2], 'apical3': [3], 'apical4':
     [4], 'apical1': [5], 'basal0': [6], 'basal1': [7], 'basal2': [8], 'all':
     [0, 1, 2, 3, 4, 5, 6, 7, 8], 'soma_group': [0], 'dendrite_group':
@@ -151,12 +151,12 @@ Handling sections not connected at the distal end
 -------------------------------------------------
 
 If you look at the ``line 12`` in above .nml file, you can see
-``fractionAlong=0.0``. fractionAlong value defines the point at which the
-given segment is connected with its parent segment. So a fractionAlong value
+``fractionAlong=0.0``. The ``fractionAlong`` value defines the point at which the
+given segment is connected with its parent segment. So a ``fractionAlong`` value
 of 1 means the segment is connected to bottom (distal) of its parent segment, 0
 means it is connected to the top (proximal) of its parent segment. Similarly a
 value of 0.5 would mean the segment is connected to the middle point of its parent
-segment. Currently ``nmlimport`` library supports ``fractionAlong`` value to be
+segment. Currently the ``nmlimport`` library supports ``fractionAlong`` value to be
 0 or 1 only, as there is no predefined way to connect a segment at
 some inbetween point of its parent segment in ``Brian``.
 
@@ -164,10 +164,26 @@ some inbetween point of its parent segment in ``Brian``.
 Extracting channel properties and Equations
 -------------------------------------------
 
-The generated ``nml_object`` contains dictionary that have biophysical
-information like threshold, refractory, Ri and Cm etc.
+The generated ``nml_object`` contains several dictionaries with biophysical information
+about the cell:
 
-With this ``nml_object``, you can view all the properties extracted:
+``properties``:
+    A dictionary with general properties such as the threshold condition or the
+    intracellular resistivity. The names are chosen to be consistent with the argument
+    names in `.~SpatialNeuron`, in many cases you should therefore be able to directly
+    pass this dictionary: ``neuron = SpatialNeuron(..., **nml_object.properties)`
+``reversal_potentials``:
+    A dictionary of reversal potentials for the different channels in the cell. The
+    dictionary contains one entry per mechanism (using the mechanism's entry as the
+    key), which maps the name of segment groups to the respective values of the
+    reversal potentials.
+``conductances``:
+    A dictionary of conductance densities for the different channels in the cell. The
+    dictionary uses the same format as the ``reversal_potentials`` dictionary, i.e.
+    each channel name maps to a dictionary which maps segment groups to the respective
+    conductance densities.
+
+For the example file, these dictionaries look like this:
 
 .. code:: python
 
@@ -175,18 +191,20 @@ With this ``nml_object``, you can view all the properties extracted:
     {'threshold': 'v > 0*mV', 'refractory': 'v > 0*mV',
     'Cm': 2.84 * ufarad / cmetre2,'Ri': 0.2 * kohm * cmetre}
 
-    >>> print(nml_object.erevs) # erev property
+    >>> print(nml_object.reversal_potentials) # erev property
     {'Ca_pyr': {'soma_group': 80. * mvolt}, 'Kahp_pyr': {'soma_group': -75. *
      mvolt}, 'Kdr_pyr': {'soma_group': -75. * mvolt}, 'LeakConductance_pyr':
      {'all': -66. * mvolt}, 'Na_pyr': {'soma_group': 55. * mvolt}}
 
-    >>> print(nml_object.cond_densities) # cond_density property
+    >>> print(nml_object.conductances) # cond_density property
     {'Ca_pyr': {'soma_group': 10. * msiemens / cmetre2}, 'Kahp_pyr':
     {'soma_group': 25. * siemens / meter ** 2}, 'Kdr_pyr':  {'soma_group': 80
     . * msiemens / cmetre2}, 'LeakConductance_pyr': {'all': 1.420051 *
     siemens / meter ** 2},  'Na_pyr': {'soma_group': 120. * msiemens / cmetre2}}
 
-|
+
+TODO: Show how these can be used
+
 
 To get channel equations for a particular channel, ex. ``Na_pyr``:
 
@@ -202,6 +220,7 @@ To get channel equations for a particular channel, ex. ``Na_pyr``:
     dh_Na_pyr/dt = alpha_h_Na_pyr*(1-h_Na_pyr) - beta_h_Na_pyr*h_Na_pyr : 1
     g_Na_pyr : siemens / meter ** 2
 
+TODO: Note restrictions
 
 .. note::
 

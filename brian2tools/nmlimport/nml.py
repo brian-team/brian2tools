@@ -99,7 +99,8 @@ class NMLMorphology(object):
         self.name_heuristic = name_heuristic
         self.incremental_id = 0
         self.doc = self._get_nml_doc(self.file_obj)
-        self.morph = self.doc.cells[0].morphology
+        cell = self.doc.cells[0]
+        self.morph = cell.morphology
         self.segments = self._adjust_morph_object(self.morph.segments)
 
         section = self.SectionObject()
@@ -108,14 +109,12 @@ class NMLMorphology(object):
         self.root = self._get_root_segment(self.segments)
         self.section = self._create_tree(section, self.root)
         self.morphology_obj = self.build_morphology(self.section)
-        self.resolved_grp_ids = self.get_resolved_group_ids(self.morph)
+        self.segment_groups = self.get_resolved_group_ids(self.morph)
 
         # biophysical Properties
-        self.properties = self._get_properties(self.doc.cells[
-                                                   0].biophysical_properties)
-        self.erevs, self.cond_densities = self._get_channel_props(
-            self.doc.cells[
-                0].biophysical_properties.membrane_properties.channel_densities)
+        self.properties = self._get_properties(cell.biophysical_properties)
+        self.reversal_potentials, self.conductances = self._get_channel_props(
+            cell.biophysical_properties.membrane_properties.channel_densities)
 
     def _get_nml_doc(self, file_obj):
         """
@@ -511,7 +510,7 @@ class NMLMorphology(object):
             Dictionary of properties to be applied.
         """
         for segment_group, value in value_dict.items():
-            ids = self.resolved_grp_ids[segment_group]
+            ids = self.segment_groups[segment_group]
             if len(ids):
                 getattr(neuron, name)[ids] = value
 
@@ -652,7 +651,7 @@ class NMLMorphology(object):
 
             I = '{} = {}*{}*(erev - v): amp / meter ** 2'.format(rename_var(
                 'I'), rename_var('g'), gate_str)
-            values['erev'] = list(self.erevs[ion_channel].values())[0]
+            values['erev'] = list(self.reversal_potentials[ion_channel].values())[0]
             str_list = [I] + str_list
             str_list.append("{} : siemens/meter**2".format(rename_var('g')))
             eq = Equations('\n'.join(str_list), **values)
@@ -661,13 +660,13 @@ class NMLMorphology(object):
             new_I = 'I_{}'.format(ion_channel)
             conductance = string_to_quantity(channel_obj.conductance)
 
-            if not self.erevs[ion_channel]:  # erev dict is empty
+            if not self.reversal_potentials[ion_channel]:  # erev dict is empty
                 raise ValueError(
                     "No erev corresponding to ion channel `{}` is present.".format(
                         ion_channel))
 
             # erev remains same across ion channel
-            erev = list(self.erevs[ion_channel].values())[0]
+            erev = list(self.reversal_potentials[ion_channel].values())[0]
             eq = Equations('I = g/area*(erev - v) : amp/meter**2', I=new_I,
                            g=conductance, erev=erev)
 

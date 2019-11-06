@@ -43,7 +43,7 @@ def test_validation():
 
 def test_resolved_group_ids():
     nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
-    assert_equal(nml_object.resolved_grp_ids['dendrite_group'],
+    assert_equal(nml_object.segment_groups['dendrite_group'],
                  [1, 2, 3, 4, 5, 6, 7, 8])
 
 
@@ -94,11 +94,11 @@ def test_channel_properties():
     nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
 
     # test cond density dict
-    assert_equal(nml_object.cond_densities['Ca_pyr'],
+    assert_equal(nml_object.conductances['Ca_pyr'],
                  {'soma_group': 10. * msiemens / cm2})
-    assert_equal(nml_object.cond_densities['Kahp_pyr'],
+    assert_equal(nml_object.conductances['Kahp_pyr'],
                  {'soma_group': 25. * siemens /
                                 meter ** 2})
     # test erev dict
-    assert_equal(nml_object.erevs['Ca_pyr'], {'soma_group': 80. * mvolt})
-    assert_equal(nml_object.erevs['Kahp_pyr'], {'soma_group': -75. * mvolt})
+    assert_equal(nml_object.reversal_potentials['Ca_pyr'], {'soma_group': 80. * mvolt})
+    assert_equal(nml_object.reversal_potentials['Kahp_pyr'], {'soma_group': -75. * mvolt})
