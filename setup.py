@@ -7,9 +7,6 @@ import sys
 
 from setuptools import setup, find_packages
 
-if sys.version_info < (2, 7):
-    raise RuntimeError('Only Python versions >= 2.7 are supported')
-
 def readme():
     with open('README.rst') as f:
         return f.read()
@@ -31,8 +28,7 @@ setup(name='brian2tools',
                         'libNeuroML>=0.2.18'],
       provides=['brian2tools'],
       extras_require={'test': ['pytest'],
-                      'docs': ['sphinx>=1.7',
-                               'mock']},
+                      'docs': ['sphinx>=1.7']},
       use_2to3=False,
       description='Tools for the Brian 2 simulator',
       long_description=readme(),
@@ -46,9 +42,9 @@ setup(name='brian2tools',
           'Natural Language :: English',
           'Operating System :: OS Independent',
           'Programming Language :: Python',
-          'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 3',
           'Topic :: Scientific/Engineering :: Bio-Informatics'
       ],
-      keywords='visualization neuroscience'
+      keywords='visualization neuroscience',
+      python_requires='>=3.5'
       )
