@@ -158,6 +158,12 @@ def test_neuromlsimulation():
 def test_simplenetwork():
     nmlnet = NeuroMLSimpleNetwork("net")
     nmlnet.add_component("i0", "lf", a=3, b=4)
-    nmlnet.build()
-    strrepr = nmlnet.__repr__()
-    assert_equal(strrepr, simplenetwork_tag_output)
+    xml = nmlnet.build()
+    assert xml.tagName == 'network'
+    assert xml.getAttributeNode('id').value == 'net'
+    children = xml.childNodes
+    assert len(children) == 1
+    child = children[0]
+    assert child.tagName == 'Component'
+    for k, v in [('a', "3"), ('b', "4"), ('id', "i0"), ('type', "lf")]:
+        assert child.getAttributeNode(k).value == v
