@@ -99,20 +99,6 @@ def test_simulation1(plot=False):
         plt.show()
     os.chdir(current_path)
 
-simulation_tag_output = '''<Simulation id="a" length="1s" step="0.1ms" target="b">
-  <Display id="ex" timeScale="1ms" title="" xmax="1000" xmin="0" ymax="11" ymin="0">
-    <Line id="line1" quantity="v" scale="1mV" timeScale="1ms"/>
-    <Line id="line2" quantity="w" scale="1mV" timeScale="1ms"/>
-  </Display>
-  <OutputFile fileName="recordings.dat" id="of1">
-    <OutputColumn id="1" quantity="[3]"/>
-  </OutputFile>
-  <EventOutputFile fileName="recordings.spikes" format="TIME_ID" id="eof1">
-    <EventSelection eventPort="spike" id="1" select="[5]"/>
-  </EventOutputFile>
-</Simulation>
-'''
-
 simplenetwork_tag_output = '''<network id="net">
   <Component a="3" b="4" id="i0" type="lf"/>
 </network>
@@ -150,9 +136,47 @@ def test_neuromlsimulation():
         nmlsim.add_eventselection('1', '[5]')
     nmlsim.add_eventoutputfile('eof1')
     nmlsim.add_eventselection('1', '[5]')
-    nmlsim.build()
-    strrepr = nmlsim.__repr__()
-    assert_equal(strrepr, simulation_tag_output)
+    xml = nmlsim.build()
+
+    # Simulation
+    assert xml.tagName == 'Simulation'
+    for k, v in [('id', 'a'), ('length', '1s'), ('step', '0.1ms'), ('target', 'b')]:
+        assert xml.getAttributeNode(k).value == v
+    children = xml.childNodes
+    assert len(children) == 3
+    # Display
+    display = children[0]
+    assert display.tagName == 'Display'
+    for k, v in [("id", "ex"), ("timeScale", "1ms"), ("title", ""), ("xmax", "1000"), ("xmin", "0"),
+                 ("ymax", "11"), ("ymin", "0")]:
+        assert display.getAttributeNode(k).value == v
+    lines = display.childNodes
+    assert len(lines) == 2
+    for name, q, line in [('line1', 'v', lines[0]),
+                          ('line2', 'w', lines[1])]:
+        assert line.tagName == 'Line'
+        for k, v in [("id", name), ("quantity", q), ("scale", "1mV"), ("timeScale", "1ms")]:
+            assert line.getAttributeNode(k).value == v
+    # OutputFile
+    output_file = children[1]
+    assert output_file.tagName == 'OutputFile'
+    for k, v in [("id", "of1"), ("fileName", "recordings.dat")]:
+        assert output_file.getAttributeNode(k).value == v
+    assert len(output_file.childNodes) == 1
+    output_column = output_file.childNodes[0]
+    assert output_column.tagName == "OutputColumn"
+    for k, v in [("id", "1"), ("quantity", "[3]")]:
+        assert output_column.getAttributeNode(k).value == v
+    # EventOutputFile
+    event_output = children[2]
+    assert event_output.tagName == 'EventOutputFile'
+    for k, v in [("id", "eof1"), ("fileName", "recordings.spikes"), ("format", "TIME_ID")]:
+        assert event_output.getAttributeNode(k).value == v
+    assert len(event_output.childNodes) == 1
+    event_selection = event_output.childNodes[0]
+    assert event_selection.tagName == 'EventSelection'
+    for k, v in [("id", "1"), ("select", "[5]"), ("eventPort", "spike")]:
+        assert event_selection.getAttributeNode(k).value == v
 
 
 def test_simplenetwork():
