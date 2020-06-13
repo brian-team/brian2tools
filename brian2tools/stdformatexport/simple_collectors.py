@@ -114,3 +114,82 @@ def collect_Events(group):
         event_dict['spike'].update({'refractory': group._refractory})
     
     return event_dict
+
+def collect_SpikeGenerator(spike_gen):
+    """
+    Extract information from 'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'
+    and represent them in a dictionary format
+
+    Parameters
+    ----------
+    spike_gen : brian2.input.spikegeneratorgroup.SpikeGeneratorGroup
+            SpikeGenerator object
+    
+    Returns
+    -------
+    spikegen_dict : dict
+                Dictionary with extracted information
+    """
+
+    spikegen_dict = {}
+
+    # get name
+    spikegen_dict['name'] = spike_gen.name
+
+    # get size
+    spikegen_dict['N'] = spike_gen.N
+
+    # get indices of spiking neurons
+    spikegen_dict['indices'] = {'array': spike_gen.variables['neuron_index'].get_value(), 
+                                'unit': spike_gen.variables['neuron_index'].unit,
+                                'dtype' : spike_gen.variables['neuron_index'].get_value().dtype}
+
+    # get spike times for defined neurons
+    spikegen_dict['times'] = {'array': spike_gen.variables['spike_time'].get_value(), 
+                                'unit': spike_gen.variables['spike_time'].unit,
+                                'dtype' : spike_gen.variables['spike_time'].get_value().dtype}
+    
+    # get spike period
+    if spike_gen.variables['period'].get_value() != [0]:
+        spikegen_dict['period'] = {'array': spike_gen.variables['period'].get_value(),
+                                        'unit': spike_gen.variables['period'].unit,
+                                        'dtype': spike_gen.variables['period'].get_value().dtype}
+        
+    return spikegen_dict
+
+def collect_PoissonGroup(poisson_grp):
+    """
+    Extract information from 'brian2.input.poissongroup.PoissonGroup'
+    and represent them in a dictionary format
+
+    Parameters
+    ----------
+    poisson_grp : brian2.input.poissongroup.PoissonGroup
+            PoissonGroup object
+    
+    Returns
+    -------
+    poisson_grp_dict : dict
+                Dictionary with extracted information
+    """
+
+    poisson_grp_dict = {}
+
+    # get name
+    poisson_grp_dict['name'] = poisson_grp._name
+
+    # get size
+    poisson_grp_dict['N'] = poisson_grp._N
+
+    # get rates
+    # check subexpression string
+    if isinstance(poisson_grp._rates, str):
+        poisson_grp_dict['rates'] = {'expr': poisson_grp.variables['rates'].expr, 
+                                    'dtype': poisson_grp.variables['rates'].dtype}
+    else:
+        poisson_grp_dict['rates'] = {'array': poisson_grp.variables['rates'].get_value(),
+                                    'dtype': poisson_grp.variables['rates'].get_value().dtype}
+    
+    poisson_grp_dict['rates'].update({'unit': poisson_grp.variables['rates'].unit})
+
+    return poisson_grp_dict

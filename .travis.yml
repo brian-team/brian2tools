@@ -10,19 +10,17 @@ matrix:
       # test that the documentation can be built from the tarball -- we
       # automatically build it from github master all the time, but downstream
       # packaging will use the tarball as the basis
-    - python: "2.7"
-      env: PYTHON="2.7" DOCS_ONLY=yes ARCHITECTURE="x86_64"
+    - python: "3.6"
+      env: PYTHON="3.6" DOCS_ONLY=yes ARCHITECTURE="x86_64"
       os: linux
     # Tests with different Python versions
-    - python: "2.7"
-      env: PYTHON="2.7" CONDA_PY="27"
-      os: linux
-    - python: "3.5"
-      env: PYTHON="3.5" CONDA_PY="35"
-      os: linux
     - python: "3.6"
       env: PYTHON="3.6" CONDA_PY="36"
       os: linux
+    - python: "3.8"
+      env: PYTHON="3.8" CONDA_PY="38"
+      os: linux
+
 
 # Use miniconda to install binary versions of numpy etc. from continuum
 # analytic's repository. Follows an approach described by Dan Blanchard:
