@@ -4,6 +4,7 @@ from BrianObjects and represent them in a standard
 dictionary format. The parts of the file shall be reused 
 with standard format exporter.
 """
+import numpy
 
 def collect_NeuronGroup(group):
     """
@@ -32,6 +33,7 @@ def collect_NeuronGroup(group):
     if isinstance(group.method_choice, str):
         neuron_dict['user_method'] = group.method_choice
     # if not specified by user
+    # TODO collect from run time
     else: 
         neuron_dict['user_method'] = None
     
@@ -142,18 +144,18 @@ def collect_SpikeGenerator(spike_gen):
     # get indices of spiking neurons
     spikegen_dict['indices'] = {'array': spike_gen.variables['neuron_index'].get_value(), 
                                 'unit': spike_gen.variables['neuron_index'].unit,
-                                'dtype' : spike_gen.variables['neuron_index'].get_value().dtype}
+                                'dtype' : numpy.dtype(spike_gen.variables['neuron_index'].get_value().dtype)}
 
     # get spike times for defined neurons
     spikegen_dict['times'] = {'array': spike_gen.variables['spike_time'].get_value(), 
                                 'unit': spike_gen.variables['spike_time'].unit,
-                                'dtype' : spike_gen.variables['spike_time'].get_value().dtype}
+                                'dtype' : numpy.dtype(spike_gen.variables['spike_time'].get_value().dtype)}
     
     # get spike period
     if spike_gen.variables['period'].get_value() != [0]:
         spikegen_dict['period'] = {'array': spike_gen.variables['period'].get_value(),
-                                        'unit': spike_gen.variables['period'].unit,
-                                        'dtype': spike_gen.variables['period'].get_value().dtype}
+                                    'unit': spike_gen.variables['period'].unit,
+                                    'dtype': numpy.dtype(spike_gen.variables['period'].get_value().dtype)}
         
     return spikegen_dict
 
@@ -185,10 +187,10 @@ def collect_PoissonGroup(poisson_grp):
     # check subexpression string
     if isinstance(poisson_grp._rates, str):
         poisson_grp_dict['rates'] = {'expr': poisson_grp.variables['rates'].expr, 
-                                    'dtype': poisson_grp.variables['rates'].dtype}
+                                    'dtype': numpy.dtype(poisson_grp.variables['rates'].dtype)}
     else:
         poisson_grp_dict['rates'] = {'array': poisson_grp.variables['rates'].get_value(),
-                                    'dtype': poisson_grp.variables['rates'].get_value().dtype}
+                                    'dtype': numpy.dtype(poisson_grp.variables['rates'].get_value().dtype)}
     
     poisson_grp_dict['rates'].update({'unit': poisson_grp.variables['rates'].unit})
 
