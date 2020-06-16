@@ -10,8 +10,8 @@ matrix:
       # test that the documentation can be built from the tarball -- we
       # automatically build it from github master all the time, but downstream
       # packaging will use the tarball as the basis
-    - python: "3.6"
-      env: PYTHON="3.6" DOCS_ONLY=yes ARCHITECTURE="x86_64"
+    - python: "3.7"
+      env: PYTHON="3.7" DOCS_ONLY=yes ARCHITECTURE="x86_64"
       os: linux
     # Tests with different Python versions
     - python: "3.6"
@@ -21,24 +21,15 @@ matrix:
       env: PYTHON="3.8" CONDA_PY="38"
       os: linux
 
-
 # Use miniconda to install binary versions of numpy etc. from continuum
 # analytic's repository. Follows an approach described by Dan Blanchard:
 # https://gist.github.com/dan-blanchard/7045057
 before_install:
-- if [ ${PYTHON:0:1} == "2" ]; then
-    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-    wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-    wget http://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -O miniconda.sh;
-    fi;
-    else
-    if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+- if [ "$TRAVIS_OS_NAME" == "linux" ]; then
     wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
+  else
     wget http://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
-    fi;
-  fi
+  fi;
 - chmod +x miniconda.sh
 - ./miniconda.sh -b -p ~/miniconda
 - export PATH=~/miniconda/bin:$PATH
@@ -49,10 +40,7 @@ before_install:
 - conda config --add channels defaults
 - conda config --add channels conda-forge
 - if [[ $DOCS_ONLY == 'yes' ]]; then
-    conda install --quiet --yes sphinx=1.7 setuptools_scm;
-    if [ ${PYTHON:0:1} == "2" ]; then
-      conda install --quiet --yes mock;
-    fi;
+    conda install --quiet --yes sphinx=1.7 setuptools_scm pip;
     python setup.py sdist;
   fi
 
