@@ -1,6 +1,8 @@
 from brian2.devices.device import RuntimeDevice
 from brian2.devices.device import Device, all_devices
 from brian2.core.namespace import get_local_namespace
+from brian2.groups import NeuronGroup
+from brian2.input import PoissonGroup, SpikeGeneratorGroup
 
 from .simple_collectors import *
 
@@ -9,6 +11,12 @@ class StdDevice(RuntimeDevice):
     Class defining `stdformat` device mode to generate standard dictioanry 
     representation of the defined model. The `StdDevice` class is derived 
     from `RuntimeDevice` to inform Brian to run the Network in this mode
+
+    Attributes
+    ----------
+
+    network_dic : dict
+        Standard dictionary containing network components
 
     Methods
     -------
@@ -19,8 +27,8 @@ class StdDevice(RuntimeDevice):
     See Also
     --------
     1. brian2.core.network.Network class
-    2. brian2.devices.device.RuntimeDevice
-    3. brian2tools.nmlexport
+    2. brian2.devices.device.RuntimeDevice class
+    3. brian2tools.nmlexport package
 
     """
 
@@ -67,8 +75,36 @@ class StdDevice(RuntimeDevice):
             namespace = get_local_namespace(level + 2)
         #prepare objects using `before_run()`
         network.before_run(namespace)
-        
 
+        
+        self.network_dict = {}  #dictionary with Network components
+
+        #list of neurons defined
+        self.network_dict['neurongroup'] = []
+        #list of Poissongroup defined
+        self.network_dict['poissongroup'] = []
+        #list of SpikeGeneratorGroup defined
+        self.network_dict['spikegeneratorgroup'] = []
+
+        #loop through all the objects of network and collect object 
+        #specific identifiers
+        for object in network.objects:
+            #check NeuronGroup
+            if isinstance(object, NeuronGroup):
+                neuron_dict = collect_NeuronGroup(object)
+                self.network_dict['neurongroup'].append(neuron_dict)
+
+            #check PoissonGroup
+            if isinstance(object, PoissonGroup):
+                poisson_dict = collect_PoissonGroup(object)
+                self.network_dict['poissongroup'].append(poisson_dict)
+            
+            #check SpikeGeneratorGroup
+            if isinstance(object, SpikeGeneratorGroup):
+                spikegen_dict = collect_SpikeGenerator(object)
+                self.network_dict['spikegeneratorgroup'].append(spikegen_dict)
+
+# instantiate StdDevice object and add to all_devices        
 std_device = StdDevice()
 all_devices['stdformat'] = std_device
 
