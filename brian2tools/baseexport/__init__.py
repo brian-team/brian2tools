@@ -1,5 +1,5 @@
 """
 stdformatexport package to export Brian models to 
-standard repersentation
+standard representation
 """
-from .simple_collectors import *
+from .collector import *

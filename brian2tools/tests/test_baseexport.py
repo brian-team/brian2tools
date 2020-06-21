@@ -1,5 +1,7 @@
 from brian2 import (NeuronGroup, SpikeGeneratorGroup,
-                    PoissonGroup, Equations, start_scope, numpy, int32)
+                    PoissonGroup, Equations, start_scope, numpy, 
+                    int32, Quantity)
+
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, Expression, SUBEXPRESSION,
                                         PARAMETER, parse_string_equations)
@@ -26,14 +28,14 @@ def test_simple_neurongroup():
     assert neuron_dict['N'] == size
     assert neuron_dict['user_method'] == 'exact'
 
-    assert neuron_dict['user_equations']['v']['type'] == DIFFERENTIAL_EQUATION
-    assert neuron_dict['user_equations']['v']['unit'] == volt
-    assert neuron_dict['user_equations']['v']['dtype'] == FLOAT
+    assert neuron_dict['equations']['v']['type'] == DIFFERENTIAL_EQUATION
+    assert neuron_dict['equations']['v']['unit'] == volt
+    assert neuron_dict['equations']['v']['var_type'] == FLOAT
 
     with pytest.raises(KeyError):
-        neuron_dict['user_equations']['tau']
+        neuron_dict['equations']['tau']
 
-    assert neuron_dict['user_equations']['v']['expr'] == Equations(eqn)['v'].expr
+    assert neuron_dict['equations']['v']['expr'] == Equations(eqn)['v'].expr
     
     #example 2
 
@@ -55,15 +57,18 @@ def test_simple_neurongroup():
     dv/dt = I_leak / Cm : volt
     I_leak = g_L*(E_L - v) : amp
     '''
-    assert neuron_dict['user_equations']['v']['type'] == DIFFERENTIAL_EQUATION
-    assert neuron_dict['user_equations']['v']['unit'] == volt
-    assert neuron_dict['user_equations']['v']['dtype'] == FLOAT
-    assert neuron_dict['user_equations']['v']['expr'] == parse_string_equations(eqn_str)['v'].expr
+    assert neuron_dict['equations']['v']['type'] == DIFFERENTIAL_EQUATION
+    assert neuron_dict['equations']['v']['unit'] == volt
+    assert neuron_dict['equations']['v']['var_type'] == FLOAT
+    assert neuron_dict['equations']['v']['expr'] == parse_string_equations(eqn_str)['v'].expr
 
-    assert neuron_dict['user_equations']['I_leak']['type'] == SUBEXPRESSION
-    assert neuron_dict['user_equations']['I_leak']['unit'] == amp
-    assert neuron_dict['user_equations']['I_leak']['dtype'] == FLOAT
-    assert neuron_dict['user_equations']['I_leak']['expr'] == Expression('g_L*(E_L - v)')
+    assert neuron_dict['equations']['I_leak']['type'] == SUBEXPRESSION
+    assert neuron_dict['equations']['I_leak']['unit'] == amp
+    assert neuron_dict['equations']['I_leak']['var_type'] == FLOAT
+    assert neuron_dict['equations']['I_leak']['expr'] == Expression('g_L*(E_L - v)')
+
+    with pytest.raises(KeyError):
+        neuron_dict['events']
 
 def test_spike_neurongroup():
     """
@@ -83,25 +88,25 @@ def test_spike_neurongroup():
     assert neuron_dict['N'] == size
     assert neuron_dict['user_method'] == None
 
-    assert neuron_dict['user_equations']['v']['type'] == DIFFERENTIAL_EQUATION
-    assert neuron_dict['user_equations']['v']['unit'] == volt
-    assert neuron_dict['user_equations']['v']['dtype'] == FLOAT
-    assert neuron_dict['user_equations']['v']['expr'] == Equations(eqn)['v'].expr
+    assert neuron_dict['equations']['v']['type'] == DIFFERENTIAL_EQUATION
+    assert neuron_dict['equations']['v']['unit'] == volt
+    assert neuron_dict['equations']['v']['var_type'] == FLOAT
+    assert neuron_dict['equations']['v']['expr'] == Equations(eqn)['v'].expr
 
-    assert neuron_dict['user_equations']['v_th']['type'] == SUBEXPRESSION
-    assert neuron_dict['user_equations']['v_th']['unit'] == volt
-    assert neuron_dict['user_equations']['v_th']['dtype'] == FLOAT
-    assert neuron_dict['user_equations']['v_th']['expr'] == Equations(eqn)['v_th'].expr
+    assert neuron_dict['equations']['v_th']['type'] == SUBEXPRESSION
+    assert neuron_dict['equations']['v_th']['unit'] == volt
+    assert neuron_dict['equations']['v_th']['var_type'] == FLOAT
+    assert neuron_dict['equations']['v_th']['expr'] == Equations(eqn)['v_th'].expr
     
-    assert neuron_dict['user_equations']['v_rest']['type'] == SUBEXPRESSION
-    assert neuron_dict['user_equations']['v_rest']['unit'] == volt
-    assert neuron_dict['user_equations']['v_rest']['dtype'] == FLOAT
-    assert neuron_dict['user_equations']['v_rest']['expr'] == Equations(eqn)['v_rest'].expr
+    assert neuron_dict['equations']['v_rest']['type'] == SUBEXPRESSION
+    assert neuron_dict['equations']['v_rest']['unit'] == volt
+    assert neuron_dict['equations']['v_rest']['var_type'] == FLOAT
+    assert neuron_dict['equations']['v_rest']['expr'] == Equations(eqn)['v_rest'].expr
 
-    assert neuron_dict['user_equations']['tau']['type'] == PARAMETER
-    assert neuron_dict['user_equations']['tau']['unit'] == second
-    assert neuron_dict['user_equations']['tau']['dtype'] == FLOAT
-    assert neuron_dict['user_equations']['tau']['flags'][0] == 'constant'
+    assert neuron_dict['equations']['tau']['type'] == PARAMETER
+    assert neuron_dict['equations']['tau']['unit'] == second
+    assert neuron_dict['equations']['tau']['var_type'] == FLOAT
+    assert neuron_dict['equations']['tau']['flags'][0] == 'constant'
 
 def test_spikegenerator():
     """
@@ -149,12 +154,11 @@ def test_poissongroup():
     poisson_dict = collect_PoissonGroup(poisongrp)
     
     assert poisson_dict['N'] == N
-    assert (poisson_dict['rates']['array'] == numpy.array(range(1, 11))).all()
-    assert poisson_dict['rates']['unit'] == hertz
-    assert poisson_dict['rates']['dtype'] == float
+    
+    assert (poisson_dict['rates'] == rates).all()
+    assert poisson_dict['rates'].has_same_dimensions(5 * Hz)
+    assert poisson_dict['rates'].dtype == float
 
-    with pytest.raises(KeyError):
-        assert poisson_dict['rates']['expr']
 
     #example2
     F = 10 * Hz
@@ -173,5 +177,3 @@ if __name__ == '__main__':
     test_spike_neurongroup()
     test_spikegenerator()
     test_poissongroup()
-
-

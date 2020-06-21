@@ -5,6 +5,7 @@ dictionary format. The parts of the file shall be reused
 with standard format exporter.
 """
 import numpy
+from brian2.equations.equations import PARAMETER
 
 def collect_NeuronGroup(group):
     """
@@ -38,10 +39,10 @@ def collect_NeuronGroup(group):
         neuron_dict['user_method'] = None
     
     # get equations
-    neuron_dict['user_equations'] = collect_Equations(group.user_equations)
+    neuron_dict['equations'] = collect_Equations(group.user_equations)
 
     # check spike event is defined
-    if bool(group.events):
+    if group.events:
         neuron_dict['events'] = collect_Events(group)
 
     return neuron_dict
@@ -63,27 +64,21 @@ def collect_Equations(equations):
 
     eqn_dict = {}
 
-    # get DIFFERENTIAL_EQUATIONS and SUBEXPRESSIONS
-    for names in equations.diff_eq_names.union(equations.subexpr_names):
-        
-        eqn_dict[names] = {'expr': equations[names].expr, 
-                                'unit': equations[names].unit, 
-                                'type': equations[names].type, 
-                                'dtype': equations[names].var_type}
-        
-        if equations[names].flags:
-            eqn_dict[names]['flags'] = equations[names].flags
-    
-    # get PARAMETERS
-    for param_names in equations.parameter_names:
-        
-        eqn_dict[param_names] = {'unit': equations[param_names].unit, 
-                                'type': equations[param_names].type, 
-                                'dtype': equations[param_names].var_type}
-        
-        if equations[param_names].flags:
-            eqn_dict[param_names]['flags'] = equations[param_names].flags
+    for name in (equations.diff_eq_names | equations.subexpr_names | 
+                                equations.parameter_names):
 
+        eqs = equations[name]
+        
+        eqn_dict[name] = {'unit': eqs.unit, 
+                            'type': eqs.type,
+                            'var_type': eqs.var_type}
+        
+        if eqs.type != PARAMETER:
+            eqn_dict[name]['expr'] = eqs.expr
+
+        if eqs.flags:
+            eqn_dict[name]['flags'] = eqs.flags
+        
     return eqn_dict
 
 def collect_Events(group):
@@ -108,7 +103,7 @@ def collect_Events(group):
     event_dict['spike'] = {'threshold': group.events['spike']}
     
     #check reset is defined
-    if bool(group.event_codes):
+    if group.event_codes:
         event_dict['spike'].update({'reset': group.event_codes['spike']})
 
     #check refractory is defined
@@ -145,7 +140,7 @@ def collect_SpikeGenerator(spike_gen):
     spikegen_dict['indices'] = {'array': spike_gen.variables['neuron_index'].get_value(), 
                                 'unit': spike_gen.variables['neuron_index'].unit,
                                 'dtype' : numpy.dtype(spike_gen.variables['neuron_index'].get_value().dtype)}
-
+    
     # get spike times for defined neurons
     spikegen_dict['times'] = {'array': spike_gen.variables['spike_time'].get_value(), 
                                 'unit': spike_gen.variables['spike_time'].unit,
@@ -187,11 +182,9 @@ def collect_PoissonGroup(poisson_grp):
     # check subexpression string
     if isinstance(poisson_grp._rates, str):
         poisson_grp_dict['rates'] = {'expr': poisson_grp.variables['rates'].expr, 
-                                    'dtype': numpy.dtype(poisson_grp.variables['rates'].dtype)}
+                                    'dtype': numpy.dtype(poisson_grp.variables['rates'].dtype),
+                                    'unit':  poisson_grp.variables['rates'].unit}
     else:
-        poisson_grp_dict['rates'] = {'array': poisson_grp.variables['rates'].get_value(),
-                                    'dtype': numpy.dtype(poisson_grp.variables['rates'].get_value().dtype)}
+        poisson_grp_dict['rates'] = poisson_grp._rates
     
-    poisson_grp_dict['rates'].update({'unit': poisson_grp.variables['rates'].unit})
-
     return poisson_grp_dict
