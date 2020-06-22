@@ -4,7 +4,6 @@ from BrianObjects and represent them in a standard
 dictionary format. The parts of the file shall be reused 
 with standard format exporter.
 """
-import numpy
 from brian2.equations.equations import PARAMETER
 
 def collect_NeuronGroup(group):
@@ -137,20 +136,14 @@ def collect_SpikeGenerator(spike_gen):
     spikegen_dict['N'] = spike_gen.N
 
     # get indices of spiking neurons
-    spikegen_dict['indices'] = {'array': spike_gen.variables['neuron_index'].get_value(), 
-                                'unit': spike_gen.variables['neuron_index'].unit,
-                                'dtype' : numpy.dtype(spike_gen.variables['neuron_index'].get_value().dtype)}
+    spikegen_dict['indices'] = spike_gen._neuron_index[:]
     
     # get spike times for defined neurons
-    spikegen_dict['times'] = {'array': spike_gen.variables['spike_time'].get_value(), 
-                                'unit': spike_gen.variables['spike_time'].unit,
-                                'dtype' : numpy.dtype(spike_gen.variables['spike_time'].get_value().dtype)}
+    spikegen_dict['times'] = spike_gen.spike_time[:]
     
-    # get spike period
-    if spike_gen.variables['period'].get_value() != [0]:
-        spikegen_dict['period'] = {'array': spike_gen.variables['period'].get_value(),
-                                    'unit': spike_gen.variables['period'].unit,
-                                    'dtype': numpy.dtype(spike_gen.variables['period'].get_value().dtype)}
+    # get spike period (default period is 0*second will be stored if not 
+    # mentioned by the user)
+    spikegen_dict['period'] = spike_gen.period[:]
         
     return spikegen_dict
 
@@ -178,13 +171,7 @@ def collect_PoissonGroup(poisson_grp):
     # get size
     poisson_grp_dict['N'] = poisson_grp._N
 
-    # get rates
-    # check subexpression string
-    if isinstance(poisson_grp._rates, str):
-        poisson_grp_dict['rates'] = {'expr': poisson_grp.variables['rates'].expr, 
-                                    'dtype': numpy.dtype(poisson_grp.variables['rates'].dtype),
-                                    'unit':  poisson_grp.variables['rates'].unit}
-    else:
-        poisson_grp_dict['rates'] = poisson_grp._rates
+    # get rates (can be Quantity or str)
+    poisson_grp_dict['rates'] = poisson_grp._rates
     
     return poisson_grp_dict

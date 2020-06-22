@@ -1,6 +1,6 @@
 from brian2 import (NeuronGroup, SpikeGeneratorGroup,
-                    PoissonGroup, Equations, start_scope, numpy, 
-                    int32, Quantity)
+                    PoissonGroup, Equations, start_scope, 
+                    numpy, Quantity)
 
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, Expression, SUBEXPRESSION,
@@ -116,30 +116,27 @@ def test_spikegenerator():
     #example 1
     size = 1
     index = [0]
-    time = [10 * ms]
+    time = [10] * ms
 
     spike_gen = SpikeGeneratorGroup(size, index, time)
     spike_gen_dict = collect_SpikeGenerator(spike_gen)
 
     assert spike_gen_dict['N'] == size
-    assert spike_gen_dict['indices']['array'] == [0]
-    assert spike_gen_dict['indices']['dtype'] == int32
+    assert spike_gen_dict['indices'] == [0]
+    assert spike_gen_dict['indices'].dtype == int
 
-    assert spike_gen_dict['times']['array'] == [float(time[0])]
-    assert spike_gen_dict['times']['unit'] == second
-    assert spike_gen_dict['times']['dtype'] == float
-
-    with pytest.raises(KeyError):
-        spike_gen_dict['period']
+    assert spike_gen_dict['times'] == time
+    assert spike_gen_dict['times'].has_same_dimensions(10 * ms)
+    assert spike_gen_dict['times'].dtype == float
 
     #example 2
     spike_gen2 = SpikeGeneratorGroup(10, index, time, period = 20 * ms)
     spike_gen_dict = collect_SpikeGenerator(spike_gen2)
 
     assert spike_gen_dict['N'] == 10
-    assert spike_gen_dict['period']['array'][0] == [float(20 * ms)]
-    assert spike_gen_dict['period']['unit'] == second
-    assert spike_gen_dict['period']['dtype'] == float 
+    assert spike_gen_dict['period'] == [20] * ms
+    assert spike_gen_dict['period'].has_same_dimensions(20 * ms)
+    assert spike_gen_dict['period'].dtype == float 
     
 def test_poissongroup():
     """
@@ -165,11 +162,7 @@ def test_poissongroup():
     poisongrp = PoissonGroup(N, rates = 'F + 2 * Hz')
     poisson_dict = collect_PoissonGroup(poisongrp) 
 
-    assert poisson_dict['rates']['expr'] == Expression('F + 2 * Hz').code
-    assert poisson_dict['rates']['unit'] == hertz
-
-    with pytest.raises(KeyError):
-        assert poisson_dict['rates']['array']
+    assert poisson_dict['rates'] == Expression('F + 2 * Hz').code
 
 if __name__ == '__main__':
 
