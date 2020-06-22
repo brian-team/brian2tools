@@ -1,16 +1,17 @@
 """
-The file contains simple functions to collect information 
-from BrianObjects and represent them in a standard 
-dictionary format. The parts of the file shall be reused 
+The file contains simple functions to collect information
+from BrianObjects and represent them in a standard
+dictionary format. The parts of the file shall be reused
 with standard format exporter.
 """
-import numpy
+from brian2.equations.equations import PARAMETER
+
 
 def collect_NeuronGroup(group):
     """
     Collect information from `brian2.groups.neurongroup.NeuronGroup`
     and return them in a dictionary format
-    
+
     Parameters
     ----------
     group : brian2.groups.neurongroup.NeuronGroup
@@ -22,7 +23,7 @@ def collect_NeuronGroup(group):
         Dictionary with extracted information
     """
     neuron_dict = {}
-    
+
     # get name
     neuron_dict['name'] = group.name
 
@@ -34,17 +35,18 @@ def collect_NeuronGroup(group):
         neuron_dict['user_method'] = group.method_choice
     # if not specified by user
     # TODO collect from run time
-    else: 
+    else:
         neuron_dict['user_method'] = None
-    
+
     # get equations
-    neuron_dict['user_equations'] = collect_Equations(group.user_equations)
+    neuron_dict['equations'] = collect_Equations(group.user_equations)
 
     # check spike event is defined
-    if bool(group.events):
+    if group.events:
         neuron_dict['events'] = collect_Events(group)
 
     return neuron_dict
+
 
 def collect_Equations(equations):
     """
@@ -63,28 +65,23 @@ def collect_Equations(equations):
 
     eqn_dict = {}
 
-    # get DIFFERENTIAL_EQUATIONS and SUBEXPRESSIONS
-    for names in equations.diff_eq_names.union(equations.subexpr_names):
-        
-        eqn_dict[names] = {'expr': equations[names].expr, 
-                                'unit': equations[names].unit, 
-                                'type': equations[names].type, 
-                                'dtype': equations[names].var_type}
-        
-        if equations[names].flags:
-            eqn_dict[names]['flags'] = equations[names].flags
-    
-    # get PARAMETERS
-    for param_names in equations.parameter_names:
-        
-        eqn_dict[param_names] = {'unit': equations[param_names].unit, 
-                                'type': equations[param_names].type, 
-                                'dtype': equations[param_names].var_type}
-        
-        if equations[param_names].flags:
-            eqn_dict[param_names]['flags'] = equations[param_names].flags
+    for name in (equations.diff_eq_names | equations.subexpr_names |
+                 equations.parameter_names):
+
+        eqs = equations[name]
+
+        eqn_dict[name] = {'unit': eqs.unit,
+                          'type': eqs.type,
+                          'var_type': eqs.var_type}
+
+        if eqs.type != PARAMETER:
+            eqn_dict[name]['expr'] = eqs.expr.code
+
+        if eqs.flags:
+            eqn_dict[name]['flags'] = eqs.flags
 
     return eqn_dict
+
 
 def collect_Events(group):
 
@@ -103,24 +100,26 @@ def collect_Events(group):
     """
 
     event_dict = {}
-    
+
     # add threshold
     event_dict['spike'] = {'threshold': group.events['spike']}
-    
-    #check reset is defined
-    if bool(group.event_codes):
+
+    # check reset is defined
+    if group.event_codes:
         event_dict['spike'].update({'reset': group.event_codes['spike']})
 
-    #check refractory is defined
+    # check refractory is defined
     if group._refractory:
         event_dict['spike'].update({'refractory': group._refractory})
-    
+
     return event_dict
+
 
 def collect_SpikeGenerator(spike_gen):
     """
-    Extract information from 'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'
-    and represent them in a dictionary format
+    Extract information from 
+    'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'and 
+    represent them in a dictionary format
 
     Parameters
     ----------
@@ -142,22 +141,17 @@ def collect_SpikeGenerator(spike_gen):
     spikegen_dict['N'] = spike_gen.N
 
     # get indices of spiking neurons
-    spikegen_dict['indices'] = {'array': spike_gen.variables['neuron_index'].get_value(), 
-                                'unit': spike_gen.variables['neuron_index'].unit,
-                                'dtype' : numpy.dtype(spike_gen.variables['neuron_index'].get_value().dtype)}
-
-    # get spike times for defined neurons
-    spikegen_dict['times'] = {'array': spike_gen.variables['spike_time'].get_value(), 
-                                'unit': spike_gen.variables['spike_time'].unit,
-                                'dtype' : numpy.dtype(spike_gen.variables['spike_time'].get_value().dtype)}
+    spikegen_dict['indices'] = spike_gen._neuron_index[:]
     
-    # get spike period
-    if spike_gen.variables['period'].get_value() != [0]:
-        spikegen_dict['period'] = {'array': spike_gen.variables['period'].get_value(),
-                                    'unit': spike_gen.variables['period'].unit,
-                                    'dtype': numpy.dtype(spike_gen.variables['period'].get_value().dtype)}
+    # get spike times for defined neurons
+    spikegen_dict['times'] = spike_gen.spike_time[:]
+    
+    # get spike period (default period is 0*second will be stored if not 
+    # mentioned by the user)
+    spikegen_dict['period'] = spike_gen.period[:]
         
     return spikegen_dict
+
 
 def collect_PoissonGroup(poisson_grp):
     """
@@ -183,15 +177,7 @@ def collect_PoissonGroup(poisson_grp):
     # get size
     poisson_grp_dict['N'] = poisson_grp._N
 
-    # get rates
-    # check subexpression string
-    if isinstance(poisson_grp._rates, str):
-        poisson_grp_dict['rates'] = {'expr': poisson_grp.variables['rates'].expr, 
-                                    'dtype': numpy.dtype(poisson_grp.variables['rates'].dtype)}
-    else:
-        poisson_grp_dict['rates'] = {'array': poisson_grp.variables['rates'].get_value(),
-                                    'dtype': numpy.dtype(poisson_grp.variables['rates'].get_value().dtype)}
+    # get rates (can be Quantity or str)
+    poisson_grp_dict['rates'] = poisson_grp._rates
     
-    poisson_grp_dict['rates'].update({'unit': poisson_grp.variables['rates'].unit})
-
     return poisson_grp_dict
