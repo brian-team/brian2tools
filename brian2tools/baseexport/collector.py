@@ -5,6 +5,7 @@ dictionary format. The parts of the file shall be reused
 with standard format exporter.
 """
 from brian2.equations.equations import PARAMETER
+from brian2.utils.stringtools import get_identifiers
 
 
 def collect_NeuronGroup(group):
@@ -21,8 +22,15 @@ def collect_NeuronGroup(group):
     -------
     neuron_dict : dict
         Dictionary with extracted information
+
+    neuron_identifers : set
+        Set of identifers belonging to group
+
     """
     neuron_dict = {}
+    
+    # identifiers belonging to the NeuronGroup
+    identifiers = set()
 
     # get name
     neuron_dict['name'] = group.name
@@ -40,12 +48,14 @@ def collect_NeuronGroup(group):
 
     # get equations
     neuron_dict['equations'] = collect_Equations(group.user_equations)
+    identifiers = identifiers | group.user_equations.identifiers
 
     # check spike event is defined
     if group.events:
-        neuron_dict['events'] = collect_Events(group)
+        neuron_dict['events'], event_identifiers = collect_Events(group)
+        identifiers = identifiers | event_identifiers
 
-    return neuron_dict
+    return neuron_dict, identifiers
 
 
 def collect_Equations(equations):
@@ -97,22 +107,29 @@ def collect_Events(group):
     -------
     event_dict : dict
         Dictionary with extracted information
+    
+    event_identifiers : set
+        Set of identifiers related to events
     """
 
     event_dict = {}
+    event_identifiers = set()
 
     # add threshold
     event_dict['spike'] = {'threshold': group.events['spike']}
+    event_identifiers |= (get_identifiers(group.events['spike']))
 
     # check reset is defined
     if group.event_codes:
         event_dict['spike'].update({'reset': group.event_codes['spike']})
+        event_identifiers |= (get_identifiers(group.event_codes['spike']))
 
     # check refractory is defined
     if group._refractory:
+        # TODO get identifiers if _refractory is basestring
         event_dict['spike'].update({'refractory': group._refractory})
 
-    return event_dict
+    return event_dict, event_identifiers
 
 
 def collect_SpikeGenerator(spike_gen):
@@ -167,9 +184,13 @@ def collect_PoissonGroup(poisson_grp):
     -------
     poisson_grp_dict : dict
                 Dictionary with extracted information
+    
+    poisson_identifiers : set
+                Set of identifiers belonging to poisson_grp
     """
 
     poisson_grp_dict = {}
+    poisson_identifiers = set()
 
     # get name
     poisson_grp_dict['name'] = poisson_grp._name
@@ -179,5 +200,7 @@ def collect_PoissonGroup(poisson_grp):
 
     # get rates (can be Quantity or str)
     poisson_grp_dict['rates'] = poisson_grp._rates
-    
-    return poisson_grp_dict
+    if type(poisson_grp._rates) ==  str:
+        poisson_identifiers |= (get_identifiers(poisson_grp._rates))
+
+    return poisson_grp_dict, poisson_identifiers

@@ -25,7 +25,7 @@ def test_simple_neurongroup():
     size = 1
 
     grp = NeuronGroup(size, eqn, method='exact')
-    neuron_dict = collect_NeuronGroup(grp)
+    neuron_dict, _ = collect_NeuronGroup(grp)
 
     assert neuron_dict['N'] == size
     assert neuron_dict['user_method'] == 'exact'
@@ -51,7 +51,7 @@ def test_simple_neurongroup():
     grp = NeuronGroup(10, '''dv/dt = I_leak / Cm : volt
                         I_leak = g_L*(E_L - v) : amp''')
 
-    neuron_dict = collect_NeuronGroup(grp)
+    neuron_dict, _ = collect_NeuronGroup(grp)
 
     assert neuron_dict['N'] == 10
     assert neuron_dict['user_method'] is None
@@ -92,7 +92,7 @@ def test_spike_neurongroup():
                                  reset='v = v_rest', 
                                  refractory=2 * ms)
     
-    neuron_dict = collect_NeuronGroup(grp)
+    neuron_dict, _ = collect_NeuronGroup(grp)
 
     assert neuron_dict['N'] == size
     assert neuron_dict['user_method'] is None
@@ -130,7 +130,7 @@ def test_spike_neurongroup():
                              method='euler')
     tau_n = 10 * ms
 
-    neuron_dict2 = collect_NeuronGroup(grp2)
+    neuron_dict2, _ = collect_NeuronGroup(grp2)
     assert neuron_dict2['events']['spike']['threshold'] == 'v > 800 * mV'
 
     with pytest.raises(KeyError):
@@ -180,7 +180,7 @@ def test_poissongroup():
     rates = numpy.arange(1, 11, step=1) * Hz
 
     poisongrp = PoissonGroup(N, rates)
-    poisson_dict = collect_PoissonGroup(poisongrp)
+    poisson_dict, _ = collect_PoissonGroup(poisongrp)
     
     assert poisson_dict['N'] == N
     
@@ -191,7 +191,7 @@ def test_poissongroup():
     # example2
     F = 10 * Hz
     poisongrp = PoissonGroup(N, rates='F + 2 * Hz')
-    poisson_dict = collect_PoissonGroup(poisongrp) 
+    poisson_dict, _ = collect_PoissonGroup(poisongrp) 
 
     assert poisson_dict['rates'] == 'F + 2 * Hz'
 
