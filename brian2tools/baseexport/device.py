@@ -2,6 +2,7 @@ from brian2.devices.device import RuntimeDevice
 from brian2.devices.device import Device, all_devices
 from brian2.core.namespace import get_local_namespace
 from brian2.groups import NeuronGroup
+from brian2.groups.group import CodeRunner
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
 
 from .collector import *
@@ -43,6 +44,9 @@ class BaseExporter(RuntimeDevice):
 
         self.build_on_run = True
         self.has_been_run = False
+        self.available_objs = (NeuronGroup, SpikeGeneratorGroup,
+                               PoissonGroup)
+        self.initializers = {}
     
 
     def network_run(self, network, duration, namespace = None, level = 0, 
@@ -96,6 +100,8 @@ class BaseExporter(RuntimeDevice):
                 neuron_identifiers = _prune_identifiers(neuron_identifiers)
                 # add identifiers field
                 neuron_dict['identifiers'] = neuron_identifiers
+                # add initializers
+                neuron_dict['initializers'] = self.initializers[object.name]
                 # check neurongroup key already exists, if not create one
                 if 'neurongroup' not in self.network_dict.keys():
                     self.network_dict['neurongroup'] = []
@@ -126,7 +132,21 @@ class BaseExporter(RuntimeDevice):
                     self.network_dict['spikegeneratorgroup'] = []
                 self.network_dict['spikegeneratorgroup'].append(posn_dict)
                 self.network_dict['spikegeneratorgroup'].append(spkgn_dict)
+            
+            if not isinstance(object, self.available_objs):
+                if isinstance(object, CodeRunner) and not isinstance(object.group, self.available_objs):
+                    raise NotImplementedError("Object {} is not implemented for standard format export".format(str(type(object))))
+            
+    def variableview_set_with_expression_conditional(self, variableview, cond, code,
+                                                     run_namespace, check_units=True):
+        if variableview.group.name not in self.initializers.keys():
+            self.initializers[variableview.group.name] = []
+        self.initializers[variableview.group.name].append({variableview.name: code})
 
+    def variableview_set_with_expression(self, variableview, item, code, run_namespace, check_units=True):
+        if variableview.group.name not in self.initializers.keys():
+            self.initializers[variableview.group.name] = []
+        self.initializers[variableview.group.name].append({variableview.name: (item, code)})
 
 # instantiate StdDevice object and add to all_devices        
 std_device = BaseExporter()

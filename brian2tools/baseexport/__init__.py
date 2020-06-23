@@ -3,8 +3,10 @@ stdformatexport package to export Brian models to
 standard representation
 """
 
-import warnings
+from brian2.utils.logger import get_logger
 from . import device
 
-warnings.warn(("The package is under development "
-               "and currently support very small range of Brian objects"))
+logger = get_logger(__name__)
+
+msg = "The package is under development and may give incorrect results"
+logger.warn(msg)
