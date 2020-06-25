@@ -1,6 +1,6 @@
 from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PoissonGroup, Equations, start_scope, 
-                    numpy, Quantity)
+                    numpy, Quantity, StateMonitor, SpikeMonitor)
 
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
@@ -8,12 +8,15 @@ from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
 
 from brian2 import (ms, mV, Hz, volt, second, umetre, siemens, cm,
                     ufarad, amp, hertz)
-import pytest
 
 from brian2tools.baseexport.collector import (collect_NeuronGroup, 
                                               collect_PoissonGroup, 
-                                              collect_SpikeGenerator)
+                                              collect_SpikeGenerator,
+                                              collect_StateMonitor,
+                                              collect_SpikeMonitor,
+                                              collect_PopulationRateMonitor)
 
+import pytest
 
 def test_simple_neurongroup():
     """
@@ -196,9 +199,66 @@ def test_poissongroup():
     assert poisson_dict['rates'] == 'F + 2 * Hz'
 
 
+def test_statemonitor():
+    """
+    Test collect_StateMonitor dictionary representation
+    """
+
+    # example 1
+    grp = NeuronGroup(10, model = 'dv/dt = (1 - v) / tau :1',
+                          method = 'euler')
+    mon = StateMonitor(grp, 'v', record = True)
+    statemon_dict = collect_StateMonitor(mon)
+
+    assert statemon_dict['source'] == grp.name
+    assert statemon_dict['record']
+    assert statemon_dict['n_indices'] == 10
+    assert statemon_dict['variables'] == ['v']
+
+    # exmaple 2
+    mon2 = StateMonitor(grp, ['v', 't'], record=[2, 4, 6, 8], 
+                             dt=1 * second)
+    statemon_dict2 = collect_StateMonitor(mon2)
+
+    assert statemon_dict2['source'] == grp.name
+    assert statemon_dict2['variables'].sort() == ['v', 't'].sort()
+    assert not statemon_dict2['record'] is True
+    assert statemon_dict2['record'] == [2, 4, 6, 8]
+    assert statemon_dict2['dt'] == 1 *  second
+
+    # example 3
+    mon3 = StateMonitor(grp, 'v', record = False)
+    statemon_dict3 = collect_StateMonitor(mon3)
+
+    assert not statemon_dict3['record']
+
+
+def test_spikemonitor():
+    """
+    Test collector function for SpikeMonitor
+    """
+
+    # example 1
+    grp = NeuronGroup(5, '''dv/dt = (v0 - v)/tau :volt''', method = 'exact',
+                      threshold = 'v > v_th', reset = 'v = v0', 
+                      name = "My_Neurons")
+    tau = 10 * ms
+    v0 = -70 * mV
+    v_th = 800 * mV
+    mon = SpikeMonitor(grp, 'v', record = [0, 4])
+    mon_dict = collect_SpikeMonitor(mon)
+
+    assert mon_dict['source'] == 'My Neurons'
+    assert mon_dict['variables'].sort() == ['i', 't', 'v'].sort()
+    assert mon_dict['record'] == [0, 4]
+    assert mon_dict['event'] == 'spike'
+
+
 if __name__ == '__main__':
 
     test_simple_neurongroup()
     test_spike_neurongroup()
     test_spikegenerator()
     test_poissongroup()
+    #test_statemonitor()
+    #test_spikemonitor()

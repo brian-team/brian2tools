@@ -181,3 +181,117 @@ def collect_PoissonGroup(poisson_grp):
     poisson_grp_dict['rates'] = poisson_grp._rates
     
     return poisson_grp_dict
+
+
+def collect_StateMonitor(state_mon):
+    """
+    Collect details of `brian2.monitors.statemonitor.StateMonitor`
+    and return them in dictionary format
+
+    Parameters
+    ----------
+    state_mon : brian2.monitors.statemonitor.StateMonitor
+            StateMonitor object
+
+    Returns
+    -------
+    state_mon_dict : dict
+            Dictionary representation of the collected details
+    """
+
+    state_mon_dict = {}
+
+    # get name
+    state_mon_dict['name'] = state_mon.name
+
+    # get source object name
+    state_mon_dict['source'] = state_mon.source.name
+
+    # get recorded variables
+    state_mon_dict['variables'] = state_mon.recorded_variables
+
+    # get record indices
+    # if all members of the source object are being recorded
+    # set 'record_indices' = True, else save indices
+    if state_mon.record_all:
+        state_mon_dict['record'] = state_mon.record_all
+    else:
+        state_mon_dict['record'] = state_mon.record
+    
+    # get no. of record indices
+    state_mon_dict['n_indices'] = state_mon.n_indices
+
+    # get clock dt of the StateMonitor
+    state_mon_dict['dt'] = state_mon.clock.dt
+
+    return state_mon_dict
+
+
+def collect_SpikeMonitor(spike_mon):
+    """
+    Collect details of `brian2.monitors.spikemonitor.SpikeMonitor`
+    and return them in dictionary format
+
+    Parameters
+    ----------
+    spike_mon : brian2.monitors.spikemonitor.SpikeMonitor
+            SpikeMonitor object
+
+    Returns
+    -------
+    spike_mon_dict : dict
+            Dictionary representation of the collected details
+    """
+
+    spike_mon_dict = {}
+
+    # collect name
+    spike_mon_dict['name'] = spike_mon.name
+
+    # collect source object name
+    spike_mon_dict['source'] = spike_mon.source.name
+
+    # collect record variables
+    # by default spike_mon.record_variables is set() so change to list
+    spike_mon_dict['variables'] = list(spike_mon.record_variables)
+
+    # collect record indices and time
+    spike_mon_dict['record'] = spike_mon.record
+
+    # collect name of the event
+    spike_mon_dict['event'] = spike_mon.event
+
+    # collect time-step
+    spike_mon_dict['dt'] = spike_mon.clock.dt
+
+    return spike_mon_dict
+
+
+def collect_PopulationRateMonitor(poprate_mon):
+    """
+    Represent required details of PopulationRateMonitor
+    in dictionary format
+
+    Parameters
+    ----------
+    poprate_mon : brian2.monitors.ratemonitor.PopulationRateMonitor
+            PopulationRateMonitor class object
+    
+    Returns
+    -------
+    poprate_mon_dict : dict
+            Dictionary format of the details collected
+    """
+
+    poprate_mon_dict = {}
+
+    # collect name
+    poprate_mon_dict['name'] = poprate_mon.name
+
+    # collect source object
+    poprate_mon_dict['source'] = poprate_mon.source.name
+
+    # collect time-step
+    poprate_mon_dict['dt'] = poprate_mon.clock.dt
+
+    return poprate_mon_dict
