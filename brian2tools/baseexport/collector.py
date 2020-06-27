@@ -117,15 +117,15 @@ def collect_Events(group):
 
 def collect_SpikeGenerator(spike_gen):
     """
-    Extract information from 
-    'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'and 
+    Extract information from
+    'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'and
     represent them in a dictionary format
 
     Parameters
     ----------
     spike_gen : brian2.input.spikegeneratorgroup.SpikeGeneratorGroup
             SpikeGenerator object
-    
+
     Returns
     -------
     spikegen_dict : dict
@@ -142,14 +142,14 @@ def collect_SpikeGenerator(spike_gen):
 
     # get indices of spiking neurons
     spikegen_dict['indices'] = spike_gen._neuron_index[:]
-    
+
     # get spike times for defined neurons
     spikegen_dict['times'] = spike_gen.spike_time[:]
-    
-    # get spike period (default period is 0*second will be stored if not 
+
+    # get spike period (default period is 0*second will be stored if not
     # mentioned by the user)
     spikegen_dict['period'] = spike_gen.period[:]
-        
+
     return spikegen_dict
 
 
@@ -162,7 +162,7 @@ def collect_PoissonGroup(poisson_grp):
     ----------
     poisson_grp : brian2.input.poissongroup.PoissonGroup
             PoissonGroup object
-    
+
     Returns
     -------
     poisson_grp_dict : dict
@@ -179,7 +179,7 @@ def collect_PoissonGroup(poisson_grp):
 
     # get rates (can be Quantity or str)
     poisson_grp_dict['rates'] = poisson_grp._rates
-    
+
     return poisson_grp_dict
 
 
@@ -208,7 +208,7 @@ def collect_StateMonitor(state_mon):
     state_mon_dict['source'] = state_mon.source.name
 
     # get recorded variables
-    state_mon_dict['variables'] = state_mon.recorded_variables
+    state_mon_dict['variables'] = state_mon.record_variables
 
     # get record indices
     # if all members of the source object are being recorded
@@ -217,7 +217,7 @@ def collect_StateMonitor(state_mon):
         state_mon_dict['record'] = state_mon.record_all
     else:
         state_mon_dict['record'] = state_mon.record
-    
+
     # get no. of record indices
     state_mon_dict['n_indices'] = state_mon.n_indices
 
@@ -256,6 +256,8 @@ def collect_SpikeMonitor(spike_mon):
     spike_mon_dict['variables'] = list(spike_mon.record_variables)
 
     # collect record indices and time
+    # when `record = True`, `spike_mon.record` stores
+    # the bool value without making it to a list unlike StateMonitor
     spike_mon_dict['record'] = spike_mon.record
 
     # collect name of the event
@@ -276,7 +278,7 @@ def collect_PopulationRateMonitor(poprate_mon):
     ----------
     poprate_mon : brian2.monitors.ratemonitor.PopulationRateMonitor
             PopulationRateMonitor class object
-    
+
     Returns
     -------
     poprate_mon_dict : dict
