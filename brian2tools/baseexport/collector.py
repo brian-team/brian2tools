@@ -5,6 +5,7 @@ dictionary format. The parts of the file shall be reused
 with standard format exporter.
 """
 from brian2.equations.equations import PARAMETER
+from brian2.groups.group import CodeRunner
 
 
 def collect_NeuronGroup(group):
@@ -45,6 +46,19 @@ def collect_NeuronGroup(group):
     if group.events:
         neuron_dict['events'] = collect_Events(group)
 
+    # check any `run_regularly` / CodeRunner objects associated
+
+    for obj in group.contained_objects:
+        # Note: Thresholder, StateUpdater, Resetter are all derived from
+        # CodeRunner, so to identify `run_regularly` object we use type()
+        if type(obj) == CodeRunner:
+            if 'run_regularly' not in neuron_dict:
+                neuron_dict['run_regularly'] = []
+            neuron_dict['run_regularly'].append({
+                                                'name': obj.name,
+                                                'code': obj.abstract_code,
+                                                'dt': obj.clock.dt
+                                                })
     return neuron_dict
 
 

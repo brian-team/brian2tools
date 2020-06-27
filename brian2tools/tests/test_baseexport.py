@@ -42,6 +42,9 @@ def test_simple_neurongroup():
     with pytest.raises(KeyError):
         neuron_dict['equations']['tau']
 
+    with pytest.raises(KeyError):
+        neuron_dict['run_regularly']
+
     eqn_obj = Equations(eqn)
     assert neuron_dict['equations']['v']['expr'] == eqn_obj['v'].expr.code
 
@@ -54,6 +57,9 @@ def test_simple_neurongroup():
     Cm = 1 * ufarad * cm ** -2 * area
     grp = NeuronGroup(10, '''dv/dt = I_leak / Cm : volt
                         I_leak = g_L*(E_L - v) : amp''')
+    grp.run_regularly('v = v / 2', dt=20 * ms, name='i_am_run_reg_senior')
+    grp.run_regularly('I_leak = I_leak + 0.002 * amp', dt=10 * ms,
+                      name='i_am_run_reg_junior')
 
     neuron_dict = collect_NeuronGroup(grp)
 
@@ -78,6 +84,17 @@ def test_simple_neurongroup():
 
     with pytest.raises(KeyError):
         neuron_dict['events']
+
+    assert neuron_dict['run_regularly'][0]['name'] == 'i_am_run_reg_senior'
+    assert neuron_dict['run_regularly'][1]['name'] == 'i_am_run_reg_junior'
+    assert neuron_dict['run_regularly'][0]['code'] == 'v = v / 2'
+    assert (neuron_dict['run_regularly'][1]['code'] ==
+            'I_leak = I_leak + 0.002 * amp')
+    assert neuron_dict['run_regularly'][0]['dt'] == 20 * ms
+    assert neuron_dict['run_regularly'][1]['dt'] == 10 * ms
+
+    with pytest.raises(IndexError):
+        neuron_dict['run_regularly'][2]
 
 
 def test_spike_neurongroup():
