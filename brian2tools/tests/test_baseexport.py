@@ -209,12 +209,23 @@ def test_poissongroup():
     assert poisson_dict['rates'].has_same_dimensions(5 * Hz)
     assert poisson_dict['rates'].dtype == float
 
+    with pytest.raises(KeyError):
+        assert poisson_dict['run_regularly']
+    
     # example2
     F = 10 * Hz
     poisongrp = PoissonGroup(N, rates='F + 2 * Hz')
+    poisongrp.run_regularly('F = F + 3 * Hz', dt = 10 * ms,
+                            name = "Run_at_0_01")
     poisson_dict = collect_PoissonGroup(poisongrp)
 
     assert poisson_dict['rates'] == 'F + 2 * Hz'
+    assert poisson_dict['run_regularly'][0]['name'] == 'Run_at_0_01'
+    assert poisson_dict['run_regularly'][0]['code'] == 'F = F + 3 * Hz'
+    assert poisson_dict['run_regularly'][0]['dt'] == 10 * ms
+    
+    with pytest.raises(IndexError):
+        poisson_dict['run_regularly'][1]
 
 
 def test_statemonitor():

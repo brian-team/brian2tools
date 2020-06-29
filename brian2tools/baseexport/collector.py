@@ -47,7 +47,6 @@ def collect_NeuronGroup(group):
         neuron_dict['events'] = collect_Events(group)
 
     # check any `run_regularly` / CodeRunner objects associated
-
     for obj in group.contained_objects:
         # Note: Thresholder, StateUpdater, Resetter are all derived from
         # CodeRunner, so to identify `run_regularly` object we use type()
@@ -193,6 +192,17 @@ def collect_PoissonGroup(poisson_grp):
 
     # get rates (can be Quantity or str)
     poisson_grp_dict['rates'] = poisson_grp._rates
+
+    # `run_regularly` / CodeRunner objects of poisson_grp
+    for obj in poisson_grp.contained_objects:
+        if type(obj) == CodeRunner:
+            if 'run_regularly' not in poisson_grp_dict:
+                poisson_grp_dict['run_regularly'] = []
+            poisson_grp_dict['run_regularly'].append({
+                                                'name': obj.name,
+                                                'code': obj.abstract_code,
+                                                'dt': obj.clock.dt
+                                                })
 
     return poisson_grp_dict
 
