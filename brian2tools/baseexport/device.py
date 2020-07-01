@@ -47,6 +47,9 @@ class BaseExporter(RuntimeDevice):
         self.build_options = None
         self.supported_objs = (NeuronGroup, SpikeGeneratorGroup,
                                PoissonGroup)
+        self.runs = []
+        self.initializers = []
+        self.run_identifiers = []
 
     def reinit(self):
         """
@@ -100,11 +103,12 @@ class BaseExporter(RuntimeDevice):
 
         run_dict = {}          # dictionary with components of particular run
         run_components = {}    # network components during the run
-        run_initializers = []  # network initializers
+        run_inactive = []      # inactive objects for the run
 
         # loop through all the objects of network
         for object in network.objects:
-
+            
+            # check the object is inactive
             # check NeuronGroup
             if isinstance(object, NeuronGroup):
                 # get dictionary containing all information about object
@@ -138,6 +142,80 @@ class BaseExporter(RuntimeDevice):
                 raise NotImplementedError(
                         "Object {} is not implemented for\
                          standard format export".format(str(type(object))))
+
+            # check any inactive objects present in the run
+            if not object.active:
+                run_inactive.append(object.name)
+
+        run_dict = {'components': run_components,
+                    'duration': duration
+                   }
+        # check any initializers defined in the run scope
+        if self.initializers:
+            run_dict['initializers'] = self.initializers
+        # check the identifiers present in run level (like from initializers
+        # expressions)
+        if self.run_identifiers:
+            run_dict['run_identifiers'] = self.run_identifiers
+        # check any inactive objects present for this run
+        if run_inactive:
+            run_dict['inactive'] = run_inactive
+        # reset the initializers, so it won't be repeated for other runs
+        self.initializers = []
+        # append the run_dict that contains all information about the
+        # Brian objects defined in the scope of run()
+        self.runs.append(run_dict)
+
+        print(self.runs)
+
+    def variableview_set_with_expression_conditional(self, variableview, cond, 
+                                                     code, run_namespace,
+                                                     check_units=True):
+        """
+        Capture setters with conditioanl expressions, 
+        for eg. obj.var['i>5'] = 'rand() * -78 * mV'
+        """
+        # Note: by default, when 
+        init_dict = {'source': variableview.group.name,
+                     'variable': variableview.name,
+                     'index': cond, 'value': code}
+        self.initializers.append(init_dict)    
+        
+    def variableview_set_with_expression(self, variableview, item, code,
+                                         run_namespace, check_units=True):
+        """
+        Capture setters with expressions,
+        for eg. obj.var[0:2] = 'rand() * -78 * mV' or
+        obj.var = 'rand() * -78 * mV'
+        """
+        init_dict = {'source': variableview.group.name,
+                     'variable': variableview.name,
+                     'value': code}
+        # check item is of slice type, if so pass to indices
+        # else pass the boolean
+        if type(item) == slice:
+            init_dict['index'] = list(range(variableview.group.N))[item]
+        else:
+            init_dict['index'] = item
+        self.initializers.append(init_dict)
+
+    def variableview_set_with_index_array(self, variableview, item, value,
+                                          check_units = True):
+        """
+        Capture setters with particular,
+        for eg. obj.var[0:2] = 'rand() * -78 * mV' or
+        obj.var = 'rand() * -78 * mV'
+        """
+        init_dict = {'source': variableview.group.name,
+                     'variable': variableview.name,
+                     'value': value}
+        # check type is slice, if so pass to indices
+        # else pass the boolean
+        if type(item) == slice:
+            init_dict['index'] = list(range(variableview.group.N))[item]
+        else:
+            init_dict['index'] = item
+        self.initializers.append(init_dict)
 
 
 # instantiate StdDevice object and add to all_devices
