@@ -18,19 +18,19 @@ def _prune_identifiers(identifiers):
     
     Returns
     -------
-    filter_identifiers : dict
+    clean_identifiers : dict
         Filtered identifiers to use with standard format
     """
 
-    filter_identifiers = {}
+    clean_identifiers = {}
     
     for (key, value) in identifiers.items():
 
-        if isinstance(value, Constant) and key not in DEFAULT_CONSTANTS.keys():
+        if isinstance(value, Constant) and key not in DEFAULT_CONSTANTS:
             quant_identity = {key : Quantity(value.value, dim = value.dim)}
-            filter_identifiers.update(quant_identity)
+            clean_identifiers.update(quant_identity)
         
-        if isinstance(value, Function) and key not in DEFAULT_FUNCTIONS.keys():
-            filter_identifiers.update({key : value})
+        if isinstance(value, Function) and key not in DEFAULT_FUNCTIONS:
+            clean_identifiers.update({key : value})
             
-    return filter_identifiers
+    return clean_identifiers

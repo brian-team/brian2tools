@@ -1,23 +1,21 @@
 from brian2 import (NeuronGroup, SpikeGeneratorGroup,
-                    PoissonGroup, Equations, start_scope, 
+                    PoissonGroup, Equations, start_scope,
                     numpy, Quantity)
-
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
                                         PARAMETER, parse_string_equations)
-
 from brian2 import (ms, mV, Hz, volt, second, umetre, siemens, cm,
                     ufarad, amp, hertz)
-import pytest
-
-from brian2tools.baseexport.collector import (collect_NeuronGroup, 
-                                              collect_PoissonGroup, 
+from brian2.core.namespace import get_local_namespace
+from brian2tools.baseexport.collector import (collect_NeuronGroup,
+                                              collect_PoissonGroup,
                                               collect_SpikeGenerator)
+import pytest
 
 
 def test_simple_neurongroup():
     """
-    Test dictionary representation of simple NeuronGroup 
+    Test dictionary representation of simple NeuronGroup
     """
     # example 1
     eqn = '''dv/dt = (1 - v) / tau : volt'''
@@ -25,11 +23,10 @@ def test_simple_neurongroup():
     size = 1
 
     grp = NeuronGroup(size, eqn, method='exact')
-    neuron_dict, _ = collect_NeuronGroup(grp)
+    neuron_dict = collect_NeuronGroup(grp, get_local_namespace(0))
 
     assert neuron_dict['N'] == size
     assert neuron_dict['user_method'] == 'exact'
-
     assert neuron_dict['equations']['v']['type'] == DIFFERENTIAL_EQUATION
     assert neuron_dict['equations']['v']['unit'] == volt
     assert neuron_dict['equations']['v']['var_type'] == FLOAT
@@ -39,11 +36,12 @@ def test_simple_neurongroup():
 
     eqn_obj = Equations(eqn)
     assert neuron_dict['equations']['v']['expr'] == eqn_obj['v'].expr.code
-    
-    # example 2
+    assert neuron_dict['identifiers']['tau'] == 10 * ms
+    with pytest.raises(KeyError):
+        neuron_dict['identifiers']['size']
 
+    # example 2
     start_scope()
-    
     area = 100 * umetre ** 2
     g_L = 1e-2 * siemens * cm ** -2 * area
     E_L = 1000
@@ -51,11 +49,11 @@ def test_simple_neurongroup():
     grp = NeuronGroup(10, '''dv/dt = I_leak / Cm : volt
                         I_leak = g_L*(E_L - v) : amp''')
 
-    neuron_dict, _ = collect_NeuronGroup(grp)
+    neuron_dict = collect_NeuronGroup(grp, get_local_namespace(0))
 
     assert neuron_dict['N'] == 10
     assert neuron_dict['user_method'] is None
-    
+
     eqn_str = '''
     dv/dt = I_leak / Cm : volt
     I_leak = g_L*(E_L - v) : amp
@@ -71,9 +69,13 @@ def test_simple_neurongroup():
     assert neuron_dict['equations']['I_leak']['unit'] == amp
     assert neuron_dict['equations']['I_leak']['var_type'] == FLOAT
     assert neuron_dict['equations']['I_leak']['expr'] == 'g_L*(E_L - v)'
+    assert neuron_dict['identifiers']['g_L'] == g_L
+    assert neuron_dict['identifiers']['Cm'] == Cm
 
     with pytest.raises(KeyError):
         neuron_dict['events']
+    with pytest.raises(KeyError):
+        neuron_dict['identifiers']['area']
 
 
 def test_spike_neurongroup():
@@ -88,11 +90,11 @@ def test_spike_neurongroup():
     tau = 10 * ms
     size = 10
 
-    grp = NeuronGroup(size, eqn, threshold='v > v_th', 
-                                 reset='v = v_rest', 
-                                 refractory=2 * ms)
-    
-    neuron_dict, _ = collect_NeuronGroup(grp)
+    grp = NeuronGroup(size, eqn, threshold='v > v_th',
+                      reset='v = v_rest',
+                      refractory=2 * ms)
+
+    neuron_dict = collect_NeuronGroup(grp, get_local_namespace(0))
 
     assert neuron_dict['N'] == size
     assert neuron_dict['user_method'] is None
@@ -107,7 +109,7 @@ def test_spike_neurongroup():
     assert neuron_dict['equations']['v_th']['unit'] == volt
     assert neuron_dict['equations']['v_th']['var_type'] == FLOAT
     assert neuron_dict['equations']['v_th']['expr'] == eqns['v_th'].expr.code
-    
+
     assert neuron_dict['equations']['v_rest']['type'] == SUBEXPRESSION
     assert neuron_dict['equations']['v_rest']['unit'] == volt
     assert neuron_dict['equations']['v_rest']['var_type'] == FLOAT
@@ -120,30 +122,29 @@ def test_spike_neurongroup():
     assert neuron_dict['events']['spike']['threshold'] == 'v > v_th'
     assert neuron_dict['events']['spike']['reset'] == 'v = v_rest'
     assert neuron_dict['events']['spike']['refractory'] == Quantity(2 * ms)
-    
+
     # example 2 with threshold but no reset
 
     start_scope()
-
-    grp2 = NeuronGroup(size, '''dv/dt = (100 * mV - v) / tau_n : volt''', 
-                             threshold='v > 800 * mV', 
+    grp2 = NeuronGroup(size, '''dv/dt = (100 * mV - v) / tau_n : volt''',
+                             threshold='v > 800 * mV',
                              method='euler')
     tau_n = 10 * ms
 
-    neuron_dict2, _ = collect_NeuronGroup(grp2)
+    neuron_dict2 = collect_NeuronGroup(grp2, get_local_namespace(0))
     assert neuron_dict2['events']['spike']['threshold'] == 'v > 800 * mV'
 
     with pytest.raises(KeyError):
         neuron_dict2['events']['spike']['reset']
     with pytest.raises(KeyError):
         neuron_dict2['events']['spike']['refractory']
-    
+
 
 def test_spikegenerator():
     """
     Test dictionary representation of SpikeGenerator
     """
-    
+
     # example 1
     size = 1
     index = [0]
@@ -167,7 +168,7 @@ def test_spikegenerator():
     assert spike_gen_dict['N'] == 10
     assert spike_gen_dict['period'] == [20] * ms
     assert spike_gen_dict['period'].has_same_dimensions(20 * ms)
-    assert spike_gen_dict['period'].dtype == float 
+    assert spike_gen_dict['period'].dtype == float
 
 
 def test_poissongroup():
@@ -180,10 +181,10 @@ def test_poissongroup():
     rates = numpy.arange(1, 11, step=1) * Hz
 
     poisongrp = PoissonGroup(N, rates)
-    poisson_dict, _ = collect_PoissonGroup(poisongrp)
-    
+    poisson_dict = collect_PoissonGroup(poisongrp, get_local_namespace(0))
+
     assert poisson_dict['N'] == N
-    
+
     assert (poisson_dict['rates'] == rates).all()
     assert poisson_dict['rates'].has_same_dimensions(5 * Hz)
     assert poisson_dict['rates'].dtype == float
@@ -191,7 +192,7 @@ def test_poissongroup():
     # example2
     F = 10 * Hz
     poisongrp = PoissonGroup(N, rates='F + 2 * Hz')
-    poisson_dict, _ = collect_PoissonGroup(poisongrp) 
+    poisson_dict = collect_PoissonGroup(poisongrp, get_local_namespace(0))
 
     assert poisson_dict['rates'] == 'F + 2 * Hz'
 

@@ -6,9 +6,10 @@ with standard format exporter.
 """
 from brian2.equations.equations import PARAMETER
 from brian2.utils.stringtools import get_identifiers
+from .helper import _prune_identifiers
 
 
-def collect_NeuronGroup(group):
+def collect_NeuronGroup(group, run_namespace):
     """
     Collect information from `brian2.groups.neurongroup.NeuronGroup`
     and return them in a dictionary format
@@ -18,17 +19,16 @@ def collect_NeuronGroup(group):
     group : brian2.groups.neurongroup.NeuronGroup
         NeuronGroup object
 
+    run_namespace : dict
+        Namespace dictionary
+
     Returns
     -------
     neuron_dict : dict
         Dictionary with extracted information
-
-    neuron_identifers : set
-        Set of identifers belonging to group
-
     """
     neuron_dict = {}
-    
+
     # identifiers belonging to the NeuronGroup
     identifiers = set()
 
@@ -55,7 +55,15 @@ def collect_NeuronGroup(group):
         neuron_dict['events'], event_identifiers = collect_Events(group)
         identifiers = identifiers | event_identifiers
 
-    return neuron_dict, identifiers
+    # resolve group-specific identifiers
+    identifiers = group.resolve_all(identifiers, run_namespace)
+    # with the identifiers connected to group, prune away unwanted
+    identifiers = _prune_identifiers(identifiers)
+    # check the dictionary is not empty
+    if identifiers:
+        neuron_dict['identifiers'] = identifiers
+
+    return neuron_dict
 
 
 def collect_Equations(equations):
@@ -107,7 +115,7 @@ def collect_Events(group):
     -------
     event_dict : dict
         Dictionary with extracted information
-    
+
     event_identifiers : set
         Set of identifiers related to events
     """
@@ -132,17 +140,20 @@ def collect_Events(group):
     return event_dict, event_identifiers
 
 
-def collect_SpikeGenerator(spike_gen):
+def collect_SpikeGenerator(spike_gen, run_namespace=None):
     """
-    Extract information from 
-    'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'and 
+    Extract information from
+    'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'and
     represent them in a dictionary format
 
     Parameters
     ----------
     spike_gen : brian2.input.spikegeneratorgroup.SpikeGeneratorGroup
             SpikeGenerator object
-    
+
+    run_namespace : dict
+            Namespace dictionary
+
     Returns
     -------
     spikegen_dict : dict
@@ -159,18 +170,18 @@ def collect_SpikeGenerator(spike_gen):
 
     # get indices of spiking neurons
     spikegen_dict['indices'] = spike_gen._neuron_index[:]
-    
+
     # get spike times for defined neurons
     spikegen_dict['times'] = spike_gen.spike_time[:]
-    
-    # get spike period (default period is 0*second will be stored if not 
+
+    # get spike period (default period is 0*second will be stored if not
     # mentioned by the user)
     spikegen_dict['period'] = spike_gen.period[:]
-        
+
     return spikegen_dict
 
 
-def collect_PoissonGroup(poisson_grp):
+def collect_PoissonGroup(poisson_grp, run_namespace):
     """
     Extract information from 'brian2.input.poissongroup.PoissonGroup'
     and represent them in a dictionary format
@@ -179,12 +190,15 @@ def collect_PoissonGroup(poisson_grp):
     ----------
     poisson_grp : brian2.input.poissongroup.PoissonGroup
             PoissonGroup object
-    
+
+    run_namespace : dict
+            Namespace dictionary
+
     Returns
     -------
     poisson_grp_dict : dict
                 Dictionary with extracted information
-    
+
     poisson_identifiers : set
                 Set of identifiers belonging to poisson_grp
     """
@@ -200,7 +214,16 @@ def collect_PoissonGroup(poisson_grp):
 
     # get rates (can be Quantity or str)
     poisson_grp_dict['rates'] = poisson_grp._rates
-    if type(poisson_grp._rates) ==  str:
+    if type(poisson_grp._rates) == str:
         poisson_identifiers |= (get_identifiers(poisson_grp._rates))
 
-    return poisson_grp_dict, poisson_identifiers
+    # resolve object-specific identifiers
+    poisson_identifiers = poisson_grp.resolve_all(poisson_identifiers,
+                                                  run_namespace)
+    # prune away unwanted from the identifiers connected to poissongroup
+    poisson_identifiers = _prune_identifiers(poisson_identifiers)
+    # check identifiers are present
+    if poisson_identifiers:
+        poisson_grp_dict['identifiers'] = poisson_identifiers
+
+    return poisson_grp_dict
