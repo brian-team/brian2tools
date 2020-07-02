@@ -7,7 +7,7 @@ from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
                                         PARAMETER, parse_string_equations)
 
-from brian2 import (ms, mV, Hz, volt, second, umetre, siemens, cm,
+from brian2 import (ms, us, mV, Hz, volt, second, umetre, siemens, cm,
                     ufarad, amp, hertz)
 
 from brian2tools.baseexport.collector import (collect_NeuronGroup,
@@ -144,8 +144,19 @@ def test_spike_neurongroup():
     assert neuron_dict['equations']['tau']['var_type'] == FLOAT
     assert neuron_dict['equations']['tau']['flags'][0] == 'constant'
 
-    assert neuron_dict['events']['spike']['threshold'] == 'v > v_th'
-    assert neuron_dict['events']['spike']['reset'] == 'v = v_rest'
+    thresholder = grp.thresholder['spike']
+    neuron_events = neuron_dict['events']['spike']
+    assert neuron_events['threshold']['code'] == 'v > v_th'
+    assert neuron_events['threshold']['when'] == thresholder.when
+    assert neuron_events['threshold']['order'] == thresholder.order
+    assert neuron_events['threshold']['dt'] == grp.clock.dt
+
+    resetter = grp.resetter['spike']
+    assert neuron_events['reset']['code'] == 'v = v_rest'
+    assert neuron_events['reset']['when'] == resetter.when
+    assert neuron_events['reset']['order'] == resetter.order
+    assert neuron_events['reset']['dt'] == resetter.clock.dt
+
     assert neuron_dict['events']['spike']['refractory'] == Quantity(2 * ms)
 
     # example 2 with threshold but no reset
@@ -158,7 +169,13 @@ def test_spike_neurongroup():
     tau_n = 10 * ms
 
     neuron_dict2 = collect_NeuronGroup(grp2)
-    assert neuron_dict2['events']['spike']['threshold'] == 'v > 800 * mV'
+
+    thresholder = grp2.thresholder['spike']
+    neuron_events = neuron_dict2['events']['spike']
+    assert neuron_events['threshold']['code'] == 'v > 800 * mV'
+    assert neuron_events['threshold']['when'] == thresholder.when
+    assert neuron_events['threshold']['order'] == thresholder.order
+    assert neuron_events['threshold']['dt'] == grp2.clock.dt
 
     with pytest.raises(KeyError):
         neuron_dict2['events']['spike']['reset']

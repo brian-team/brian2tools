@@ -122,20 +122,26 @@ def collect_Events(group):
         Dictionary with extracted information
     """
 
-    event_dict = {}
+    spike_dict = {}
 
     # add threshold
-    event_dict['spike'] = {'threshold': group.events['spike']}
+    spike_dict['threshold'] = {'code': group.events['spike'],
+                               'when': group.thresholder['spike'].when,
+                               'order': group.thresholder['spike'].order,
+                               'dt': group.thresholder['spike'].clock.dt}
 
     # check reset is defined
     if group.event_codes:
-        event_dict['spike'].update({'reset': group.event_codes['spike']})
+        spike_dict.update({'reset': {'code': group.event_codes['spike'],
+                                     'when': group.resetter['spike'].when,
+                                     'order': group.resetter['spike'].order,
+                                     'dt': group.resetter['spike'].clock.dt}})
 
     # check refractory is defined
     if group._refractory:
-        event_dict['spike'].update({'refractory': group._refractory})
+        spike_dict.update({'refractory': group._refractory})
 
-    return event_dict
+    return {'spike': spike_dict}
 
 
 def collect_SpikeGenerator(spike_gen):
