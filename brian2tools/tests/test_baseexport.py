@@ -47,9 +47,10 @@ def test_simple_neurongroup():
 
     eqn_obj = Equations(eqn)
     assert neuron_dict['equations']['v']['expr'] == eqn_obj['v'].expr.code
+    assert neuron_dict['when'] == 'groups'
+    assert neuron_dict['order'] == 0
 
     # example 2
-
     start_scope()
     area = 100 * umetre ** 2
     g_L = 1e-2 * siemens * cm ** -2 * area
@@ -65,7 +66,8 @@ def test_simple_neurongroup():
 
     assert neuron_dict['N'] == 10
     assert neuron_dict['user_method'] is None
-
+    assert neuron_dict['when'] == 'groups'
+    assert neuron_dict['order'] == 0
     eqn_str = '''
     dv/dt = I_leak / Cm : volt
     I_leak = g_L*(E_L - v) : amp
@@ -92,6 +94,10 @@ def test_simple_neurongroup():
             'I_leak = I_leak + 0.002 * amp')
     assert neuron_dict['run_regularly'][0]['dt'] == 20 * ms
     assert neuron_dict['run_regularly'][1]['dt'] == 10 * ms
+    assert neuron_dict['run_regularly'][0]['when'] == 'start'
+    assert neuron_dict['run_regularly'][1]['when'] == 'start'
+    assert neuron_dict['run_regularly'][0]['order'] == 0
+    assert neuron_dict['run_regularly'][1]['order'] == 0
 
     with pytest.raises(IndexError):
         neuron_dict['run_regularly'][2]
@@ -183,12 +189,22 @@ def test_spikegenerator():
 
     # example 2
     spike_gen2 = SpikeGeneratorGroup(10, index, time, period=20 * ms)
+    spike_gen2.run_regularly('var = var + 1', dt=10 * ms, name='spikerr')
     spike_gen_dict = collect_SpikeGenerator(spike_gen2)
 
     assert spike_gen_dict['N'] == 10
     assert spike_gen_dict['period'] == [20] * ms
     assert spike_gen_dict['period'].has_same_dimensions(20 * ms)
     assert spike_gen_dict['period'].dtype == float
+
+    # (check run_regularly)
+    assert spike_gen_dict['run_regularly'][0]['name'] == 'spikerr'
+    assert spike_gen_dict['run_regularly'][0]['code'] == 'var = var + 1'
+    assert spike_gen_dict['run_regularly'][0]['dt'] == 10 * ms
+    assert spike_gen_dict['run_regularly'][0]['when'] == 'start'
+    assert spike_gen_dict['run_regularly'][0]['order'] == 0
+    with pytest.raises(IndexError):
+        spike_gen_dict['run_regularly'][1]
 
 
 def test_poissongroup():
@@ -211,19 +227,21 @@ def test_poissongroup():
 
     with pytest.raises(KeyError):
         assert poisson_dict['run_regularly']
-    
+
     # example2
     F = 10 * Hz
     poisongrp = PoissonGroup(N, rates='F + 2 * Hz')
-    poisongrp.run_regularly('F = F + 3 * Hz', dt = 10 * ms,
-                            name = "Run_at_0_01")
+    poisongrp.run_regularly('F = F + 3 * Hz', dt=10 * ms,
+                            name="Run_at_0_01")
     poisson_dict = collect_PoissonGroup(poisongrp)
 
     assert poisson_dict['rates'] == 'F + 2 * Hz'
     assert poisson_dict['run_regularly'][0]['name'] == 'Run_at_0_01'
     assert poisson_dict['run_regularly'][0]['code'] == 'F = F + 3 * Hz'
     assert poisson_dict['run_regularly'][0]['dt'] == 10 * ms
-    
+    assert poisson_dict['run_regularly'][0]['when'] == 'start'
+    assert poisson_dict['run_regularly'][0]['order'] == 0
+
     with pytest.raises(IndexError):
         poisson_dict['run_regularly'][1]
 
@@ -243,6 +261,8 @@ def test_statemonitor():
     assert statemon_dict['record']
     assert statemon_dict['n_indices'] == 10
     assert statemon_dict['variables'] == ['v']
+    assert statemon_dict['when'] == 'start'
+    assert statemon_dict['order'] == 0
 
     # exmaple 2
     eqn = '''dvar1/dt = (var1 + 1) / tau :1
@@ -266,6 +286,8 @@ def test_statemonitor():
     statemon_dict3 = collect_StateMonitor(mon3)
 
     assert not statemon_dict3['record'].size
+    assert statemon_dict3['when'] == 'start'
+    assert statemon_dict3['order'] == 0
 
 
 def test_spikemonitor():
@@ -287,6 +309,8 @@ def test_spikemonitor():
     assert mon_dict['variables'].sort() == ['i', 't', 'v'].sort()
     assert mon_dict['record'] == [0, 4]
     assert mon_dict['event'] == 'spike'
+    assert mon_dict['when'] == 'thresholds'
+    assert mon_dict['order'] == 1
 
     # example 2
     pos = PoissonGroup(5, rates=100 * Hz)
@@ -297,6 +321,8 @@ def test_spikemonitor():
     assert 'i' in smon_dict['variables']
 
     assert smon_dict['record'] == [0, 1, 2, 3, 4]
+    assert smon_dict['when'] == 'thresholds'
+    assert smon_dict['order'] == 1
 
     # example 3
     spk = SpikeGeneratorGroup(10, [2, 6, 8], [5 * ms, 10 * ms, 15 * ms])
@@ -306,6 +332,8 @@ def test_spikemonitor():
     assert smon_dict['record']
     assert 't' in smon_dict['variables']
     assert smon_dict['source'] == spk.name
+    assert smon_dict['when'] == 'thresholds'
+    assert smon_dict['order'] == 1
 
 
 def test_PopulationRateMonitor():
@@ -332,6 +360,8 @@ def test_PopulationRateMonitor():
     assert pop_dict['name'] == LFP.name
     assert pop_dict['source'] == group.name
     assert pop_dict['dt'] == LFP.clock.dt
+    assert pop_dict['when'] == 'end'
+    assert pop_dict['order'] == 0
 
 
 if __name__ == '__main__':

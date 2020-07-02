@@ -5,6 +5,7 @@ dictionary format. The parts of the file shall be reused
 with standard format exporter.
 """
 from brian2.equations.equations import PARAMETER
+from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
 
 
@@ -56,8 +57,17 @@ def collect_NeuronGroup(group):
             neuron_dict['run_regularly'].append({
                                                 'name': obj.name,
                                                 'code': obj.abstract_code,
-                                                'dt': obj.clock.dt
+                                                'dt': obj.clock.dt,
+                                                'when': obj.when,
+                                                'order': obj.order
                                                 })
+        # check StateUpdater when/order and assign to group level
+        if isinstance(obj, StateUpdater):
+            neuron_dict['when'] = obj.when
+            neuron_dict['order'] = obj.order
+
+        # check Threshold
+
     return neuron_dict
 
 
@@ -163,6 +173,20 @@ def collect_SpikeGenerator(spike_gen):
     # mentioned by the user)
     spikegen_dict['period'] = spike_gen.period[:]
 
+    # `run_regularly` / CodeRunner objects of spike_gen
+    # although not a very popular option
+    for obj in spike_gen.contained_objects:
+        if type(obj) == CodeRunner:
+            if 'run_regularly' not in spikegen_dict:
+                spikegen_dict['run_regularly'] = []
+            spikegen_dict['run_regularly'].append({
+                                                'name': obj.name,
+                                                'code': obj.abstract_code,
+                                                'dt': obj.clock.dt,
+                                                'when': obj.when,
+                                                'order': obj.order
+                                                })
+
     return spikegen_dict
 
 
@@ -201,7 +225,9 @@ def collect_PoissonGroup(poisson_grp):
             poisson_grp_dict['run_regularly'].append({
                                                 'name': obj.name,
                                                 'code': obj.abstract_code,
-                                                'dt': obj.clock.dt
+                                                'dt': obj.clock.dt,
+                                                'when': obj.when,
+                                                'order': obj.order
                                                 })
 
     return poisson_grp_dict
@@ -248,6 +274,10 @@ def collect_StateMonitor(state_mon):
     # get clock dt of the StateMonitor
     state_mon_dict['dt'] = state_mon.clock.dt
 
+    # get when and order of the StateMonitor
+    state_mon_dict['when'] = state_mon.when
+    state_mon_dict['order'] = state_mon.order
+
     return state_mon_dict
 
 
@@ -290,6 +320,10 @@ def collect_SpikeMonitor(spike_mon):
     # collect time-step
     spike_mon_dict['dt'] = spike_mon.clock.dt
 
+    # collect when and order
+    spike_mon_dict['when'] = spike_mon.when
+    spike_mon_dict['order'] = spike_mon.order
+
     return spike_mon_dict
 
 
@@ -319,5 +353,9 @@ def collect_PopulationRateMonitor(poprate_mon):
 
     # collect time-step
     poprate_mon_dict['dt'] = poprate_mon.clock.dt
+
+    # collect when/order
+    poprate_mon_dict['when'] = poprate_mon.when
+    poprate_mon_dict['order'] = poprate_mon.order
 
     return poprate_mon_dict
