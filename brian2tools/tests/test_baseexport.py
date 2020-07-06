@@ -1,7 +1,7 @@
 from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PoissonGroup, Equations, start_scope,
                     numpy, Quantity, StateMonitor, SpikeMonitor,
-                    PopulationRateMonitor)
+                    PopulationRateMonitor, EventMonitor)
 
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
@@ -15,7 +15,8 @@ from brian2tools.baseexport.collector import (collect_NeuronGroup,
                                               collect_SpikeGenerator,
                                               collect_StateMonitor,
                                               collect_SpikeMonitor,
-                                              collect_PopulationRateMonitor)
+                                              collect_PopulationRateMonitor,
+                                              collect_EventMonitor)
 
 import pytest
 
@@ -179,8 +180,40 @@ def test_spike_neurongroup():
 
     with pytest.raises(KeyError):
         neuron_dict2['events']['spike']['reset']
-    with pytest.raises(KeyError):
         neuron_dict2['events']['spike']['refractory']
+
+
+def test_custom_events_neurongroup():
+
+    start_scope()
+    grp = NeuronGroup(10, 'dvar/dt = (100 - var) / tau_n : 1',
+                      events={'test_event': 'var > 70'}, method='exact')
+    grp.thresholder['test_event'].clock.dt = 10 * ms
+    neuron_dict = collect_NeuronGroup(grp)
+
+    custom_event = neuron_dict['events']['test_event']
+    thresholder = custom_event['threshold']
+
+    assert thresholder['code'] == 'var > 70'
+    assert thresholder['when'] == grp.thresholder['test_event'].when
+    assert thresholder['order'] == grp.thresholder['test_event'].order
+    assert thresholder['dt'] == 10 * ms
+
+    with pytest.raises(KeyError):
+        neuron_dict['events']['spike']
+        custom_event['reset']
+        custom_event['refractory']
+
+    # check with reset
+    grp.run_on_event('test_event', 'var = -10')
+    neuron_dict = collect_NeuronGroup(grp)
+    custom_event = neuron_dict['events']['test_event']
+    resetter = custom_event['reset']
+
+    assert resetter['code'] == 'var = -10'
+    assert resetter['when'] == grp.resetter['test_event'].when
+    assert resetter['order'] == grp.resetter['test_event'].order
+    assert resetter['dt'] == thresholder['dt']
 
 
 def test_spikegenerator():
@@ -381,6 +414,25 @@ def test_PopulationRateMonitor():
     assert pop_dict['order'] == 0
 
 
+def test_EventMonitor():
+    """
+    Test collect_EventMonitor()
+    """
+    grp = NeuronGroup(10, 'dvar/dt = (100 - var) / tau_n : 1',
+                      events={'test_event': 'var > 70'}, method='exact')
+
+    event_mon = EventMonitor(grp, 'test_event', 'var', record=True)
+    event_mon_dict = collect_EventMonitor(event_mon)
+
+    assert event_mon_dict['name'] == event_mon.name
+    assert event_mon_dict['source'] == grp.name
+    assert event_mon_dict['record']
+    assert event_mon_dict['variables'].sort() == ['i', 'var', 't'].sort()
+    assert event_mon_dict['when'] == 'after_thresholds'
+    assert event_mon_dict['order'] == 1
+    assert event_mon_dict['event'] == 'test_event'
+
+
 if __name__ == '__main__':
 
     test_simple_neurongroup()
@@ -390,3 +442,5 @@ if __name__ == '__main__':
     test_statemonitor()
     test_spikemonitor()
     test_PopulationRateMonitor()
+    test_EventMonitor()
+    test_custom_events_neurongroup()

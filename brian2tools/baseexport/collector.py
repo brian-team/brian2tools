@@ -122,26 +122,30 @@ def collect_Events(group):
         Dictionary with extracted information
     """
 
-    spike_dict = {}
+    event_dict = {}
+    # loop over the thresholder to check `spike` or custom event
+    for event in group.thresholder:
+        # for simplicity create subdict variable for particular event
+        event_dict[event] = {}
+        event_subdict = event_dict[event]
+        # add threshold
+        event_subdict['threshold'] = {'code': group.events[event],
+                                      'when': group.thresholder[event].when,
+                                      'order': group.thresholder[event].order,
+                                      'dt': group.thresholder[event].clock.dt}
 
-    # add threshold
-    spike_dict['threshold'] = {'code': group.events['spike'],
-                               'when': group.thresholder['spike'].when,
-                               'order': group.thresholder['spike'].order,
-                               'dt': group.thresholder['spike'].clock.dt}
+        # check reset is defined
+        if event in group.event_codes:
+            event_subdict['reset'] = {'code': group.event_codes[event],
+                                      'when': group.resetter[event].when,
+                                      'order': group.resetter[event].order,
+                                      'dt': group.resetter[event].clock.dt}
 
-    # check reset is defined
-    if group.event_codes:
-        spike_dict.update({'reset': {'code': group.event_codes['spike'],
-                                     'when': group.resetter['spike'].when,
-                                     'order': group.resetter['spike'].order,
-                                     'dt': group.resetter['spike'].clock.dt}})
+    # check refractory is defined (only for spike event)
+    if event == 'spike' and group._refractory:
+        event_subdict['refractory'] = group._refractory
 
-    # check refractory is defined
-    if group._refractory:
-        spike_dict.update({'refractory': group._refractory})
-
-    return {'spike': spike_dict}
+    return event_dict
 
 
 def collect_SpikeGenerator(spike_gen):
@@ -331,6 +335,49 @@ def collect_SpikeMonitor(spike_mon):
     spike_mon_dict['order'] = spike_mon.order
 
     return spike_mon_dict
+
+
+def collect_EventMonitor(event_mon):
+    """
+    Collect details of `EventMonitor` class
+    and return them in dictionary format
+
+    Parameters
+    ----------
+    event_mon : brian2.EventMonitor
+            EventMonitor object
+
+    Returns
+    -------
+    event_mon_dict : dict
+            Dictionary representation of the collected details
+    """
+
+    event_mon_dict = {}
+
+    # collect name
+    event_mon_dict['name'] = event_mon.name
+
+    # collect event name
+    event_mon_dict['event'] = event_mon.event
+
+    # collect source object name
+    event_mon_dict['source'] = event_mon.source.name
+
+    # collect record variables, (done same as for SpikeMonitor)
+    event_mon_dict['variables'] = list(event_mon.record_variables)
+
+    # collect record indices and time
+    event_mon_dict['record'] = event_mon.record
+
+    # collect time-step
+    event_mon_dict['dt'] = event_mon.clock.dt
+
+    # collect when and order
+    event_mon_dict['when'] = event_mon.when
+    event_mon_dict['order'] = event_mon.order
+
+    return event_mon_dict
 
 
 def collect_PopulationRateMonitor(poprate_mon):
