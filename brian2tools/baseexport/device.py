@@ -2,10 +2,12 @@ from brian2.devices.device import RuntimeDevice
 from brian2.devices.device import Device, all_devices
 from brian2.core.namespace import get_local_namespace
 from brian2.groups import NeuronGroup
-from brian2.groups.group import CodeRunner
 from brian2.utils.logger import get_logger
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
-
+from brian2 import (StateMonitor, SpikeMonitor, EventMonitor,
+                    PopulationRateMonitor)
+import pprint
+from .helper import _prune_identifiers, _resolve_identifiers_from_string
 from .collector import *
 
 logger = get_logger(__name__)
@@ -46,10 +48,11 @@ class BaseExporter(RuntimeDevice):
         self.has_been_run = False
         self.build_options = None
         self.supported_objs = (NeuronGroup, SpikeGeneratorGroup,
-                               PoissonGroup)
+                               PoissonGroup, StateMonitor, SpikeMonitor,
+                               EventMonitor, PopulationRateMonitor)
         self.runs = []
         self.initializers = []
-        self.run_identifiers = []
+        self.run_identifiers = {}
 
     def reinit(self):
         """
@@ -104,52 +107,53 @@ class BaseExporter(RuntimeDevice):
         run_dict = {}          # dictionary with components of particular run
         run_components = {}    # network components during the run
         run_inactive = []      # inactive objects for the run
+        # dictionary to store objects and its collector functions
+        collector_map={'neurongroup': {'f': collect_NeuronGroup, 'n': True},
+                       'poissongroup': {'f': collect_PoissonGroup, 'n': True},
+                       'spikegeneratorgroup': {'f': collect_SpikeGenerator,
+                                               'n': True},
+                       'statemonitor': {'f': collect_StateMonitor,
+                                        'n': False},
+                       'spikemonitor': {'f': collect_SpikeMonitor,
+                                        'n': False},
+                       'eventmonitor': {'f': collect_EventMonitor,
+                                        'n': False},
+                       'populationratemonitor':
+                                       {'f': collect_PopulationRateMonitor,
+                                        'n': False}}
 
         # loop through all the objects of network
         for object in network.objects:
-            
-            # check the object is inactive
-            # check NeuronGroup
-            if isinstance(object, NeuronGroup):
-                # get dictionary containing all information about object
-                neuron_dict = collect_NeuronGroup(object, namespace)
-                # check neurongroup key already exists, if not create one
-                if 'neurongroup' not in run_components:
-                    run_components['neurongroup'] = []
-                run_components['neurongroup'].append(neuron_dict)
 
-            # check PoissonGroup
-            if isinstance(object, PoissonGroup):
-                # get dict of all information
-                posn_dict = collect_PoissonGroup(object, namespace)
-                # check poissongroup key already exists, if not create one
-                if 'poissongroup' not in run_components:
-                    run_components['poissongroup'] = []
-                run_components['poissongroup'].append(posn_dict)
-
-            # check SpikeGeneratorGroup
-            if isinstance(object, SpikeGeneratorGroup):
-                # get dict containing required information
-                # no identifiers are connected with object so default to None
-                spkgn_dict = collect_SpikeGenerator(object)
-                # check poissongroup key already exists, if not create one
-                if 'spikegeneratorgroup' not in run_components:
-                    run_components['spikegeneratorgroup'] = []
-                run_components['spikegeneratorgroup'].append(spkgn_dict)
-
+            # check the object is supported currently
             if (not isinstance(object, self.supported_objs) and
                 not isinstance(object.group, self.supported_objs)):
-                raise NotImplementedError(
-                        "Object {} is not implemented for\
-                         standard format export".format(str(type(object))))
+                raise NotImplementedError("Object {} is not implemented for\
+                                           standard format\
+                                           export".format(str(type(object))))
+
+            # get the object type in string with lower case
+            object_instance = type(object).__name__.lower()
+            # call collectors for valid objects or just pass
+            if object_instance in collector_map:
+                # map with approporiate collector function
+                if collector_map[object_instance]['n']:
+                    obj_dict = collector_map[object_instance]['f'](object,
+                                                                   namespace)
+                else:
+                    obj_dict = collector_map[object_instance]['f'](object)
+                # if key not exists in run_components, create one
+                if object_instance not in run_components:
+                    run_components[object_instance] = []
+                run_components[object_instance].append(obj_dict)
 
             # check any inactive objects present in the run
             if not object.active:
                 run_inactive.append(object.name)
 
+        # copy fields to run_dict
         run_dict = {'components': run_components,
-                    'duration': duration
-                   }
+                    'duration': duration}
         # check any initializers defined in the run scope
         if self.initializers:
             run_dict['initializers'] = self.initializers
@@ -160,27 +164,33 @@ class BaseExporter(RuntimeDevice):
         # check any inactive objects present for this run
         if run_inactive:
             run_dict['inactive'] = run_inactive
-        # reset the initializers, so it won't be repeated for other runs
+        # reset the initializers and identifiers at run_level,
+        # so it won't be repeated for other runs
         self.initializers = []
+        self.run_identifiers = {}
         # append the run_dict that contains all information about the
         # Brian objects defined in the scope of run()
         self.runs.append(run_dict)
 
-        print(self.runs)
+        pprint.pprint(self.runs)
 
-    def variableview_set_with_expression_conditional(self, variableview, cond, 
-                                                     code, run_namespace,
+    def variableview_set_with_expression_conditional(self, variableview,
+                                                     cond, code,
+                                                     run_namespace,
                                                      check_units=True):
         """
-        Capture setters with conditioanl expressions, 
+        Capture setters with conditioanl expressions,
         for eg. obj.var['i>5'] = 'rand() * -78 * mV'
         """
-        # Note: by default, when 
+        # Note: by default, when
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
                      'index': cond, 'value': code}
-        self.initializers.append(init_dict)    
-        
+        self.initializers.append(init_dict)
+        # get resolved and clean identifiers
+        ident_dict = _resolve_identifiers_from_string(code, run_namespace)
+        self.run_identifiers.update(ident_dict)
+
     def variableview_set_with_expression(self, variableview, item, code,
                                          run_namespace, check_units=True):
         """
@@ -194,13 +204,16 @@ class BaseExporter(RuntimeDevice):
         # check item is of slice type, if so pass to indices
         # else pass the boolean
         if type(item) == slice:
-            init_dict['index'] = list(range(variableview.group.N))[item]
+            init_dict['index'] = variableview.group.indices[item]
         else:
             init_dict['index'] = item
         self.initializers.append(init_dict)
+        # get resolved and clean identifiers
+        ident_dict = _resolve_identifiers_from_string(code, run_namespace)
+        self.run_identifiers.update(ident_dict)
 
     def variableview_set_with_index_array(self, variableview, item, value,
-                                          check_units = True):
+                                          check_units=True):
         """
         Capture setters with particular,
         for eg. obj.var[0:2] = 'rand() * -78 * mV' or
@@ -212,7 +225,10 @@ class BaseExporter(RuntimeDevice):
         # check type is slice, if so pass to indices
         # else pass the boolean
         if type(item) == slice:
-            init_dict['index'] = list(range(variableview.group.N))[item]
+            if item.start is None and item.stop is None:
+                init_dict['index'] = True
+            else:
+                init_dict['index'] = variableview.group.indices[item]
         else:
             init_dict['index'] = item
         self.initializers.append(init_dict)

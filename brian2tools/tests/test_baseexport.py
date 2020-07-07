@@ -189,8 +189,9 @@ def test_custom_events_neurongroup():
     start_scope()
     grp = NeuronGroup(10, 'dvar/dt = (100 - var) / tau_n : 1',
                       events={'test_event': 'var > 70'}, method='exact')
+    tau_n = 10 * ms
     grp.thresholder['test_event'].clock.dt = 10 * ms
-    neuron_dict = collect_NeuronGroup(grp)
+    neuron_dict = collect_NeuronGroup(grp, get_local_namespace(0))
 
     custom_event = neuron_dict['events']['test_event']
     thresholder = custom_event['threshold']
@@ -207,7 +208,7 @@ def test_custom_events_neurongroup():
 
     # check with reset
     grp.run_on_event('test_event', 'var = -10')
-    neuron_dict = collect_NeuronGroup(grp)
+    neuron_dict = collect_NeuronGroup(grp, get_local_namespace(0))
     custom_event = neuron_dict['events']['test_event']
     resetter = custom_event['reset']
 
