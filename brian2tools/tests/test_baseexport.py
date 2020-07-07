@@ -1,15 +1,20 @@
 from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PoissonGroup, Equations, start_scope,
-                    numpy, Quantity)
+                    numpy, Quantity, StateMonitor, SpikeMonitor,
+                    PopulationRateMonitor, EventMonitor)
+from brian2.core.namespace import get_local_namespace
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
                                         PARAMETER, parse_string_equations)
-from brian2 import (ms, mV, Hz, volt, second, umetre, siemens, cm,
+from brian2 import (ms, us, mV, Hz, volt, second, umetre, siemens, cm,
                     ufarad, amp, hertz)
-from brian2.core.namespace import get_local_namespace
 from brian2tools.baseexport.collector import (collect_NeuronGroup,
                                               collect_PoissonGroup,
-                                              collect_SpikeGenerator)
+                                              collect_SpikeGenerator,
+                                              collect_StateMonitor,
+                                              collect_SpikeMonitor,
+                                              collect_PopulationRateMonitor,
+                                              collect_EventMonitor)
 import pytest
 
 
@@ -34,11 +39,16 @@ def test_simple_neurongroup():
     with pytest.raises(KeyError):
         neuron_dict['equations']['tau']
 
+    with pytest.raises(KeyError):
+        neuron_dict['run_regularly']
+
     eqn_obj = Equations(eqn)
     assert neuron_dict['equations']['v']['expr'] == eqn_obj['v'].expr.code
     assert neuron_dict['identifiers']['tau'] == 10 * ms
     with pytest.raises(KeyError):
         neuron_dict['identifiers']['size']
+    assert neuron_dict['when'] == 'groups'
+    assert neuron_dict['order'] == 0
 
     # example 2
     start_scope()
@@ -48,12 +58,16 @@ def test_simple_neurongroup():
     Cm = 1 * ufarad * cm ** -2 * area
     grp = NeuronGroup(10, '''dv/dt = I_leak / Cm : volt
                         I_leak = g_L*(E_L - v) : amp''')
+    grp.run_regularly('v = v / 2', dt=20 * ms, name='i_am_run_reg_senior')
+    grp.run_regularly('I_leak = I_leak + 0.002 * amp', dt=10 * ms,
+                      name='i_am_run_reg_junior')
 
     neuron_dict = collect_NeuronGroup(grp, get_local_namespace(0))
 
     assert neuron_dict['N'] == 10
     assert neuron_dict['user_method'] is None
-
+    assert neuron_dict['when'] == 'groups'
+    assert neuron_dict['order'] == 0
     eqn_str = '''
     dv/dt = I_leak / Cm : volt
     I_leak = g_L*(E_L - v) : amp
@@ -76,6 +90,21 @@ def test_simple_neurongroup():
         neuron_dict['events']
     with pytest.raises(KeyError):
         neuron_dict['identifiers']['area']
+
+    assert neuron_dict['run_regularly'][0]['name'] == 'i_am_run_reg_senior'
+    assert neuron_dict['run_regularly'][1]['name'] == 'i_am_run_reg_junior'
+    assert neuron_dict['run_regularly'][0]['code'] == 'v = v / 2'
+    assert (neuron_dict['run_regularly'][1]['code'] ==
+            'I_leak = I_leak + 0.002 * amp')
+    assert neuron_dict['run_regularly'][0]['dt'] == 20 * ms
+    assert neuron_dict['run_regularly'][1]['dt'] == 10 * ms
+    assert neuron_dict['run_regularly'][0]['when'] == 'start'
+    assert neuron_dict['run_regularly'][1]['when'] == 'start'
+    assert neuron_dict['run_regularly'][0]['order'] == 0
+    assert neuron_dict['run_regularly'][1]['order'] == 0
+
+    with pytest.raises(IndexError):
+        neuron_dict['run_regularly'][2]
 
 
 def test_spike_neurongroup():
@@ -119,8 +148,19 @@ def test_spike_neurongroup():
     assert neuron_dict['equations']['tau']['var_type'] == FLOAT
     assert neuron_dict['equations']['tau']['flags'][0] == 'constant'
 
-    assert neuron_dict['events']['spike']['threshold'] == 'v > v_th'
-    assert neuron_dict['events']['spike']['reset'] == 'v = v_rest'
+    thresholder = grp.thresholder['spike']
+    neuron_events = neuron_dict['events']['spike']
+    assert neuron_events['threshold']['code'] == 'v > v_th'
+    assert neuron_events['threshold']['when'] == thresholder.when
+    assert neuron_events['threshold']['order'] == thresholder.order
+    assert neuron_events['threshold']['dt'] == grp.clock.dt
+
+    resetter = grp.resetter['spike']
+    assert neuron_events['reset']['code'] == 'v = v_rest'
+    assert neuron_events['reset']['when'] == resetter.when
+    assert neuron_events['reset']['order'] == resetter.order
+    assert neuron_events['reset']['dt'] == resetter.clock.dt
+
     assert neuron_dict['events']['spike']['refractory'] == Quantity(2 * ms)
 
     # example 2 with threshold but no reset
@@ -132,12 +172,49 @@ def test_spike_neurongroup():
     tau_n = 10 * ms
 
     neuron_dict2 = collect_NeuronGroup(grp2, get_local_namespace(0))
-    assert neuron_dict2['events']['spike']['threshold'] == 'v > 800 * mV'
+    thresholder = grp2.thresholder['spike']
+    neuron_events = neuron_dict2['events']['spike']
+    assert neuron_events['threshold']['code'] == 'v > 800 * mV'
+    assert neuron_events['threshold']['when'] == thresholder.when
+    assert neuron_events['threshold']['order'] == thresholder.order
+    assert neuron_events['threshold']['dt'] == grp2.clock.dt
 
     with pytest.raises(KeyError):
         neuron_dict2['events']['spike']['reset']
-    with pytest.raises(KeyError):
         neuron_dict2['events']['spike']['refractory']
+
+
+def test_custom_events_neurongroup():
+
+    start_scope()
+    grp = NeuronGroup(10, 'dvar/dt = (100 - var) / tau_n : 1',
+                      events={'test_event': 'var > 70'}, method='exact')
+    grp.thresholder['test_event'].clock.dt = 10 * ms
+    neuron_dict = collect_NeuronGroup(grp)
+
+    custom_event = neuron_dict['events']['test_event']
+    thresholder = custom_event['threshold']
+
+    assert thresholder['code'] == 'var > 70'
+    assert thresholder['when'] == grp.thresholder['test_event'].when
+    assert thresholder['order'] == grp.thresholder['test_event'].order
+    assert thresholder['dt'] == 10 * ms
+
+    with pytest.raises(KeyError):
+        neuron_dict['events']['spike']
+        custom_event['reset']
+        custom_event['refractory']
+
+    # check with reset
+    grp.run_on_event('test_event', 'var = -10')
+    neuron_dict = collect_NeuronGroup(grp)
+    custom_event = neuron_dict['events']['test_event']
+    resetter = custom_event['reset']
+
+    assert resetter['code'] == 'var = -10'
+    assert resetter['when'] == grp.resetter['test_event'].when
+    assert resetter['order'] == grp.resetter['test_event'].order
+    assert resetter['dt'] == thresholder['dt']
 
 
 def test_spikegenerator():
@@ -163,12 +240,22 @@ def test_spikegenerator():
 
     # example 2
     spike_gen2 = SpikeGeneratorGroup(10, index, time, period=20 * ms)
+    spike_gen2.run_regularly('var = var + 1', dt=10 * ms, name='spikerr')
     spike_gen_dict = collect_SpikeGenerator(spike_gen2)
 
     assert spike_gen_dict['N'] == 10
     assert spike_gen_dict['period'] == [20] * ms
     assert spike_gen_dict['period'].has_same_dimensions(20 * ms)
     assert spike_gen_dict['period'].dtype == float
+
+    # (check run_regularly)
+    assert spike_gen_dict['run_regularly'][0]['name'] == 'spikerr'
+    assert spike_gen_dict['run_regularly'][0]['code'] == 'var = var + 1'
+    assert spike_gen_dict['run_regularly'][0]['dt'] == 10 * ms
+    assert spike_gen_dict['run_regularly'][0]['when'] == 'start'
+    assert spike_gen_dict['run_regularly'][0]['order'] == 0
+    with pytest.raises(IndexError):
+        spike_gen_dict['run_regularly'][1]
 
 
 def test_poissongroup():
@@ -189,12 +276,162 @@ def test_poissongroup():
     assert poisson_dict['rates'].has_same_dimensions(5 * Hz)
     assert poisson_dict['rates'].dtype == float
 
+    with pytest.raises(KeyError):
+        assert poisson_dict['run_regularly']
+
     # example2
     F = 10 * Hz
     poisongrp = PoissonGroup(N, rates='F + 2 * Hz')
+    poisongrp.run_regularly('F = F + 3 * Hz', dt=10 * ms,
+                            name="Run_at_0_01")
     poisson_dict = collect_PoissonGroup(poisongrp, get_local_namespace(0))
 
     assert poisson_dict['rates'] == 'F + 2 * Hz'
+    assert poisson_dict['run_regularly'][0]['name'] == 'Run_at_0_01'
+    assert poisson_dict['run_regularly'][0]['code'] == 'F = F + 3 * Hz'
+    assert poisson_dict['run_regularly'][0]['dt'] == 10 * ms
+    assert poisson_dict['run_regularly'][0]['when'] == 'start'
+    assert poisson_dict['run_regularly'][0]['order'] == 0
+
+    with pytest.raises(IndexError):
+        poisson_dict['run_regularly'][1]
+
+
+def test_statemonitor():
+    """
+    Test collect_StateMonitor dictionary representation
+    """
+
+    # example 1
+    grp = NeuronGroup(10, model='dv/dt = (1 - v) / tau :1',
+                      method='euler')
+    mon = StateMonitor(grp, 'v', record=True)
+    statemon_dict = collect_StateMonitor(mon)
+
+    assert statemon_dict['source'] == grp.name
+    assert statemon_dict['record']
+    assert statemon_dict['n_indices'] == 10
+    assert statemon_dict['variables'] == ['v']
+    assert statemon_dict['when'] == 'start'
+    assert statemon_dict['order'] == 0
+
+    # exmaple 2
+    eqn = '''dvar1/dt = (var1 + 1) / tau :1
+    var2 = var1 + 3 :1
+    var3 = 2 + var1 :1
+    '''
+    grp2 = NeuronGroup(10, eqn, method='euler')
+    mon2 = StateMonitor(grp2, ['var1', 'var3'], record=[2, 4, 6, 8],
+                        dt=1 * second)
+    statemon_dict2 = collect_StateMonitor(mon2)
+
+    assert statemon_dict2['source'] == grp2.name
+    assert statemon_dict2['variables'].sort() == ['var1', 'var3'].sort()
+    assert 'var2' not in statemon_dict2['variables']
+    assert not statemon_dict2['record'] is True
+    assert (statemon_dict2['record'] == [2, 4, 6, 8]).all()
+    assert statemon_dict2['dt'] == 1 * second
+
+    # example 3
+    mon3 = StateMonitor(grp, 'v', record=False)
+    statemon_dict3 = collect_StateMonitor(mon3)
+
+    assert not statemon_dict3['record'].size
+    assert statemon_dict3['when'] == 'start'
+    assert statemon_dict3['order'] == 0
+
+
+def test_spikemonitor():
+    """
+    Test collector function for SpikeMonitor
+    """
+
+    # example 1
+    grp = NeuronGroup(5, '''dv/dt = (v0 - v)/tau :volt''', method='exact',
+                      threshold='v > v_th', reset='v = v0',
+                      name="My_Neurons")
+    tau = 10 * ms
+    v0 = -70 * mV
+    v_th = 800 * mV
+    mon = SpikeMonitor(grp, 'v', record=[0, 4])
+    mon_dict = collect_SpikeMonitor(mon)
+
+    assert mon_dict['source'] == 'My_Neurons'
+    assert mon_dict['variables'].sort() == ['i', 't', 'v'].sort()
+    assert mon_dict['record'] == [0, 4]
+    assert mon_dict['event'] == 'spike'
+    assert mon_dict['when'] == 'thresholds'
+    assert mon_dict['order'] == 1
+
+    # example 2
+    pos = PoissonGroup(5, rates=100 * Hz)
+    smon = SpikeMonitor(pos, record=[0, 1, 2, 3, 4])
+    smon_dict = collect_SpikeMonitor(smon)
+
+    assert smon_dict['source'] == pos.name
+    assert 'i' in smon_dict['variables']
+
+    assert smon_dict['record'] == [0, 1, 2, 3, 4]
+    assert smon_dict['when'] == 'thresholds'
+    assert smon_dict['order'] == 1
+
+    # example 3
+    spk = SpikeGeneratorGroup(10, [2, 6, 8], [5 * ms, 10 * ms, 15 * ms])
+    spkmon = SpikeMonitor(spk, record=True)
+    smon_dict = collect_SpikeMonitor(spkmon)
+
+    assert smon_dict['record']
+    assert 't' in smon_dict['variables']
+    assert smon_dict['source'] == spk.name
+    assert smon_dict['when'] == 'thresholds'
+    assert smon_dict['order'] == 1
+
+
+def test_PopulationRateMonitor():
+    """
+    Test collect_PopulationRateMonitor()
+    """
+
+    # /examples/frompapers.Brunel_Hakim_1999.html
+    N = 50
+    tau = 20*ms
+    muext = 25*mV
+    sigmaext = 1*mV
+    Vr = 10*mV
+    theta = 20*mV
+    taurefr = 2*ms
+    eqs = """
+    dV/dt = (-V+muext + sigmaext * sqrt(tau) * xi)/tau : volt
+    """
+    group = NeuronGroup(N, eqs, threshold='V>theta',
+                        reset='V=Vr', refractory=taurefr, method='euler')
+    LFP = PopulationRateMonitor(group)
+    pop_dict = collect_PopulationRateMonitor(LFP)
+
+    assert pop_dict['name'] == LFP.name
+    assert pop_dict['source'] == group.name
+    assert pop_dict['dt'] == LFP.clock.dt
+    assert pop_dict['when'] == 'end'
+    assert pop_dict['order'] == 0
+
+
+def test_EventMonitor():
+    """
+    Test collect_EventMonitor()
+    """
+    grp = NeuronGroup(10, 'dvar/dt = (100 - var) / tau_n : 1',
+                      events={'test_event': 'var > 70'}, method='exact')
+
+    event_mon = EventMonitor(grp, 'test_event', 'var', record=True)
+    event_mon_dict = collect_EventMonitor(event_mon)
+
+    assert event_mon_dict['name'] == event_mon.name
+    assert event_mon_dict['source'] == grp.name
+    assert event_mon_dict['record']
+    assert event_mon_dict['variables'].sort() == ['i', 'var', 't'].sort()
+    assert event_mon_dict['when'] == 'after_thresholds'
+    assert event_mon_dict['order'] == 1
+    assert event_mon_dict['event'] == 'test_event'
 
 
 if __name__ == '__main__':
@@ -203,3 +440,8 @@ if __name__ == '__main__':
     test_spike_neurongroup()
     test_spikegenerator()
     test_poissongroup()
+    test_statemonitor()
+    test_spikemonitor()
+    test_PopulationRateMonitor()
+    test_EventMonitor()
+    test_custom_events_neurongroup()

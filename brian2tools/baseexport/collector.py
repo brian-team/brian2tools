@@ -7,6 +7,8 @@ with standard format exporter.
 from brian2.equations.equations import PARAMETER
 from brian2.utils.stringtools import get_identifiers
 from .helper import _prune_identifiers
+from brian2.groups.neurongroup import StateUpdater
+from brian2.groups.group import CodeRunner
 
 
 def collect_NeuronGroup(group, run_namespace):
@@ -62,6 +64,27 @@ def collect_NeuronGroup(group, run_namespace):
     # check the dictionary is not empty
     if identifiers:
         neuron_dict['identifiers'] = identifiers
+
+    # check any `run_regularly` / CodeRunner objects associated
+    for obj in group.contained_objects:
+        # Note: Thresholder, StateUpdater, Resetter are all derived from
+        # CodeRunner, so to identify `run_regularly` object we use type()
+        if type(obj) == CodeRunner:
+            if 'run_regularly' not in neuron_dict:
+                neuron_dict['run_regularly'] = []
+            neuron_dict['run_regularly'].append({
+                                                'name': obj.name,
+                                                'code': obj.abstract_code,
+                                                'dt': obj.clock.dt,
+                                                'when': obj.when,
+                                                'order': obj.order
+                                                })
+        # check StateUpdater when/order and assign to group level
+        if isinstance(obj, StateUpdater):
+            neuron_dict['when'] = obj.when
+            neuron_dict['order'] = obj.order
+
+        # check Threshold
 
     return neuron_dict
 
@@ -123,19 +146,29 @@ def collect_Events(group):
     event_dict = {}
     event_identifiers = set()
 
-    # add threshold
-    event_dict['spike'] = {'threshold': group.events['spike']}
-    event_identifiers |= (get_identifiers(group.events['spike']))
+    # loop over the thresholder to check `spike` or custom event
+    for event in group.thresholder:
+        # for simplicity create subdict variable for particular event
+        event_dict[event] = {}
+        event_subdict = event_dict[event]
+        # add threshold
+        event_subdict['threshold'] = {'code': group.events[event],
+                                      'when': group.thresholder[event].when,
+                                      'order': group.thresholder[event].order,
+                                      'dt': group.thresholder[event].clock.dt}
+        event_identifiers |= (get_identifiers(group.events[event]))
 
-    # check reset is defined
-    if group.event_codes:
-        event_dict['spike'].update({'reset': group.event_codes['spike']})
-        event_identifiers |= (get_identifiers(group.event_codes['spike']))
+        # check reset is defined
+        if event in group.event_codes:
+            event_subdict['reset'] = {'code': group.event_codes[event],
+                                      'when': group.resetter[event].when,
+                                      'order': group.resetter[event].order,
+                                      'dt': group.resetter[event].clock.dt}
+            event_identifiers |= (get_identifiers(group.event_codes[event]))
 
-    # check refractory is defined
-    if group._refractory:
-        # TODO get identifiers if _refractory is basestring
-        event_dict['spike'].update({'refractory': group._refractory})
+    # check refractory is defined (only for spike event)
+    if event == 'spike' and group._refractory:
+        event_subdict['refractory'] = group._refractory
 
     return event_dict, event_identifiers
 
@@ -178,6 +211,20 @@ def collect_SpikeGenerator(spike_gen, run_namespace=None):
     # mentioned by the user)
     spikegen_dict['period'] = spike_gen.period[:]
 
+    # `run_regularly` / CodeRunner objects of spike_gen
+    # although not a very popular option
+    for obj in spike_gen.contained_objects:
+        if type(obj) == CodeRunner:
+            if 'run_regularly' not in spikegen_dict:
+                spikegen_dict['run_regularly'] = []
+            spikegen_dict['run_regularly'].append({
+                                                'name': obj.name,
+                                                'code': obj.abstract_code,
+                                                'dt': obj.clock.dt,
+                                                'when': obj.when,
+                                                'order': obj.order
+                                                })
+
     return spikegen_dict
 
 
@@ -198,9 +245,6 @@ def collect_PoissonGroup(poisson_grp, run_namespace):
     -------
     poisson_grp_dict : dict
                 Dictionary with extracted information
-
-    poisson_identifiers : set
-                Set of identifiers belonging to poisson_grp
     """
 
     poisson_grp_dict = {}
@@ -226,4 +270,162 @@ def collect_PoissonGroup(poisson_grp, run_namespace):
     if poisson_identifiers:
         poisson_grp_dict['identifiers'] = poisson_identifiers
 
+    # `run_regularly` / CodeRunner objects of poisson_grp
+    for obj in poisson_grp.contained_objects:
+        if type(obj) == CodeRunner:
+            if 'run_regularly' not in poisson_grp_dict:
+                poisson_grp_dict['run_regularly'] = []
+            poisson_grp_dict['run_regularly'].append({
+                                                'name': obj.name,
+                                                'code': obj.abstract_code,
+                                                'dt': obj.clock.dt,
+                                                'when': obj.when,
+                                                'order': obj.order
+                                                })
+
     return poisson_grp_dict
+
+
+def collect_StateMonitor(state_mon):
+    """
+    Collect details of `brian2.monitors.statemonitor.StateMonitor`
+    and return them in dictionary format
+
+    Parameters
+    ----------
+    state_mon : brian2.monitors.statemonitor.StateMonitor
+            StateMonitor object
+
+    Returns
+    -------
+    state_mon_dict : dict
+            Dictionary representation of the collected details
+    """
+
+    state_mon_dict = {}
+
+    # get name
+    state_mon_dict['name'] = state_mon.name
+
+    # get source object name
+    state_mon_dict['source'] = state_mon.source.name
+
+    # get recorded variables
+    state_mon_dict['variables'] = state_mon.record_variables
+
+    # get record indices
+    # if all members of the source object are being recorded
+    # set 'record_indices' = True, else save indices
+    if state_mon.record_all:
+        state_mon_dict['record'] = state_mon.record_all
+    else:
+        state_mon_dict['record'] = state_mon.record
+
+    # get no. of record indices
+    state_mon_dict['n_indices'] = state_mon.n_indices
+
+    # get clock dt of the StateMonitor
+    state_mon_dict['dt'] = state_mon.clock.dt
+
+    # get when and order of the StateMonitor
+    state_mon_dict['when'] = state_mon.when
+    state_mon_dict['order'] = state_mon.order
+
+    return state_mon_dict
+
+
+def collect_SpikeMonitor(spike_mon):
+    """
+    Collect details of `brian2.monitors.spikemonitor.SpikeMonitor`
+    and return them in dictionary format
+
+    Parameters
+    ----------
+    spike_mon : brian2.monitors.spikemonitor.SpikeMonitor
+            SpikeMonitor object
+
+    Returns
+    -------
+    spike_mon_dict : dict
+            Dictionary representation of the collected details
+    """
+    # pass to EventMonitor as they both are identical
+    spike_mon_dict = collect_EventMonitor(spike_mon)
+    return spike_mon_dict
+
+
+def collect_EventMonitor(event_mon):
+    """
+    Collect details of `EventMonitor` class
+    and return them in dictionary format
+
+    Parameters
+    ----------
+    event_mon : brian2.EventMonitor
+            EventMonitor object
+
+    Returns
+    -------
+    event_mon_dict : dict
+            Dictionary representation of the collected details
+    """
+
+    event_mon_dict = {}
+
+    # collect name
+    event_mon_dict['name'] = event_mon.name
+
+    # collect event name
+    event_mon_dict['event'] = event_mon.event
+
+    # collect source object name
+    event_mon_dict['source'] = event_mon.source.name
+
+    # collect record variables, (done same as for SpikeMonitor)
+    event_mon_dict['variables'] = list(event_mon.record_variables)
+
+    # collect record indices and time
+    event_mon_dict['record'] = event_mon.record
+
+    # collect time-step
+    event_mon_dict['dt'] = event_mon.clock.dt
+
+    # collect when and order
+    event_mon_dict['when'] = event_mon.when
+    event_mon_dict['order'] = event_mon.order
+
+    return event_mon_dict
+
+
+def collect_PopulationRateMonitor(poprate_mon):
+    """
+    Represent required details of PopulationRateMonitor
+    in dictionary format
+
+    Parameters
+    ----------
+    poprate_mon : brian2.monitors.ratemonitor.PopulationRateMonitor
+            PopulationRateMonitor class object
+
+    Returns
+    -------
+    poprate_mon_dict : dict
+            Dictionary format of the details collected
+    """
+
+    poprate_mon_dict = {}
+
+    # collect name
+    poprate_mon_dict['name'] = poprate_mon.name
+
+    # collect source object
+    poprate_mon_dict['source'] = poprate_mon.source.name
+
+    # collect time-step
+    poprate_mon_dict['dt'] = poprate_mon.clock.dt
+
+    # collect when/order
+    poprate_mon_dict['when'] = poprate_mon.when
+    poprate_mon_dict['order'] = poprate_mon.order
+
+    return poprate_mon_dict
