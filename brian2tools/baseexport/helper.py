@@ -2,9 +2,9 @@
 The file contains helper functions that shall be
 used for exporting standard representation format
 """
+from brian2 import DEFAULT_CONSTANTS, DEFAULT_FUNCTIONS, Quantity
 from brian2.core.variables import Constant
 from brian2.core.functions import Function
-from brian2 import DEFAULT_CONSTANTS, DEFAULT_FUNCTIONS, Quantity
 from brian2.utils.stringtools import get_identifiers
 
 

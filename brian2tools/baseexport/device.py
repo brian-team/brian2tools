@@ -1,14 +1,17 @@
 from brian2.devices.device import RuntimeDevice
 from brian2.devices.device import Device, all_devices
-from brian2.core.namespace import get_local_namespace
 from brian2.groups import NeuronGroup
 from brian2.utils.logger import get_logger
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
-from brian2 import (StateMonitor, SpikeMonitor, EventMonitor,
-                    PopulationRateMonitor)
-import pprint
+from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
+                    EventMonitor, PopulationRateMonitor)
 from .helper import _prune_identifiers, _resolve_identifiers_from_string
 from .collector import *
+try:
+    import pprint
+    pprint_available = True
+except ImportError:
+    pprint_available = False
 
 logger = get_logger(__name__)
 
@@ -91,10 +94,6 @@ class BaseExporter(RuntimeDevice):
             Depth of the stack frame to look for namespace items
         """
 
-        if kwds:
-            logger.warn(('Unsupported keyword argument(s) provided for run: '
-                         '%s') % ', '.join(kwds.keys()))
-
         # `_clocks` is required to run `Network.before_run(namespace)`
         network._clocks = {object.clock for object in network.objects}
 
@@ -171,8 +170,17 @@ class BaseExporter(RuntimeDevice):
         # append the run_dict that contains all information about the
         # Brian objects defined in the scope of run()
         self.runs.append(run_dict)
-
-        pprint.pprint(self.runs)
+        # check to call build()
+        if self.build_on_run:
+            # if alread called build() raise error
+            if self.has_been_run:
+                raise RuntimeError('The network has already been built '
+                                   'and run before. Use set_device with '
+                                   'build_on_run=False and an explicit '
+                                   'device.build call to use multiple run '
+                                   'statements with this device.')
+            # call build
+            self.build(direct_call=False, **self.build_options)
 
     def variableview_set_with_expression_conditional(self, variableview,
                                                      cond, code,
@@ -204,7 +212,7 @@ class BaseExporter(RuntimeDevice):
         # check item is of slice type, if so pass to indices
         # else pass the boolean
         if type(item) == slice:
-            init_dict['index'] = variableview.group.indices[item]
+            init_dict['index'] = variableview.group.indices[item][:]
         else:
             init_dict['index'] = item
         self.initializers.append(init_dict)
@@ -228,10 +236,51 @@ class BaseExporter(RuntimeDevice):
             if item.start is None and item.stop is None:
                 init_dict['index'] = True
             else:
-                init_dict['index'] = variableview.group.indices[item]
+                init_dict['index'] = variableview.group.indices[item][:]
+        # does this work?
         else:
             init_dict['index'] = item
         self.initializers.append(init_dict)
+
+    def build(self, direct_call=True, debug=False):
+        """
+        Collect all run information and export the standard
+        dictionary format
+
+        Parameters
+        ----------
+        direct_call: bool, optional
+            To check the call to build() was made directly
+
+        debug: bool, optional
+            To build the device in debug mode
+        """
+        # buil_on_run = True but called build() directly
+        if self.build_on_run and direct_call:
+            raise RuntimeError('You used set_device with build_on_run=True '
+                               '(the default option), which will '
+                               'automatically build the simulation at the '
+                               'first encountered run call - do not call '
+                               'device.build manually in this case. If you '
+                               'want to call it manually, '
+                               'e.g. because you have multiple run calls, use'
+                               ' set_device with build_on_run=False.')
+        # if already built
+        if self.has_been_run:
+            raise RuntimeError('The network has already been built and run '
+                               'before. To build several simulations in '
+                               'the same script, call "device.reinit()" '
+                               'and "device.activate()". Note that you '
+                               'will have to set build options (e.g. the '
+                               'directory) and defaultclock.dt again.')
+        # change the flag
+        self.has_been_run = True
+        # if to operate in debug mode
+        if debug:
+            logger.debug("Building ExportDevice in debug mode")
+            # print dictionary format using pprint
+            if pprint_available:
+                pprint.pprint(self.runs)
 
 
 # instantiate StdDevice object and add to all_devices
