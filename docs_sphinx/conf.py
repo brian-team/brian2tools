@@ -64,20 +64,17 @@ author = u'Brian authors'
 
 # We mock modules that are not needed just for building the documentation
 import sys
-try:
-    from unittest.mock import Mock, MagicMock
-except ImportError:
-    from mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock
 
-MOCK_MODULES = ['matplotlib', 'matplotlib.colors', 'matplotlib.patches', 'matplotlib.pyplot', 'matplotlib.ticker',
+MOCK_MODULES = ['matplotlib', 'matplotlib.colors', 'matplotlib.patches', 'matplotlib.pyplot', 'matplotlib.ticker', 'matplotlib.cm',
                 'mpl_toolkits', 'mpl_toolkits.axes_grid1',
                 'numpy', 'numpy.ma',
                 'lems', 'lems.api',
                 'brian2',
-                'brian2.core', 'brian2.core.magic', 'brian2.core.namespace', 'brian2.core.network', 'brian2.core.variables',
+                'brian2.core', 'brian2.core.functions', 'brian2.core.magic', 'brian2.core.namespace', 'brian2.core.network', 'brian2.core.variables',
                 'brian2.devices', 'brian2.devices.device',
                 'brian2.equations', 'brian2.equations.equations',
-                'brian2.groups', 'brian2.groups.neurongroup',
+                'brian2.groups', 'brian2.groups.group', 'brian2.groups.neurongroup',
                 'brian2.input', 'brian2.input.poissoninput',
                 'brian2.monitors', 'brian2.monitors.statemonitor', 'brian2.monitors.spikemonitor',
                 'brian2.parsing', 'brian2.parsing.rendering',
