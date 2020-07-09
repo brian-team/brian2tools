@@ -55,7 +55,6 @@ class BaseExporter(RuntimeDevice):
                                EventMonitor, PopulationRateMonitor)
         self.runs = []
         self.initializers = []
-        self.run_identifiers = {}
 
     def reinit(self):
         """
@@ -156,20 +155,19 @@ class BaseExporter(RuntimeDevice):
         # check any initializers defined in the run scope
         if self.initializers:
             run_dict['initializers'] = self.initializers
-        # check the identifiers present in run level (like from initializers
-        # expressions)
-        if self.run_identifiers:
-            run_dict['run_identifiers'] = self.run_identifiers
         # check any inactive objects present for this run
         if run_inactive:
             run_dict['inactive'] = run_inactive
-        # reset the initializers and identifiers at run_level,
-        # so it won't be repeated for other runs
-        self.initializers = []
-        self.run_identifiers = {}
         # append the run_dict that contains all information about the
         # Brian objects defined in the scope of run()
         self.runs.append(run_dict)
+        # reset the dict, lists at run_level,
+        # so it won't be repeated for other runs
+        # TODO: but it doesn't make any diff, should compare and remove
+        self.initializers = []
+        run_dict = {}
+        run_components = {}
+        run_inactive = []
         # check to call build()
         if self.build_on_run:
             # if alread called build() raise error
@@ -190,14 +188,13 @@ class BaseExporter(RuntimeDevice):
         Capture setters with conditioanl expressions,
         for eg. obj.var['i>5'] = 'rand() * -78 * mV'
         """
-        # Note: by default, when
-        init_dict = {'source': variableview.group.name,
-                     'variable': variableview.name,
-                     'index': cond, 'value': code}
-        self.initializers.append(init_dict)
         # get resolved and clean identifiers
         ident_dict = _resolve_identifiers_from_string(code, run_namespace)
-        self.run_identifiers.update(ident_dict)
+        init_dict = {'source': variableview.group.name,
+                     'variable': variableview.name,
+                     'index': cond, 'value': code,
+                     'identifiers': ident_dict}
+        self.initializers.append(init_dict)
 
     def variableview_set_with_expression(self, variableview, item, code,
                                          run_namespace, check_units=True):
@@ -206,9 +203,12 @@ class BaseExporter(RuntimeDevice):
         for eg. obj.var[0:2] = 'rand() * -78 * mV' or
         obj.var = 'rand() * -78 * mV'
         """
+        # get resolved and clean identifiers
+        ident_dict = _resolve_identifiers_from_string(code, run_namespace)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'value': code}
+                     'value': code,
+                     'identifiers': ident_dict}
         # check item is of slice type, if so pass to indices
         # else pass the boolean
         if type(item) == slice:
@@ -216,9 +216,6 @@ class BaseExporter(RuntimeDevice):
         else:
             init_dict['index'] = item
         self.initializers.append(init_dict)
-        # get resolved and clean identifiers
-        ident_dict = _resolve_identifiers_from_string(code, run_namespace)
-        self.run_identifiers.update(ident_dict)
 
     def variableview_set_with_index_array(self, variableview, item, value,
                                           check_units=True):
