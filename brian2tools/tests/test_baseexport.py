@@ -1,13 +1,15 @@
 from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PoissonGroup, Equations, start_scope,
                     numpy, Quantity, StateMonitor, SpikeMonitor,
-                    PopulationRateMonitor, EventMonitor)
+                    PopulationRateMonitor, EventMonitor, set_device,
+                    run, device, Network, Synapses)
 from brian2.core.namespace import get_local_namespace
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
                                         PARAMETER, parse_string_equations)
 from brian2 import (ms, us, mV, Hz, volt, second, umetre, siemens, cm,
                     ufarad, amp, hertz)
+from brian2tools import baseexport
 from brian2tools.baseexport.collector import (collect_NeuronGroup,
                                               collect_PoissonGroup,
                                               collect_SpikeGenerator,
@@ -435,6 +437,158 @@ def test_EventMonitor():
     assert event_mon_dict['event'] == 'test_event'
 
 
+def test_ExportDevice_options():
+    """
+    Test the run and build options of ExportDevice
+    """
+    # test1
+    set_device('ExportDevice')
+    grp = NeuronGroup(10, 'eqn = 1:1', method='exact')
+    run(100 * ms)
+    _ = StateMonitor(grp, 'eqn', record=False)
+    with pytest.raises(RuntimeError):
+        run(100 * ms)
+
+    # test2
+    device.reinit()
+    with pytest.raises(RuntimeError):
+        device.build()
+
+    # test3
+    start_scope()
+    net = Network()
+    set_device('ExportDevice', build_on_run=False)
+    grp = NeuronGroup(10, 'eqn = 1:1', method='exact')
+    net.add(grp)
+    net.run(10 * ms)
+    pogrp = PoissonGroup(10, rates=10 * Hz)
+    net.add(pogrp)
+    net.run(10 * ms)
+    mon = StateMonitor(grp, 'eqn', record=False)
+    net.add(mon)
+    net.run(10 * ms)
+    device.build()
+    device.reinit()
+
+
+def test_ExportDevice_basic():
+    """
+    Test the components and structure of the dictionary exported
+    by ExportDevice
+    """
+    start_scope()
+    set_device('ExportDevice')
+
+    grp = NeuronGroup(10, 'dv/dt = (1-v)/tau :1', method='exact',
+                      threshold='v > 0.5', reset='v = 0', refractory=2 * ms)
+    tau = 10 * ms
+    rate = '1/tau'
+    grp.v['i > 2 and i < 5'] = -0.2
+    pgrp = PoissonGroup(10, rates=rate)
+    smon = SpikeMonitor(pgrp)
+    smon.active = False
+    netobj = Network(grp, pgrp, smon)
+    netobj.run(100*ms)
+    dev_dict = device.runs
+    # check the structure and components in dev_dict
+    assert dev_dict[0]['duration'] == 100 * ms
+    assert dev_dict[0]['inactive'][0] == smon.name
+    components = dev_dict[0]['components']
+    assert components['spikemonitor'][0]
+    assert components['poissongroup'][0]
+    assert components['neurongroup'][0]
+    initializers = dev_dict[0]['initializers']
+    assert initializers[0]['source'] == grp.name
+    assert initializers[0]['variable'] == 'v'
+    assert initializers[0]['index'] == 'i > 2 and i < 5'
+    # TODO: why not a Quantity type?
+    assert initializers[0]['value'] == '-0.2'
+    with pytest.raises(KeyError):
+        initializers[0]['identifiers']
+    device.reinit()
+
+    start_scope()
+    set_device('ExportDevice', build_on_run=False)
+    tau = 10 * ms
+    v0 = -70 * mV
+    vth = 800 * mV
+    grp = NeuronGroup(10, 'dv/dt = (v0-v)/tau :volt', method='exact',
+                      threshold='v > vth', reset='v = v0', refractory=2 * ms)
+    v0 = -80 * mV
+    grp.v[:] = 'v0 + 2 * mV'
+    smon = StateMonitor(grp, 'v', record=True)
+    smon.active = False
+    net = Network(grp, smon)
+    net.run(10 * ms)  # first run
+    v0 = -75 * mV
+    grp.v[3:8] = list(range(3, 8)) * mV
+    smon.active = True
+    net.run(20 * ms)  # second run
+    v_new = -5 * mV
+    grp.v['i >= 5'] = 'v0 + v_new'
+    v_new = -10 * mV
+    grp.v['i < 5'] = 'v0 - v_new'
+    spikemon = SpikeMonitor(grp)
+    net.add(spikemon)
+    net.run(5 * ms)  # third run
+    dev_dict = device.runs
+    # check run1
+    assert dev_dict[0]['duration'] == 10 * ms
+    assert dev_dict[0]['inactive'][0] == smon.name
+    components = dev_dict[0]['components']
+    assert components['statemonitor'][0]
+    assert components['neurongroup'][0]
+    initializers = dev_dict[0]['initializers']
+    assert initializers[0]['source'] == grp.name
+    assert initializers[0]['variable'] == 'v'
+    assert initializers[0]['index']
+    assert initializers[0]['value'] == 'v0 + 2 * mV'
+    assert initializers[0]['identifiers']['v0'] == -80 * mV
+    # check run2
+    assert dev_dict[1]['duration'] == 20 * ms
+    initializers = dev_dict[1]['initializers']
+    assert initializers[0]['source'] == grp.name
+    assert initializers[0]['variable'] == 'v'
+    assert (initializers[0]['index'] == grp.indices[slice(3, 8, None)]).all()
+    assert (initializers[0]['value'] == list(range(3, 8)) * mV).all()
+    with pytest.raises(KeyError):
+        dev_dict[1]['inactive']
+        initializers[1]['identifiers']
+    # check run3
+    assert dev_dict[2]['duration'] == 5 * ms
+    with pytest.raises(KeyError):
+        dev_dict[2]['inactive']
+    assert dev_dict[2]['components']['spikemonitor']
+    initializers = dev_dict[2]['initializers']
+    assert initializers[0]['source'] == grp.name
+    assert initializers[0]['variable'] == 'v'
+    assert initializers[0]['index'] == 'i >= 5'
+    assert initializers[0]['value'] == 'v0 + v_new'
+    assert initializers[0]['identifiers']['v0'] == -75 * mV
+    assert initializers[0]['identifiers']['v_new'] == -5 * mV
+    assert initializers[1]['index'] == 'i < 5'
+    assert initializers[1]['value'] == 'v0 - v_new'
+    assert initializers[1]['identifiers']['v_new'] == -10 * mV
+    with pytest.raises(IndexError):
+        initializers[2]
+        dev_dict[3]
+    device.reinit()
+
+
+def test_ExportDevice_unsupported():
+    """
+    Test whether unsupported objects for standard format export
+    are raising Error
+    """
+    start_scope()
+    set_device('ExportDevice')
+    grp = NeuronGroup(10, 'sample = 1:1', method='exact')
+    syn = Synapses(grp, grp, model='w :1')
+    syn.connect()
+    with pytest.raises(NotImplementedError):
+        run(10 * ms)
+
+
 if __name__ == '__main__':
 
     test_simple_neurongroup()
@@ -446,3 +600,6 @@ if __name__ == '__main__':
     test_PopulationRateMonitor()
     test_EventMonitor()
     test_custom_events_neurongroup()
+    test_ExportDevice_options()
+    test_ExportDevice_basic()
+    test_ExportDevice_unsupported()

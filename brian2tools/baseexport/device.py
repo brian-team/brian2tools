@@ -124,11 +124,16 @@ class BaseExporter(RuntimeDevice):
         for object in network.objects:
 
             # check the object is supported currently
-            if (not isinstance(object, self.supported_objs) and
-                not isinstance(object.group, self.supported_objs)):
-                raise NotImplementedError("Object {} is not implemented for\
-                                           standard format\
-                                           export".format(str(type(object))))
+            if not isinstance(object, self.supported_objs):
+                unsupported = True
+                if hasattr(object, 'group') and isinstance(
+                                                        object.group,
+                                                        self.supported_objs):
+                    unsupported = False
+                if unsupported:
+                    raise NotImplementedError("Object {} is not implemented \
+                                               for standard format export".
+                                               format(str(type(object))))
 
             # get the object type in string with lower case
             object_instance = type(object).__name__.lower()
@@ -192,8 +197,10 @@ class BaseExporter(RuntimeDevice):
         ident_dict = _resolve_identifiers_from_string(code, run_namespace)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'index': cond, 'value': code,
-                     'identifiers': ident_dict}
+                     'index': cond, 'value': code}
+        # if identifiers are defined, then add the field
+        if ident_dict:
+            init_dict.update({'identifiers': ident_dict})
         self.initializers.append(init_dict)
 
     def variableview_set_with_expression(self, variableview, item, code,
@@ -207,14 +214,15 @@ class BaseExporter(RuntimeDevice):
         ident_dict = _resolve_identifiers_from_string(code, run_namespace)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'value': code,
-                     'identifiers': ident_dict}
+                     'value': code}
+        if ident_dict:
+            init_dict.update({'identifiers': ident_dict})
         # check item is of slice type, if so pass to indices
         # else pass the boolean
         if type(item) == slice:
             init_dict['index'] = variableview.group.indices[item][:]
         else:
-            init_dict['index'] = item
+            init_dict['index'] = bool(item)
         self.initializers.append(init_dict)
 
     def variableview_set_with_index_array(self, variableview, item, value,
@@ -236,7 +244,7 @@ class BaseExporter(RuntimeDevice):
                 init_dict['index'] = variableview.group.indices[item][:]
         # does this work?
         else:
-            init_dict['index'] = item
+            init_dict['index'] = bool(item)
         self.initializers.append(init_dict)
 
     def build(self, direct_call=True, debug=False):
