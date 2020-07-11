@@ -2,7 +2,8 @@
 The file contains helper functions that shall be
 used for exporting standard representation format
 """
-from brian2 import DEFAULT_CONSTANTS, DEFAULT_FUNCTIONS, Quantity
+from brian2 import (DEFAULT_CONSTANTS, DEFAULT_FUNCTIONS,
+                    DEFAULT_UNITS, Quantity)
 from brian2.core.variables import Constant
 from brian2.core.functions import Function
 from brian2.utils.stringtools import get_identifiers
@@ -28,14 +29,15 @@ def _prune_identifiers(identifiers):
 
     for (key, value) in identifiers.items():
 
-        if isinstance(value, Constant) and key not in DEFAULT_CONSTANTS:
+        if isinstance(value, Constant) and (key not in DEFAULT_CONSTANTS and
+                                            key not in DEFAULT_UNITS):
             quant_identity = {key: Quantity(value.value, dim=value.dim)}
             clean_identifiers.update(quant_identity)
 
         if isinstance(value, Function) and key not in DEFAULT_FUNCTIONS:
             clean_identifiers.update({key: value})
 
-        if isinstance(value, Quantity):
+        if isinstance(value, Quantity) and key not in DEFAULT_UNITS:
             clean_identifiers.update({key: value})
 
     return clean_identifiers
@@ -65,7 +67,8 @@ def _resolve_identifiers_from_string(string_code, run_namespace):
     ident_dict = {}
     # loop over identifiers to get their value from namespace
     for identifier in identifiers:
-        ident_dict.update({identifier: run_namespace[identifier]})
+        if identifier in run_namespace:
+            ident_dict.update({identifier: run_namespace[identifier]})
     # prune away unwanted identifiers
     ident_dict = _prune_identifiers(ident_dict)
     return ident_dict

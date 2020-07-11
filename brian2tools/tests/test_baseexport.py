@@ -544,6 +544,8 @@ def test_ExportDevice_basic():
     assert initializers[0]['index']
     assert initializers[0]['value'] == 'v0 + 2 * mV'
     assert initializers[0]['identifiers']['v0'] == -80 * mV
+    with pytest.raises(KeyError):
+        initializers[0]['identifiers']['mV']
     # check run2
     assert dev_dict[1]['duration'] == 20 * ms
     initializers = dev_dict[1]['initializers']
