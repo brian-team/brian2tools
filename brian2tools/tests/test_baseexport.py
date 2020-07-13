@@ -10,13 +10,7 @@ from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
 from brian2 import (ms, us, mV, Hz, volt, second, umetre, siemens, cm,
                     ufarad, amp, hertz)
 from brian2tools import baseexport
-from brian2tools.baseexport.collector import (collect_NeuronGroup,
-                                              collect_PoissonGroup,
-                                              collect_SpikeGenerator,
-                                              collect_StateMonitor,
-                                              collect_SpikeMonitor,
-                                              collect_PopulationRateMonitor,
-                                              collect_EventMonitor)
+from brian2tools.baseexport.collector import *
 import pytest
 
 

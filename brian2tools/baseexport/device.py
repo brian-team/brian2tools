@@ -1,10 +1,9 @@
-from brian2.devices.device import RuntimeDevice
-from brian2.devices.device import Device, all_devices
+from brian2.devices.device import RuntimeDevice, Device, all_devices
 from brian2.groups import NeuronGroup
-from brian2.utils.logger import get_logger
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
 from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
                     EventMonitor, PopulationRateMonitor)
+from brian2.utils.logger import get_logger
 from .helper import _prune_identifiers, _resolve_identifiers_from_string
 from .collector import *
 try:
@@ -287,7 +286,12 @@ class BaseExporter(RuntimeDevice):
             if pprint_available:
                 pprint.pprint(self.runs)
 
+    def synaptic_pathway_before_run(self, pathway, run_namespace):
+        pass
 
+
+msg = "The package is under development and may give incorrect results"
+logger.warn(msg)
 # instantiate StdDevice object and add to all_devices
 std_device = BaseExporter()
 all_devices['ExportDevice'] = std_device

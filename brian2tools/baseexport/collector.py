@@ -6,9 +6,9 @@ with standard format exporter.
 """
 from brian2.equations.equations import PARAMETER
 from brian2.utils.stringtools import get_identifiers
-from .helper import _prune_identifiers
 from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
+from .helper import _prune_identifiers
 
 
 def collect_NeuronGroup(group, run_namespace):
