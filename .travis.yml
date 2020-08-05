@@ -45,7 +45,7 @@ before_install:
 - conda config --add channels defaults
 - conda config --add channels conda-forge
 - if [[ $DOCS_ONLY == 'yes' ]]; then
-    conda install --quiet --yes sphinx=1.7 setuptools_scm pip;
+    conda install --quiet --yes "sphinx>=1.7" setuptools_scm pip;
     python setup.py sdist;
   fi
 
