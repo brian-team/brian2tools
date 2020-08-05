@@ -2,7 +2,7 @@ from brian2.devices.device import RuntimeDevice, Device, all_devices
 from brian2.groups import NeuronGroup
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
 from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
-                    EventMonitor, PopulationRateMonitor)
+                    EventMonitor, PopulationRateMonitor, Synapses)
 from brian2.utils.logger import get_logger
 from .helper import _prune_identifiers, _resolve_identifiers_from_string
 from .collector import *
@@ -51,9 +51,11 @@ class BaseExporter(RuntimeDevice):
         self.build_options = None
         self.supported_objs = (NeuronGroup, SpikeGeneratorGroup,
                                PoissonGroup, StateMonitor, SpikeMonitor,
-                               EventMonitor, PopulationRateMonitor)
+                               EventMonitor, PopulationRateMonitor, Synapses)
         self.runs = []
         self.initializers = []
+        self.synaptic_pathways = [] # pathways defined by synapse
+        self.synaptic_connections = [] # connections defined for synapse
 
     def reinit(self):
         """
@@ -104,6 +106,7 @@ class BaseExporter(RuntimeDevice):
         run_dict = {}          # dictionary with components of particular run
         run_components = {}    # network components during the run
         run_inactive = []      # inactive objects for the run
+
         # dictionary to store objects and its collector functions
         collector_map={'neurongroup': {'f': collect_NeuronGroup, 'n': True},
                        'poissongroup': {'f': collect_PoissonGroup, 'n': True},
@@ -117,7 +120,10 @@ class BaseExporter(RuntimeDevice):
                                         'n': False},
                        'populationratemonitor':
                                        {'f': collect_PopulationRateMonitor,
-                                        'n': False}}
+                                        'n': False},
+                        'synapses': {'f': collect_Synapses,
+                                     'n': True}
+                      }
 
         # loop through all the objects of network
         for object in network.objects:
@@ -159,6 +165,12 @@ class BaseExporter(RuntimeDevice):
         # check any initializers defined in the run scope
         if self.initializers:
             run_dict['initializers'] = self.initializers
+        # check any synaptic pathways defined
+        if self.synaptic_pathways:
+            run_dict['synaptic_pathways'] = self.synaptic_pathways
+        # check any synaptic connections defined
+        if self.synaptic_connections:
+            run_dict['synaptic_connections'] = self.synaptic_connections
         # check any inactive objects present for this run
         if run_inactive:
             run_dict['inactive'] = run_inactive
@@ -169,6 +181,8 @@ class BaseExporter(RuntimeDevice):
         # so it won't be repeated for other runs
         # TODO: but it doesn't make any diff, should compare and remove
         self.initializers = []
+        self.synaptic_pathways = []
+        self.synaptic_connections = []
         run_dict = {}
         run_components = {}
         run_inactive = []
@@ -287,7 +301,32 @@ class BaseExporter(RuntimeDevice):
                 pprint.pprint(self.runs)
 
     def synaptic_pathway_before_run(self, pathway, run_namespace):
-        pass
+        """
+        Get synaptic pathways and pass it to dictionary
+        """
+        path = {'prepost': pathway.prepost, 'event': pathway.event,
+                'code': pathway.code, 'source': pathway.source.name,
+                'target': pathway.target.name, 'name': pathway.name,
+                'clock': pathway.clock.dt, 'order': pathway.order,
+                'when': pathway.when, 'synapse': pathway.synapses.name
+               }
+        self.synaptic_pathways.append(path)
+
+    def synapses_connect(self, condition=None, i=None, j=None, p=1., n=1,
+                         skip_if_invalid=False, namespace=None):
+        """
+        Override synapses_connect() to get details from Synapses.connect()
+        """
+        connect = {}
+        if condition:
+            connect.update({'condition': condition})
+        elif i is not None or j is not None:
+            if i is not None:
+                connect.update({'i': i})
+            if j is not None:
+                connect.update({'j': j})
+        connect.update({'probability': p, 'n_connections': n})
+        self.synaptic_connections.append(connect)
 
 
 msg = "The package is under development and may give incorrect results"

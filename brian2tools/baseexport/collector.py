@@ -8,6 +8,7 @@ from brian2.equations.equations import PARAMETER
 from brian2.utils.stringtools import get_identifiers
 from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
+from brian2.synapses.synapses import SummedVariableUpdater
 from .helper import _prune_identifiers
 
 
@@ -429,3 +430,53 @@ def collect_PopulationRateMonitor(poprate_mon):
     poprate_mon_dict['order'] = poprate_mon.order
 
     return poprate_mon_dict
+
+
+def collect_Synapses(synapses, run_namespace = None):
+    """
+    Collect information from `brian2.synapses.synapses.Synapses`
+    and represent them in dictionary format
+
+    Parameters
+    ----------
+    synapses : brian2.synapses.synapses.Synapses
+        Synapses object
+
+    run_namespace : dict
+        Namespace dictionary
+
+    Returns
+    -------
+    synapse_dict : dict
+        Standard dictionary format with collected information
+    """
+
+    synapse_dict = {}
+    # get synapses object name
+    synapse_dict['name'] = synapses.name
+
+    # get source and target groups
+    synapse_dict['source'] = synapses.source.name
+    synapse_dict['target'] = synapses.target.name
+
+    # get governing equations
+    synapse_dict['equations'] = collect_Equations(synapses.equations)
+    if synapses.event_driven:
+        synapse_dict['equations'].update(collect_Equations(synapses.event_driven))
+
+    # loop over the contained objects
+    summed_variables = []
+    for obj in synapses.contained_objects:
+        # check summed variables
+        if isinstance(obj, SummedVariableUpdater):
+            summed_var = {'code': obj.abstract_code, 'target': obj.target.name,
+                          'name': obj.name, 'dt': obj.clock.dt,
+                          'when': obj.when, 'order': obj.order
+                         }
+            summed_variables.append(summed_var)
+
+    # check any summed variables are used
+    if summed_variables:
+        synapse_dict['summed_variables'] = summed_variables
+
+    return synapse_dict
