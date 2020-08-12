@@ -4,6 +4,7 @@ from brian2.input import PoissonGroup, SpikeGeneratorGroup
 from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
                     EventMonitor, PopulationRateMonitor, Synapses)
 from brian2.utils.logger import get_logger
+from brian2.utils.stringtools import get_identifiers
 from .helper import _prune_identifiers, _resolve_identifiers_from_string
 from .collector import *
 try:
@@ -53,8 +54,7 @@ class BaseExporter(RuntimeDevice):
                                PoissonGroup, StateMonitor, SpikeMonitor,
                                EventMonitor, PopulationRateMonitor, Synapses)
         self.runs = []
-        self.initializers = []
-        self.synaptic_pathways = [] # pathways defined by synapse
+        self.initializers_connectors = []
         self.synaptic_connections = [] # connections defined for synapse
 
     def reinit(self):
@@ -163,11 +163,8 @@ class BaseExporter(RuntimeDevice):
         run_dict = {'components': run_components,
                     'duration': duration}
         # check any initializers defined in the run scope
-        if self.initializers:
-            run_dict['initializers'] = self.initializers
-        # check any synaptic pathways defined
-        if self.synaptic_pathways:
-            run_dict['synaptic_pathways'] = self.synaptic_pathways
+        if self.initializers_connectors:
+            run_dict['initializers_connectors'] = self.initializers_connectors
         # check any synaptic connections defined
         if self.synaptic_connections:
             run_dict['synaptic_connections'] = self.synaptic_connections
@@ -180,9 +177,7 @@ class BaseExporter(RuntimeDevice):
         # reset the dict, lists at run_level,
         # so it won't be repeated for other runs
         # TODO: but it doesn't make any diff, should compare and remove
-        self.initializers = []
-        self.synaptic_pathways = []
-        self.synaptic_connections = []
+        self.initializers_connectors = []
         run_dict = {}
         run_components = {}
         run_inactive = []
@@ -207,14 +202,16 @@ class BaseExporter(RuntimeDevice):
         for eg. obj.var['i>5'] = 'rand() * -78 * mV'
         """
         # get resolved and clean identifiers
-        ident_dict = _resolve_identifiers_from_string(code, run_namespace)
+        ident_set = get_identifiers(code)
+        ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
+        ident_dict = _prune_identifiers(ident_dict)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'index': cond, 'value': code}
+                     'index': cond, 'value': code, 'type': 'initializer'}
         # if identifiers are defined, then add the field
         if ident_dict:
             init_dict.update({'identifiers': ident_dict})
-        self.initializers.append(init_dict)
+        self.initializers_connectors.append(init_dict)
 
     def variableview_set_with_expression(self, variableview, item, code,
                                          run_namespace, check_units=True):
@@ -224,10 +221,12 @@ class BaseExporter(RuntimeDevice):
         obj.var = 'rand() * -78 * mV'
         """
         # get resolved and clean identifiers
-        ident_dict = _resolve_identifiers_from_string(code, run_namespace)
+        ident_set = get_identifiers(code)
+        ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
+        ident_dict = _prune_identifiers(ident_dict)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'value': code}
+                     'value': code, 'type': 'initializer'}
         if ident_dict:
             init_dict.update({'identifiers': ident_dict})
         # check item is of slice type, if so pass to indices
@@ -236,7 +235,7 @@ class BaseExporter(RuntimeDevice):
             init_dict['index'] = variableview.group.indices[item][:]
         else:
             init_dict['index'] = bool(item)
-        self.initializers.append(init_dict)
+        self.initializers_connectors.append(init_dict)
 
     def variableview_set_with_index_array(self, variableview, item, value,
                                           check_units=True):
@@ -247,7 +246,7 @@ class BaseExporter(RuntimeDevice):
         """
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'value': value}
+                     'value': value, 'type': 'initializer'}
         # check type is slice, if so pass to indices
         # else pass the boolean
         if type(item) == slice:
@@ -258,8 +257,57 @@ class BaseExporter(RuntimeDevice):
         # does this work?
         else:
             init_dict['index'] = bool(item)
-        self.initializers.append(init_dict)
+        self.initializers_connectors.append(init_dict)
+    
+    def synaptic_pathway_before_run(self, pathway, run_namespace):
+        """
+        Get synaptic pathways and pass it to dictionary
+        """
+        pass
 
+    def synapses_connect(self, synapses, namespace=None, condition=None, i=None,
+                         j=None, p=1, n=1, skip_if_invalid=False, level=0):
+        """
+        Override synapses_connect() to get details from Synapses.connect()
+        """
+        # if namespace not defined
+        if namespace is None:
+            namespace = get_local_namespace(level + 2)
+        # prepare objects using `before_run()`
+        synapses.before_run(namespace)
+
+        connect = {}
+        # string statements that shall have identifers
+        strings_with_identifers = []
+        if condition:
+            connect.update({'condition': condition})
+            strings_with_identifers.append(condition)
+        elif i is not None or j is not None:
+            if i is not None:
+                connect.update({'i': i})
+                strings_with_identifers.append(str(i))
+            if j is not None:
+                connect.update({'j': j})
+                strings_with_identifers.append(str(j))
+        connect.update({'probability': p, 'n_connections': n, 
+                        'synapses': synapses.name, 
+                        'source': synapses.source.name,
+                        'target': synapses.target.name, 'type': 'connector'
+                        })
+        # get resolved and clean identifiers
+        strings_with_identifers.append(str(p))
+        strings_with_identifers.append(str(n))
+        identifers_set = set()
+        for string_expressions in strings_with_identifers:
+            identifers_set = identifers_set | get_identifiers(string_expressions)
+        ident_dict = synapses.resolve_all(identifers_set, namespace)
+        ident_dict = _prune_identifiers(ident_dict)
+        if ident_dict:
+            connect.update({'identifiers': ident_dict})
+        self.initializers_connectors.append(connect)
+         # update `_connect_called` to allow initialization on synaptic variables
+        synapses._connect_called = True
+    
     def build(self, direct_call=True, debug=False):
         """
         Collect all run information and export the standard
@@ -299,34 +347,6 @@ class BaseExporter(RuntimeDevice):
             # print dictionary format using pprint
             if pprint_available:
                 pprint.pprint(self.runs)
-
-    def synaptic_pathway_before_run(self, pathway, run_namespace):
-        """
-        Get synaptic pathways and pass it to dictionary
-        """
-        path = {'prepost': pathway.prepost, 'event': pathway.event,
-                'code': pathway.code, 'source': pathway.source.name,
-                'target': pathway.target.name, 'name': pathway.name,
-                'clock': pathway.clock.dt, 'order': pathway.order,
-                'when': pathway.when, 'synapse': pathway.synapses.name
-               }
-        self.synaptic_pathways.append(path)
-
-    def synapses_connect(self, condition=None, i=None, j=None, p=1., n=1,
-                         skip_if_invalid=False, namespace=None):
-        """
-        Override synapses_connect() to get details from Synapses.connect()
-        """
-        connect = {}
-        if condition:
-            connect.update({'condition': condition})
-        elif i is not None or j is not None:
-            if i is not None:
-                connect.update({'i': i})
-            if j is not None:
-                connect.update({'j': j})
-        connect.update({'probability': p, 'n_connections': n})
-        self.synaptic_connections.append(connect)
 
 
 msg = "The package is under development and may give incorrect results"

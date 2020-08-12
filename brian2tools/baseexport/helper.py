@@ -29,16 +29,18 @@ def _prune_identifiers(identifiers):
 
     for (key, value) in identifiers.items():
 
-        if isinstance(value, Constant) and (key not in DEFAULT_CONSTANTS and
-                                            key not in DEFAULT_UNITS):
-            quant_identity = {key: Quantity(value.value, dim=value.dim)}
-            clean_identifiers.update(quant_identity)
+        if isinstance(value, Constant):
+            if key not in DEFAULT_CONSTANTS and key not in DEFAULT_UNITS:
+                quant_identity = {key: Quantity(value.value, dim=value.dim)}
+                clean_identifiers.update(quant_identity)
 
-        if isinstance(value, Function) and key not in DEFAULT_FUNCTIONS:
-            clean_identifiers.update({key: value})
+        elif isinstance(value, Function):
+            if key not in DEFAULT_FUNCTIONS:
+                clean_identifiers.update({key: value})
 
-        if isinstance(value, Quantity) and key not in DEFAULT_UNITS:
-            clean_identifiers.update({key: value})
+        elif isinstance(value, Quantity):
+            if key not in DEFAULT_UNITS:
+                clean_identifiers.update({key: value})
 
     return clean_identifiers
 
@@ -69,6 +71,9 @@ def _resolve_identifiers_from_string(string_code, run_namespace):
     for identifier in identifiers:
         if identifier in run_namespace:
             ident_dict.update({identifier: run_namespace[identifier]})
+        else:
+            raise KeyError("Identifer {} is not found in \
+                            run namespace".format(identifier))
     # prune away unwanted identifiers
     ident_dict = _prune_identifiers(ident_dict)
     return ident_dict

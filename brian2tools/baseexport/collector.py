@@ -8,8 +8,9 @@ from brian2.equations.equations import PARAMETER
 from brian2.utils.stringtools import get_identifiers
 from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
-from brian2.synapses.synapses import SummedVariableUpdater
-from .helper import _prune_identifiers
+from brian2.synapses.synapses import SummedVariableUpdater, SynapticPathway
+from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
+from .helper import _prune_identifiers, _resolve_identifiers_from_string
 
 
 def collect_NeuronGroup(group, run_namespace):
@@ -432,7 +433,7 @@ def collect_PopulationRateMonitor(poprate_mon):
     return poprate_mon_dict
 
 
-def collect_Synapses(synapses, run_namespace = None):
+def collect_Synapses(synapses, run_namespace):
     """
     Collect information from `brian2.synapses.synapses.Synapses`
     and represent them in dictionary format
@@ -450,7 +451,7 @@ def collect_Synapses(synapses, run_namespace = None):
     synapse_dict : dict
         Standard dictionary format with collected information
     """
-
+    identifiers = set()
     synapse_dict = {}
     # get synapses object name
     synapse_dict['name'] = synapses.name
@@ -461,11 +462,18 @@ def collect_Synapses(synapses, run_namespace = None):
 
     # get governing equations
     synapse_dict['equations'] = collect_Equations(synapses.equations)
+    # get identifiers from equations
+    identifiers = identifiers | synapses.equations.identifiers
     if synapses.event_driven:
         synapse_dict['equations'].update(collect_Equations(synapses.event_driven))
-
+        identifiers = identifiers | synapses.event_driven.identifiers
+    # check state updaters
+    if (synapses.state_updater and 
+        isinstance(synapses.state_updater.method_choice, str)):
+        synapse_dict['user_method'] = synapses.state_updater.method_choice
     # loop over the contained objects
     summed_variables = []
+    pathways = []
     for obj in synapses.contained_objects:
         # check summed variables
         if isinstance(obj, SummedVariableUpdater):
@@ -475,8 +483,38 @@ def collect_Synapses(synapses, run_namespace = None):
                          }
             summed_variables.append(summed_var)
 
+        # check synapse pathways
+        if isinstance(obj, SynapticPathway):
+            path = {'prepost': obj.prepost, 'event': obj.event,
+                    'code': obj.code, 'source': obj.source.name,
+                    'target': obj.target.name, 'name': obj.name,
+                    'clock': obj.clock.dt, 'order': obj.order,
+                    'when': obj.when
+                   }
+            # check delay is defined
+            if obj.delay[:]:
+                path.update({'delay': obj.delay[:]})
+            pathways.append(path)
+            # check any identifiers specific to pathway expression
+            identifiers = identifiers | get_identifiers(obj.code)
+
     # check any summed variables are used
     if summed_variables:
         synapse_dict['summed_variables'] = summed_variables
+    # check any pathways are defined
+    if pathways:
+        synapse_dict['pathways'] = pathways
+    # resolve identifiers and add to dict
+    identifiers = synapses.resolve_all(identifiers, run_namespace)
+    identifiers = _prune_identifiers(identifiers)
+    if identifiers:
+        synapse_dict['identifiers'] = identifiers
+    # get when and order
+    # is this necessary or CodeRunner's is sufficient?
+    synapse_dict['when'] = synapses.when
+    synapse_dict['order'] = synapses.order
+    # check common delay
+    if synapses.delay[:]:
+        synapse_dict['delay'] = synapses.delay[:]
 
     return synapse_dict
