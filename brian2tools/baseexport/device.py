@@ -79,6 +79,12 @@ class BaseExporter(RuntimeDevice):
     def init_with_arange(self, var, start, dtype):
         self.array_cache[var] = np.arange(0, var.size, dtype=dtype) + start
 
+    def code_object(self, owner, name, abstract_code, variables, template_name,
+                variable_indices, codeobj_class=None,
+                template_kwds=None, override_conditional_write=None,
+                compiler_kwds=None):
+        pass  # Do nothing
+
     def network_run(self, network, duration, namespace=None, level=0, **kwds):
         """
         Method to be executed when `Network.run()` is called in
