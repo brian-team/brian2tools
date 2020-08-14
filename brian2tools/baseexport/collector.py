@@ -461,14 +461,17 @@ def collect_Synapses(synapses, run_namespace):
     synapse_dict['target'] = synapses.target.name
 
     # get governing equations
-    synapse_dict['equations'] = collect_Equations(synapses.equations)
+    synapse_equations = collect_Equations(synapses.equations)
     # get identifiers from equations
     identifiers = identifiers | synapses.equations.identifiers
     if synapses.event_driven:
-        synapse_dict['equations'].update(collect_Equations(synapses.event_driven))
+        synapse_equations.update(collect_Equations(synapses.event_driven))
         identifiers = identifiers | synapses.event_driven.identifiers
+    # check equations is not empty
+    if synapse_equations:
+        synapse_dict['equations'] = synapse_equations
     # check state updaters
-    if (synapses.state_updater and 
+    if (synapses.state_updater and
         isinstance(synapses.state_updater.method_choice, str)):
         synapse_dict['user_method'] = synapses.state_updater.method_choice
     # loop over the contained objects
@@ -482,6 +485,9 @@ def collect_Synapses(synapses, run_namespace):
                           'when': obj.when, 'order': obj.order
                          }
             summed_variables.append(summed_var)
+            # check any identifiers in abstract code
+            # TODO: raises error because of _synaptic_var
+            #identifiers = identifiers | get_identifiers(obj.abstract_code)
 
         # check synapse pathways
         if isinstance(obj, SynapticPathway):
@@ -492,8 +498,8 @@ def collect_Synapses(synapses, run_namespace):
                     'when': obj.when
                    }
             # check delay is defined
-            if obj.delay[:]:
-                path.update({'delay': obj.delay[:]})
+            #if obj.delay[:].size > 0:
+            #    path.update({'delay': obj.delay[:]})
             pathways.append(path)
             # check any identifiers specific to pathway expression
             identifiers = identifiers | get_identifiers(obj.code)
@@ -513,8 +519,5 @@ def collect_Synapses(synapses, run_namespace):
     # is this necessary or CodeRunner's is sufficient?
     synapse_dict['when'] = synapses.when
     synapse_dict['order'] = synapses.order
-    # check common delay
-    if synapses.delay[:]:
-        synapse_dict['delay'] = synapses.delay[:]
 
     return synapse_dict

@@ -2,7 +2,7 @@ from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PoissonGroup, Equations, start_scope,
                     numpy, Quantity, StateMonitor, SpikeMonitor,
                     PopulationRateMonitor, EventMonitor, set_device,
-                    run, device, Network, Synapses)
+                    run, device, Network, Synapses, PoissonInput)
 from brian2.core.namespace import get_local_namespace
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
@@ -431,6 +431,91 @@ def test_EventMonitor():
     assert event_mon_dict['event'] == 'test_event'
 
 
+def test_Synapses():
+    """
+    Test cases to verify standard export on Synapses
+    """
+    # check simple Synapses
+    eqn = 'dv/dt = (1 - v)/tau :1'
+    tau = 1 * ms
+    P = NeuronGroup(1, eqn, method='euler', threshold='v>0.7')
+    Q = NeuronGroup(1, eqn, method='euler')
+    w = 1
+    S = Synapses(P, Q, on_pre='v += w')
+    syn_dict = collect_Synapses(S, get_local_namespace(0))
+
+    assert syn_dict['name'] == S.name
+    assert syn_dict['order'] == 0
+    assert syn_dict['when'] == 'start'
+    
+    pathways = syn_dict['pathways'][0]
+    assert pathways['clock'] == S._pathways[0].clock.dt
+    assert pathways['prepost'] == 'pre'
+    assert pathways['source'] == P.name
+    assert pathways['target'] == Q.name
+    assert pathways['order'] == -1
+    assert pathways['when'] == 'synapses'
+    assert pathways['code'] == 'v += w'
+    assert pathways['event'] == 'spike'
+    with pytest.raises(KeyError):
+        syn_dict['equations']
+        syn_dict['user_method']
+        syn_dict['summed_variables']
+        syn_dict['identifiers']
+        pathways['delay']
+    
+    # test 2: check pre, post, eqns, identifiers and summed variables
+    start_scope()
+    eqn = '''
+    dv/dt = (1 - v)/tau :1
+    summ_v :1
+    '''
+    tau = 1 * ms
+    P = NeuronGroup(1, eqn, method='euler', threshold='v>0.7')
+    Q = NeuronGroup(1, eqn, method='euler', threshold='v>0.9')
+    eqn = '''
+    dvar/dt = -var/tau :1 (event-driven)
+    dvarr/dt = -varr/tau :1 (clock-driven)
+    w = 1 :1
+    summ_v_pre = kiki :1 (summed)
+    '''
+    kiki = 0.01
+    preki = 0
+    postki = -0.01
+    S = Synapses(P, Q, eqn, on_pre='v += preki', on_post='v -= w + postki',
+                 delay=2*ms, method='euler')
+    syn_dict = collect_Synapses(S, get_local_namespace(0))
+
+    var = syn_dict['equations']['var']
+    assert var['type'] == 'differential equation'
+    assert var['var_type'] == 'float'
+    assert var['expr'] == '-var/tau'
+    assert var['flags'][0] == 'event-driven'
+    varr = syn_dict['equations']['varr']
+    assert varr['type'] == 'differential equation'
+    assert varr['var_type'] == 'float'
+    assert varr['expr'] == '-varr/tau'
+    assert varr['flags'][0] == 'clock-driven'
+    assert syn_dict['equations']['w']['type'] == 'subexpression'
+    assert syn_dict['equations']['w']['expr'] == '1'
+    assert syn_dict['equations']['w']['var_type'] == 'float'
+    assert syn_dict['summed_variables'][0]['target'] == P.name
+    # TODO: check the problem
+    #assert syn_dict['summed_variables'][0]['code'] == 'kiki'
+    pre_path = syn_dict['pathways'][0]
+    post_path = syn_dict['pathways'][1]
+    assert pre_path['delay'] == 2*ms
+    assert pre_path['prepost'] == 'pre'
+    assert pre_path['code'] == 'v += preki'
+    assert post_path['prepost'] == 'post'
+    assert post_path['code'] == 'v -= w + postki'
+    with pytest.raises(KeyError):
+        post_path['delay']
+    assert syn_dict['user_method'] == 'euler'
+    assert syn_dict['identifiers']['preki'] == 0
+    assert syn_dict['identifiers']['postki'] == -0.01
+    
+
 def test_ExportDevice_options():
     """
     Test the run and build options of ExportDevice
@@ -491,7 +576,7 @@ def test_ExportDevice_basic():
     assert components['spikemonitor'][0]
     assert components['poissongroup'][0]
     assert components['neurongroup'][0]
-    initializers = dev_dict[0]['initializers']
+    initializers = dev_dict[0]['initializers_connectors']
     assert initializers[0]['source'] == grp.name
     assert initializers[0]['variable'] == 'v'
     assert initializers[0]['index'] == 'i > 2 and i < 5'
@@ -532,7 +617,7 @@ def test_ExportDevice_basic():
     components = dev_dict[0]['components']
     assert components['statemonitor'][0]
     assert components['neurongroup'][0]
-    initializers = dev_dict[0]['initializers']
+    initializers = dev_dict[0]['initializers_connectors']
     assert initializers[0]['source'] == grp.name
     assert initializers[0]['variable'] == 'v'
     assert initializers[0]['index']
@@ -542,7 +627,7 @@ def test_ExportDevice_basic():
         initializers[0]['identifiers']['mV']
     # check run2
     assert dev_dict[1]['duration'] == 20 * ms
-    initializers = dev_dict[1]['initializers']
+    initializers = dev_dict[1]['initializers_connectors']
     assert initializers[0]['source'] == grp.name
     assert initializers[0]['variable'] == 'v'
     assert (initializers[0]['index'] == grp.indices[slice(3, 8, None)]).all()
@@ -555,7 +640,7 @@ def test_ExportDevice_basic():
     with pytest.raises(KeyError):
         dev_dict[2]['inactive']
     assert dev_dict[2]['components']['spikemonitor']
-    initializers = dev_dict[2]['initializers']
+    initializers = dev_dict[2]['initializers_connectors']
     assert initializers[0]['source'] == grp.name
     assert initializers[0]['variable'] == 'v'
     assert initializers[0]['index'] == 'i >= 5'
@@ -571,6 +656,68 @@ def test_ExportDevice_basic():
     device.reinit()
 
 
+def test_synapse_connect_cond():
+    # check connectors
+    start_scope()
+    eqn = 'dv/dt = (1 - v)/tau :1'
+    tau = 1 * ms
+    P = NeuronGroup(5, eqn, method='euler', threshold='v>0.8')
+    Q = NeuronGroup(10, eqn, method='euler', threshold='v>0.9')
+    w = 1
+    tata = 2
+    bye = 2
+    my_prob = -1
+    S = Synapses(P, Q, on_pre='v += w')
+    S.connect('tata > bye', p='my_prob', n=5)
+    run(1*ms)
+    connect = device.runs[0]['initializers_connectors'][0]
+    assert connect['probability'] == 'my_prob'
+    assert connect['n_connections'] == 5
+    assert connect['type'] == 'connect'
+    assert connect['identifiers']['tata'] == bye
+    with pytest.raises(KeyError):
+        connect['i']
+        connect['j']
+    device.reinit()
+
+
+def test_synapse_connect_ij():
+    #connector test 2
+    start_scope()
+    set_device('ExportDevice', build_on_run=False)
+    tau = 10 * ms
+    eqn = 'dv/dt = (1 - v)/tau :1'
+    my_prob = -1
+    Source = NeuronGroup(10, eqn, method='exact', threshold='v>0.9')
+    S1 = Synapses(Source, Source)
+    nett = Network(Source, S1)
+    S1.connect(i=[0, 1], j=[1, 2], p='my_prob')
+    nett.run(1*ms)
+    connect2 = device.runs[0]['initializers_connectors'][0]
+    assert connect2['i'] == [0, 1]    
+    assert connect2['j'] == [1, 2]
+    assert connect2['identifiers']['my_prob'] == -1
+    with pytest.raises(KeyError):
+        connect2['condition']
+    device.reinit()
+
+
+def test_synapse_connect_generator():
+    #connector test 3
+    start_scope()
+    set_device('ExportDevice', build_on_run=False)
+    tau = 1 * ms
+    eqn = 'dv/dt = (1 - v)/tau :1'
+    Source = NeuronGroup(10, eqn, method='exact', threshold='v>0.9')
+    S1 = Synapses(Source, Source)
+    nett2 = Network(Source, S1)
+    S1.connect(j='k for k in range(0, i+1)')
+    nett2.run(1*ms)
+    connect3 = device.runs[0]['initializers_connectors'][0]
+    assert connect3['j'] == 'k for k in range(0, i+1)'
+    device.reinit()
+
+
 def test_ExportDevice_unsupported():
     """
     Test whether unsupported objects for standard format export
@@ -578,11 +725,14 @@ def test_ExportDevice_unsupported():
     """
     start_scope()
     set_device('ExportDevice')
-    grp = NeuronGroup(10, 'sample = 1:1', method='exact')
-    syn = Synapses(grp, grp, model='w :1')
-    syn.connect()
-    with pytest.raises(NotImplementedError):
-        run(10 * ms)
+    eqn = '''
+    v = 1 :1
+    g :1
+    '''
+    G = NeuronGroup(1, eqn)
+    _ = PoissonInput(G, 'g', 1, 1 * Hz, 1)
+    #with pytest.raises(NotImplementedError):
+    run(10 * ms)
 
 
 if __name__ == '__main__':
@@ -596,6 +746,10 @@ if __name__ == '__main__':
     test_PopulationRateMonitor()
     test_EventMonitor()
     test_custom_events_neurongroup()
+    test_Synapses()
     test_ExportDevice_options()
     test_ExportDevice_basic()
     test_ExportDevice_unsupported()
+    test_synapse_connect_cond()
+    test_synapse_connect_generator()
+    test_synapse_connect_ij()
