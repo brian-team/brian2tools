@@ -1,3 +1,4 @@
+from brian2.core.variables import DynamicArrayVariable
 from brian2.devices.device import RuntimeDevice, Device, all_devices
 from brian2.groups import NeuronGroup
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
@@ -78,6 +79,20 @@ class BaseExporter(RuntimeDevice):
 
     def init_with_arange(self, var, start, dtype):
         self.array_cache[var] = np.arange(0, var.size, dtype=dtype) + start
+
+    def fill_with_array(self, var, arr):
+        arr = np.asarray(arr)
+        if arr.size == 0:
+            return  # nothing to do
+        if isinstance(var, DynamicArrayVariable):
+            # We can never be sure about the size of a dynamic array, so
+            # we can't do correct broadcasting. Therefore, we do not cache
+            # them at all for now.
+            self.array_cache[var] = None
+        else:
+            new_arr = np.empty(var.size, dtype=var.dtype)
+            new_arr[:] = arr
+            self.array_cache[var] = new_arr
 
     def code_object(self, owner, name, abstract_code, variables, template_name,
                 variable_indices, codeobj_class=None,
@@ -207,9 +222,8 @@ class BaseExporter(RuntimeDevice):
         if self.array_cache.get(var, None) is not None:
             return self.array_cache[var]
         else:
-            raise NotImplementedError(('Cannot set variable "%s" this way in '
-                                       'device mode, try using string '
-                                       'expressions.') % var.name)
+            raise NotImplementedError(('Cannot get variable "%s" this way in '
+                                       'device mode.') % var.name)
 
     def variableview_set_with_expression_conditional(self, variableview,
                                                      cond, code,
