@@ -498,8 +498,8 @@ def collect_Synapses(synapses, run_namespace):
                     'when': obj.when
                    }
             # check delay is defined
-            #if obj.delay[:].size > 0:
-            #    path.update({'delay': obj.delay[:]})
+            if obj.variables['delay'].scalar:
+               path.update({'delay': obj.delay[:]})
             pathways.append(path)
             # check any identifiers specific to pathway expression
             identifiers = identifiers | get_identifiers(obj.code)
