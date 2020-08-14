@@ -659,6 +659,7 @@ def test_ExportDevice_basic():
 def test_synapse_connect_cond():
     # check connectors
     start_scope()
+    set_device('ExportDevice')
     eqn = 'dv/dt = (1 - v)/tau :1'
     tau = 1 * ms
     P = NeuronGroup(5, eqn, method='euler', threshold='v>0.8')
