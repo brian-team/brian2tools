@@ -95,9 +95,9 @@ class BaseExporter(RuntimeDevice):
             self.array_cache[var] = new_arr
 
     def code_object(self, owner, name, abstract_code, variables, template_name,
-                variable_indices, codeobj_class=None,
-                template_kwds=None, override_conditional_write=None,
-                compiler_kwds=None):
+                    variable_indices, codeobj_class=None,
+                    template_kwds=None, override_conditional_write=None,
+                    compiler_kwds=None):
         pass  # Do nothing
 
     def network_run(self, network, duration, namespace=None, level=0, **kwds):
@@ -149,8 +149,8 @@ class BaseExporter(RuntimeDevice):
                        'populationratemonitor':
                                        {'f': collect_PopulationRateMonitor,
                                         'n': False},
-                        'synapses': {'f': collect_Synapses,
-                                     'n': True}
+                        'synapses': {'f': collect_Synapses, 'n': True},
+                        'poissoninput': {'f': collect_PoissonInput, 'n': True}
                       }
 
         # loop through all the objects of network
@@ -261,11 +261,11 @@ class BaseExporter(RuntimeDevice):
                      'value': code, 'type': 'initializer'}
         if ident_dict:
             init_dict.update({'identifiers': ident_dict})
-                # check type is slice and True
+        # check type is slice and True
         if type(item) == slice and item.start is None and item.stop is None:
             init_dict['index'] = True
         elif ((isinstance(item, int) or (isinstance(item, np.ndarray) and
-              item.shape==()))):
+               item.shape == ()))):
             if self.array_cache.get(variableview.variable, None) is not None:
                 self.array_cache[variableview.variable][item] = code
             init_dict['index'] = item
@@ -274,11 +274,11 @@ class BaseExporter(RuntimeDevice):
             # variables
             try:
                 init_dict['index'] = np.asarray(variableview.indexing(item,
-                                                index_var=variableview.index_var))
+                                            index_var=variableview.index_var))
             except NotImplementedError:
-                raise NotImplementedError(('Cannot set variable "%s" this way in '
-                                           'device mode, try using string '
-                                           'expressions.') % variableview.name)
+                raise NotImplementedError(('Cannot set variable "%s" this way'
+                                           ' in device mode,try using string '
+                                           'expressions') % variableview.name)
         self.initializers_connectors.append(init_dict)
 
     def variableview_set_with_index_array(self, variableview, item, value,
@@ -293,8 +293,8 @@ class BaseExporter(RuntimeDevice):
         # check type is slice and True
         if type(item) == slice and item.start is None and item.stop is None:
             init_dict['index'] = True
-        elif ((isinstance(item, int) or (isinstance(item, np.ndarray) and 
-              item.shape==())) and value.size == 1):
+        elif ((isinstance(item, int) or (isinstance(item, np.ndarray) and
+              item.shape == ())) and value.size == 1):
             if self.array_cache.get(variableview.variable, None) is not None:
                 self.array_cache[variableview.variable][item] = value
             init_dict['index'] = item
@@ -303,11 +303,12 @@ class BaseExporter(RuntimeDevice):
             # variables
             try:
                 init_dict['index'] = np.asarray(variableview.indexing(item,
-                                                index_var=variableview.index_var))
+                                            index_var=variableview.index_var))
             except NotImplementedError:
-                raise NotImplementedError(('Cannot set variable "%s" this way in '
-                                           'device mode, try using string '
-                                           'expressions.') % variableview.name)
+                raise NotImplementedError(('Cannot set variable "%s" this way'
+                                           'in device mode, '
+                                           'try using string '
+                                           'expressions') % variableview.name)
         self.initializers_connectors.append(init_dict)
 
     def synaptic_pathway_before_run(self, pathway, run_namespace):
@@ -318,7 +319,7 @@ class BaseExporter(RuntimeDevice):
         pass
 
     def synapses_connect(self, synapses, condition=None, i=None,
-                         j=None, p=1, n=1, skip_if_invalid=False, 
+                         j=None, p=1, n=1, skip_if_invalid=False,
                          namespace=None, level=0):
         """
         Override synapses_connect() to get details from Synapses.connect()
@@ -331,7 +332,7 @@ class BaseExporter(RuntimeDevice):
         if condition is not None:
             if i is not None or j is not None:
                 raise ValueError("Cannot combine condition with i or j "
-                                    "arguments")
+                                 "arguments")
         connect = {}
         # string statements that shall have identifers
         strings_with_identifers = []
@@ -343,8 +344,8 @@ class BaseExporter(RuntimeDevice):
                 connect.update({'i': i})
             if j is not None:
                 connect.update({'j': j})
-        connect.update({'probability': p, 'n_connections': n, 
-                        'synapses': synapses.name, 
+        connect.update({'probability': p, 'n_connections': n,
+                        'synapses': synapses.name,
                         'source': synapses.source.name,
                         'target': synapses.target.name, 'type': 'connect'
                         })
@@ -352,14 +353,15 @@ class BaseExporter(RuntimeDevice):
         strings_with_identifers.append(str(p))
         strings_with_identifers.append(str(n))
         identifers_set = set()
-        for string_expressions in strings_with_identifers:
-            identifers_set = identifers_set | get_identifiers(string_expressions)
+        for string_expr in strings_with_identifers:
+            identifers_set = identifers_set | get_identifiers(string_expr)
         ident_dict = synapses.resolve_all(identifers_set, namespace)
         ident_dict = _prune_identifiers(ident_dict)
         if ident_dict:
             connect.update({'identifiers': ident_dict})
         self.initializers_connectors.append(connect)
-         # update `_connect_called` to allow initialization on synaptic variables
+        # update `_connect_called` to allow initialization on
+        # synaptic variables
         synapses._connect_called = True
 
     def build(self, direct_call=True, debug=False):

@@ -11,6 +11,7 @@ from brian2.groups.group import CodeRunner
 from brian2.synapses.synapses import SummedVariableUpdater, SynapticPathway
 from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
 from .helper import _prune_identifiers, _resolve_identifiers_from_string
+import re
 
 
 def collect_NeuronGroup(group, run_namespace):
@@ -485,10 +486,7 @@ def collect_Synapses(synapses, run_namespace):
                           'when': obj.when, 'order': obj.order
                          }
             summed_variables.append(summed_var)
-            # check any identifiers in abstract code
             # TODO: raises error because of _synaptic_var
-            #identifiers = identifiers | get_identifiers(obj.abstract_code)
-
         # check synapse pathways
         if isinstance(obj, SynapticPathway):
             path = {'prepost': obj.prepost, 'event': obj.event,
@@ -521,3 +519,41 @@ def collect_Synapses(synapses, run_namespace):
     synapse_dict['order'] = synapses.order
 
     return synapse_dict
+
+
+def collect_PoissonInput(poinp, run_namespace):
+    """
+    Collect details of `PoissonInput` and represent them in dictionary
+
+    Parameters
+    ----------
+    poinp : brian2.input.poissoninput.PoissonInput
+            PoissonInput object
+
+    run_namespace : dict
+            Namespace dictionary
+
+    Returns
+    -------
+    poinp_dict : dict
+            Dictionary representation of the collected details
+    """
+    poinp_dict = {}
+    poinp_dict['target'] = poinp._group.name
+    poinp_dict['rate'] = poinp.rate
+    poinp_dict['N'] = poinp.N
+    poinp_dict['when'] = poinp.when
+    poinp_dict['order'] = poinp.order
+    poinp_dict['clock'] = poinp.clock.dt
+    # always str even when given as Quantity by user
+    weight = re.search(r"(\*\((.*)\))|\)\*(.+)", poinp.abstract_code)
+    poinp_dict['weight'] = weight.group(0)[2:]
+    poinp_dict['target_var'] = poinp.abstract_code.split(' +=')[0]
+    # collect identifiers, resolve and prune
+    identifiers = get_identifiers(poinp_dict['weight'])
+    identifiers = poinp._group.resolve_all(identifiers, run_namespace)
+    identifiers = _prune_identifiers(identifiers)
+    if identifiers:
+        poinp_dict['identifiers'] = identifiers
+
+    return poinp_dict

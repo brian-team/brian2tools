@@ -294,6 +294,39 @@ def test_poissongroup():
         poisson_dict['run_regularly'][1]
 
 
+def test_poissoninput():
+    """
+    Test collect_PoissonInput()
+    """
+    # test 1
+    start_scope()
+    v_th = 1 * volt
+    grp = NeuronGroup(10, 'dv/dt = (v_th - v)/(10*ms) :volt', method='euler',
+                      threshold='v>100*mV', reset='v=0*mV')
+    poi = PoissonInput(grp, 'v', 10, 1*Hz, 'v_th * rand() + 1*mV')
+    poi_dict = collect_PoissonInput(poi, get_local_namespace(0))
+    assert poi_dict['target'] == grp.name
+    assert poi_dict['rate'] == 1*Hz
+    assert poi_dict['N'] == 10
+    assert poi_dict['target_var'] == 'v'
+    assert poi_dict['when'] == poi.when
+    assert poi_dict['order'] == poi.order
+    assert poi_dict['clock'] == poi.clock.dt
+    assert poi_dict['identifiers']['v_th'] == v_th
+    # test 2
+    grp2 = NeuronGroup(10, 'dv_1_2_3/dt = (v_th - v_1_2_3)/(10*ms) :volt',
+                       method='euler', threshold='v_1_2_3>v_th',
+                       reset='v_1_2_3=-v_th')
+    poi2 = PoissonInput(grp2, 'v_1_2_3', 0, 0*Hz, v_th)
+    poi_dict = collect_PoissonInput(poi2, get_local_namespace(0))
+    assert poi_dict['target'] == grp2.name
+    assert poi_dict['rate'] == 0*Hz
+    assert poi_dict['N'] == 0
+    assert poi_dict['target_var'] == 'v_1_2_3'
+    with pytest.raises(KeyError):
+        poi_dict['identifiers']
+
+
 def test_statemonitor():
     """
     Test collect_StateMonitor dictionary representation
@@ -447,7 +480,7 @@ def test_Synapses():
     assert syn_dict['name'] == S.name
     assert syn_dict['order'] == 0
     assert syn_dict['when'] == 'start'
-    
+
     pathways = syn_dict['pathways'][0]
     assert pathways['clock'] == S._pathways[0].clock.dt
     assert pathways['prepost'] == 'pre'
@@ -463,7 +496,7 @@ def test_Synapses():
         syn_dict['summed_variables']
         syn_dict['identifiers']
         pathways['delay']
-    
+
     # test 2: check pre, post, eqns, identifiers and summed variables
     start_scope()
     eqn = '''
@@ -500,8 +533,6 @@ def test_Synapses():
     assert syn_dict['equations']['w']['expr'] == '1'
     assert syn_dict['equations']['w']['var_type'] == 'float'
     assert syn_dict['summed_variables'][0]['target'] == P.name
-    # TODO: check the problem
-    #assert syn_dict['summed_variables'][0]['code'] == 'kiki'
     pre_path = syn_dict['pathways'][0]
     post_path = syn_dict['pathways'][1]
     assert pre_path['delay'] == 2*ms
@@ -514,7 +545,7 @@ def test_Synapses():
     assert syn_dict['user_method'] == 'euler'
     assert syn_dict['identifiers']['preki'] == 0
     assert syn_dict['identifiers']['postki'] == -0.01
-    
+
 
 def test_ExportDevice_options():
     """
@@ -683,7 +714,7 @@ def test_synapse_connect_cond():
 
 
 def test_synapse_connect_ij():
-    #connector test 2
+    # connector test 2
     start_scope()
     set_device('ExportDevice', build_on_run=False)
     tau = 10 * ms
@@ -695,7 +726,7 @@ def test_synapse_connect_ij():
     S1.connect(i=[0, 1], j=[1, 2], p='my_prob')
     nett.run(1*ms)
     connect2 = device.runs[0]['initializers_connectors'][0]
-    assert connect2['i'] == [0, 1]    
+    assert connect2['i'] == [0, 1]
     assert connect2['j'] == [1, 2]
     assert connect2['identifiers']['my_prob'] == -1
     with pytest.raises(KeyError):
@@ -704,7 +735,7 @@ def test_synapse_connect_ij():
 
 
 def test_synapse_connect_generator():
-    #connector test 3
+    # connector test 3
     start_scope()
     set_device('ExportDevice', build_on_run=False)
     tau = 1 * ms
@@ -732,7 +763,7 @@ def test_ExportDevice_unsupported():
     '''
     G = NeuronGroup(1, eqn)
     _ = PoissonInput(G, 'g', 1, 1 * Hz, 1)
-    #with pytest.raises(NotImplementedError):
+    # with pytest.raises(NotImplementedError):
     run(10 * ms)
 
 
@@ -742,6 +773,7 @@ if __name__ == '__main__':
     test_spike_neurongroup()
     test_spikegenerator()
     test_poissongroup()
+    test_poissoninput()
     test_statemonitor()
     test_spikemonitor()
     test_PopulationRateMonitor()
@@ -750,7 +782,7 @@ if __name__ == '__main__':
     test_Synapses()
     test_ExportDevice_options()
     test_ExportDevice_basic()
-    test_ExportDevice_unsupported()
+    test_ExportDevice_unsupported()  # TODO: not checking anything
     test_synapse_connect_cond()
     test_synapse_connect_generator()
     test_synapse_connect_ij()
