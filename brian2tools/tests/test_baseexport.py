@@ -503,9 +503,6 @@ def test_timedarray_customfunc():
     neuro_dict = collect_NeuronGroup(grp, get_local_namespace(0))
     assert neuro_dict['identifiers']['da']['pyfunc'] == da.pyfunc
     assert neuro_dict['identifiers']['da']['type'] == 'custom_func'
-    with pytest.raises(KeyError):
-        neuro_dict['identifiers']['a']['type']
-        neuro_dict['identifiers']['b']['type']
 
 
 def test_Synapses():

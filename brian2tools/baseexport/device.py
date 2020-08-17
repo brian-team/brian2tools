@@ -401,6 +401,7 @@ class BaseExporter(RuntimeDevice):
         if debug:
             logger.debug("Building ExportDevice in debug mode")
             # print dictionary format using pprint
+            np.set_printoptions(threshold=10)
             if pprint_available:
                 pprint.pprint(self.runs)
 
