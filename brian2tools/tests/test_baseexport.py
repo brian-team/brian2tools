@@ -2,7 +2,8 @@ from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PoissonGroup, Equations, start_scope,
                     numpy, Quantity, StateMonitor, SpikeMonitor,
                     PopulationRateMonitor, EventMonitor, set_device,
-                    run, device, Network, Synapses, PoissonInput)
+                    run, device, Network, Synapses, PoissonInput, TimedArray,
+                    Function)
 from brian2.core.namespace import get_local_namespace
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
@@ -464,6 +465,49 @@ def test_EventMonitor():
     assert event_mon_dict['event'] == 'test_event'
 
 
+def test_timedarray_customfunc():
+    """
+    Test TimedArray and Custom Functions
+    """
+    # simple timedarray test
+    ta = TimedArray([1, 2, 3, 4] * mV, dt=0.1*ms)
+    eqn = 'v = ta(t) :volt'
+    G = NeuronGroup(1, eqn, method='euler')
+    neuro_dict = collect_NeuronGroup(G, get_local_namespace(0))
+    ta_dict = neuro_dict['identifiers']['ta']
+    assert ta_dict['name'] == ta.name
+    assert (ta_dict['values'] == [1, 2, 3, 4] * mV).all()
+    assert float(ta_dict['dt']) == float(ta.dt)
+    assert ta_dict['ndim'] == 1
+    assert ta_dict['type'] == 'timedarray'
+
+    # test 2
+    ta2d = TimedArray([[1, 2], [3, 4], [5, 6]]*mV, dt=1*ms)
+    G2 = NeuronGroup(4, 'v = ta2d(t, i%2) : volt')
+    neuro_dict = collect_NeuronGroup(G2, get_local_namespace(0))
+    ta_dict = neuro_dict['identifiers']['ta2d']
+    assert ta_dict['name'] == ta2d.name
+    assert (ta_dict['values'] == [[1, 2], [3, 4], [5, 6]] * mV).all()
+    assert float(ta_dict['dt']) == float(ta2d.dt)
+    assert ta_dict['ndim'] == 2
+    assert ta_dict['type'] == 'timedarray'
+
+    # test 3
+    def da(x1, x2):
+        return (x1 - x2)
+    a = 1*mV
+    b = 1*mV
+    da = Function(da, arg_units=[volt, volt],
+                  return_unit=volt)
+    grp = NeuronGroup(1, 'v = da(a, b) :volt', method='euler')
+    neuro_dict = collect_NeuronGroup(grp, get_local_namespace(0))
+    assert neuro_dict['identifiers']['da']['pyfunc'] == da.pyfunc
+    assert neuro_dict['identifiers']['da']['type'] == 'custom_func'
+    with pytest.raises(KeyError):
+        neuro_dict['identifiers']['a']['type']
+        neuro_dict['identifiers']['b']['type']
+
+
 def test_Synapses():
     """
     Test cases to verify standard export on Synapses
@@ -778,6 +822,7 @@ if __name__ == '__main__':
     test_spikemonitor()
     test_PopulationRateMonitor()
     test_EventMonitor()
+    test_timedarray_customfunc()
     test_custom_events_neurongroup()
     test_Synapses()
     test_ExportDevice_options()
