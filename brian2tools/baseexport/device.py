@@ -290,7 +290,7 @@ class BaseExporter(RuntimeDevice):
         """
         # happens when dimensionless is passed like int/float
         if not isinstance(value, Quantity):
-            value = Quantity(value).in_best_unit()
+            value = Quantity(value)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
                      'value': value, 'type': 'initializer'}

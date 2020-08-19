@@ -732,6 +732,37 @@ def test_ExportDevice_basic():
     device.reinit()
 
 
+def test_synapse_init():
+    # check initializations validity for synapse variables
+    start_scope()
+    set_device('ExportDevice')
+    eqn = 'dv/dt = -v/tau :1'
+    tau = 1 * ms
+    w = 1
+    P = NeuronGroup(5, eqn, method='euler',
+                    threshold='v>0.8')
+    Q = NeuronGroup(10, eqn, method='euler',
+                    threshold='v>0.9')
+    S = Synapses(P, Q, 'g :1', on_pre='v += w')
+    S.connect()
+    # allowable
+    S.g['i>10'] = 10
+    S.g[-1] = -1
+    S.g[10000] = 'rand() + w + w'
+    mon = StateMonitor(S, 'g', record=[0,1])
+    run(1*ms)
+    # not allowable
+    with pytest.raises(NotImplementedError):
+        S.g[0:1000] = -1
+        run(0.5*ms)
+    with pytest.raises(NotImplementedError):
+        S.g[0:1] = 'rand() + 10'
+        run(0.25*ms)
+    with pytest.raises(NotImplementedError):
+        _ = StateMonitor(S, 'g', S.g[0:10])
+    device.reinit()
+
+
 def test_synapse_connect_cond():
     # check connectors
     start_scope()
@@ -829,6 +860,7 @@ if __name__ == '__main__':
     test_ExportDevice_options()
     test_ExportDevice_basic()
     test_ExportDevice_unsupported()  # TODO: not checking anything
+    test_synapse_init()
     test_synapse_connect_cond()
     test_synapse_connect_generator()
     test_synapse_connect_ij()
