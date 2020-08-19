@@ -9,10 +9,10 @@ from brian2.core.functions import Function
 from brian2.utils.stringtools import get_identifiers
 
 
-def _prune_identifiers(identifiers):
+def _prepare_identifiers(identifiers):
     """
-    Helper function to filter out required identifiers
-    to use them in standard dictionary format
+    Helper function to filter out required identifiers and
+    prepare them to use in standard dictionary format
 
     Parameters
     ----------
@@ -47,45 +47,14 @@ def _prune_identifiers(identifiers):
                 clean_identifiers.update({key: timed_arr})
             # else if custom function type
             elif key not in DEFAULT_FUNCTIONS:
-                clean_identifiers.update({key: {'pyfunc': value.pyfunc,
-                                                'type': 'custom_func'}
-                                               })
+                clean_identifiers.update({key: {'type': 'custom_func',
+                                 'arg_units': value._arg_units,
+                                 'arg_types': value._arg_types,
+                                 'return_type': value._return_type,
+                                 'return_unit': value._return_unit,
+                                }})
         elif isinstance(value, Quantity):
             if key not in DEFAULT_UNITS:
                 clean_identifiers.update({key: value})
 
     return clean_identifiers
-
-
-def _resolve_identifiers_from_string(string_code, run_namespace):
-    """
-    Helper function to get identifiers from string, resolve them
-    and prune unwanted identifiers
-
-    Parameters
-    ----------
-    string_code : str
-        String code
-
-    run_namespace : dict
-        namespace dictionary
-
-    Returns
-    -------
-    identifiers : dict
-        Identifiers retrived, resolved and cleaned
-    """
-
-    # from the code get identifiers
-    identifiers = get_identifiers(string_code)
-    ident_dict = {}
-    # loop over identifiers to get their value from namespace
-    for identifier in identifiers:
-        if identifier in run_namespace:
-            ident_dict.update({identifier: run_namespace[identifier]})
-        else:
-            raise KeyError("Identifer {} is not found in \
-                            run namespace".format(identifier))
-    # prune away unwanted identifiers
-    ident_dict = _prune_identifiers(ident_dict)
-    return ident_dict

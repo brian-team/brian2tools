@@ -501,8 +501,12 @@ def test_timedarray_customfunc():
                   return_unit=volt)
     grp = NeuronGroup(1, 'v = da(a, b) :volt', method='euler')
     neuro_dict = collect_NeuronGroup(grp, get_local_namespace(0))
-    assert neuro_dict['identifiers']['da']['pyfunc'] == da.pyfunc
-    assert neuro_dict['identifiers']['da']['type'] == 'custom_func'
+    identi = neuro_dict['identifiers']['da']
+    assert identi['type'] == 'custom_func'
+    assert identi['arg_units'] == da._arg_units
+    assert identi['arg_types'] == da._arg_types
+    assert identi['return_unit'] == da._return_unit
+    assert identi['return_type'] == da._return_type
 
 
 def test_Synapses():

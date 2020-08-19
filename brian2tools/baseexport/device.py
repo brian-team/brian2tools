@@ -3,10 +3,11 @@ from brian2.devices.device import RuntimeDevice, Device, all_devices
 from brian2.groups import NeuronGroup
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
 from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
-                    EventMonitor, PopulationRateMonitor, Synapses)
+                    EventMonitor, PopulationRateMonitor, Synapses,
+                    Quantity)
 from brian2.utils.logger import get_logger
 from brian2.utils.stringtools import get_identifiers
-from .helper import _prune_identifiers, _resolve_identifiers_from_string
+from .helper import _prepare_identifiers
 import numpy as np
 from .collector import *
 try:
@@ -236,7 +237,7 @@ class BaseExporter(RuntimeDevice):
         # get resolved and clean identifiers
         ident_set = get_identifiers(code)
         ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
-        ident_dict = _prune_identifiers(ident_dict)
+        ident_dict = _prepare_identifiers(ident_dict)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
                      'index': cond, 'value': code, 'type': 'initializer'}
@@ -255,7 +256,7 @@ class BaseExporter(RuntimeDevice):
         # get resolved and clean identifiers
         ident_set = get_identifiers(code)
         ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
-        ident_dict = _prune_identifiers(ident_dict)
+        ident_dict = _prepare_identifiers(ident_dict)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
                      'value': code, 'type': 'initializer'}
@@ -287,6 +288,9 @@ class BaseExporter(RuntimeDevice):
         Capture setters with particular,
         for eg. obj.var[0:2] = -78 * mV
         """
+        # happens when dimensionless is passed like int/float
+        if not isinstance(value, Quantity):
+            value = Quantity(value).in_best_unit()
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
                      'value': value, 'type': 'initializer'}
@@ -356,7 +360,7 @@ class BaseExporter(RuntimeDevice):
         for string_expr in strings_with_identifers:
             identifers_set = identifers_set | get_identifiers(string_expr)
         ident_dict = synapses.resolve_all(identifers_set, namespace)
-        ident_dict = _prune_identifiers(ident_dict)
+        ident_dict = _prepare_identifiers(ident_dict)
         if ident_dict:
             connect.update({'identifiers': ident_dict})
         self.initializers_connectors.append(connect)

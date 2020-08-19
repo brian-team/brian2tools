@@ -10,8 +10,7 @@ from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
 from brian2.synapses.synapses import SummedVariableUpdater, SynapticPathway
 from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
-from .helper import _prune_identifiers, _resolve_identifiers_from_string
-import re
+from .helper import _prepare_identifiers
 
 
 def collect_NeuronGroup(group, run_namespace):
@@ -63,7 +62,7 @@ def collect_NeuronGroup(group, run_namespace):
     # resolve group-specific identifiers
     identifiers = group.resolve_all(identifiers, run_namespace)
     # with the identifiers connected to group, prune away unwanted
-    identifiers = _prune_identifiers(identifiers)
+    identifiers = _prepare_identifiers(identifiers)
     # check the dictionary is not empty
     if identifiers:
         neuron_dict['identifiers'] = identifiers
@@ -268,7 +267,7 @@ def collect_PoissonGroup(poisson_grp, run_namespace):
     poisson_identifiers = poisson_grp.resolve_all(poisson_identifiers,
                                                   run_namespace)
     # prune away unwanted from the identifiers connected to poissongroup
-    poisson_identifiers = _prune_identifiers(poisson_identifiers)
+    poisson_identifiers = _prepare_identifiers(poisson_identifiers)
     # check identifiers are present
     if poisson_identifiers:
         poisson_grp_dict['identifiers'] = poisson_identifiers
@@ -510,7 +509,7 @@ def collect_Synapses(synapses, run_namespace):
         synapse_dict['pathways'] = pathways
     # resolve identifiers and add to dict
     identifiers = synapses.resolve_all(identifiers, run_namespace)
-    identifiers = _prune_identifiers(identifiers)
+    identifiers = _prepare_identifiers(identifiers)
     if identifiers:
         synapse_dict['identifiers'] = identifiers
     # get when and order
@@ -545,15 +544,14 @@ def collect_PoissonInput(poinp, run_namespace):
     poinp_dict['when'] = poinp.when
     poinp_dict['order'] = poinp.order
     poinp_dict['clock'] = poinp.clock.dt
-    # always str even when given as Quantity by user
-    weight = re.search(r"(\*\((.*)\))|\)\*(.+)", poinp.abstract_code)
-    poinp_dict['weight'] = weight.group(0)[2:]
-    poinp_dict['target_var'] = poinp.abstract_code.split(' +=')[0]
+    poinp_dict['weight'] = poinp._weight
+    poinp_dict['target_var'] = poinp._target_var
     # collect identifiers, resolve and prune
-    identifiers = get_identifiers(poinp_dict['weight'])
-    identifiers = poinp._group.resolve_all(identifiers, run_namespace)
-    identifiers = _prune_identifiers(identifiers)
-    if identifiers:
-        poinp_dict['identifiers'] = identifiers
+    if isinstance(poinp_dict['weight'], str):
+        identifiers = get_identifiers(poinp_dict['weight'])
+        identifiers = poinp._group.resolve_all(identifiers, run_namespace)
+        identifiers = _prepare_identifiers(identifiers)
+        if identifiers:
+            poinp_dict['identifiers'] = identifiers
 
     return poinp_dict
