@@ -379,7 +379,8 @@ class BaseExporter(RuntimeDevice):
             To check the call to build() was made directly
 
         debug: bool, optional
-            To build the device in debug mode
+            To build the device in debug mode, which prints out the dictionary
+            information
         """
         # buil_on_run = True but called build() directly
         if self.build_on_run and direct_call:
@@ -405,13 +406,14 @@ class BaseExporter(RuntimeDevice):
         if debug:
             logger.debug("Building ExportDevice in debug mode")
             # print dictionary format using pprint
+            old_threshold = np.get_printoptions()['threshold']
             np.set_printoptions(threshold=10)
             if pprint_available:
                 pprint.pprint(self.runs)
+            # reset to avoid affecting overall remaining session
+            np.set_printoptions(old_threshold)
 
 
-msg = "The package is under development and may give incorrect results"
-logger.warn(msg)
 # instantiate StdDevice object and add to all_devices
 std_device = BaseExporter()
-all_devices['ExportDevice'] = std_device
+all_devices['exporter'] = std_device

@@ -158,7 +158,7 @@ def collect_Events(group):
                                       'when': group.thresholder[event].when,
                                       'order': group.thresholder[event].order,
                                       'dt': group.thresholder[event].clock.dt}
-        event_identifiers |= (get_identifiers(group.events[event]))
+        event_identifiers |= get_identifiers(group.events[event])
 
         # check reset is defined
         if event in group.event_codes:
@@ -166,7 +166,7 @@ def collect_Events(group):
                                       'when': group.resetter[event].when,
                                       'order': group.resetter[event].order,
                                       'dt': group.resetter[event].clock.dt}
-            event_identifiers |= (get_identifiers(group.event_codes[event]))
+            event_identifiers |= get_identifiers(group.event_codes[event])
 
     # check refractory is defined (only for spike event)
     if event == 'spike' and group._refractory:
@@ -260,7 +260,7 @@ def collect_PoissonGroup(poisson_grp, run_namespace):
 
     # get rates (can be Quantity or str)
     poisson_grp_dict['rates'] = poisson_grp._rates
-    if type(poisson_grp._rates) == str:
+    if isinstance(poisson_grp._rates, str):
         poisson_identifiers |= (get_identifiers(poisson_grp._rates))
 
     # resolve object-specific identifiers
@@ -485,7 +485,6 @@ def collect_Synapses(synapses, run_namespace):
                           'when': obj.when, 'order': obj.order
                          }
             summed_variables.append(summed_var)
-            # TODO: raises error because of _synaptic_var
         # check synapse pathways
         if isinstance(obj, SynapticPathway):
             path = {'prepost': obj.prepost, 'event': obj.event,
@@ -512,10 +511,6 @@ def collect_Synapses(synapses, run_namespace):
     identifiers = _prepare_identifiers(identifiers)
     if identifiers:
         synapse_dict['identifiers'] = identifiers
-    # get when and order
-    # is this necessary or CodeRunner's is sufficient?
-    synapse_dict['when'] = synapses.when
-    synapse_dict['order'] = synapses.order
 
     return synapse_dict
 
