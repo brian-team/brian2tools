@@ -17,21 +17,6 @@ class MdExporter():
     """
     Build Markdown texts from run dictionary
     """
-    def get_monitor_details(self, monitor):
-        name = "- Name: " + ' ' + monitor['name'] + endl
-        source = "- Monitor object: " + ' ' + monitor['source'] + endl
-        var_mon = "- Monitor variables: " + ' ' + ','.join([self.render_expression(str_to_sympy(var)) for var in monitor['variables']]) + endl
-        indices = "- Monitor indices: " + ' '
-        if type(monitor['record']) == bool:
-            if monitor['record'] == True:
-                indices += " All indices" + endl
-            else:
-                indices += "No indices" + endl
-        else:
-            indices += ','.join([str(ind) for ind in monitor['record']]) + endl
-        time_step = "- Time step of monitoring: " + ' ' + str(monitor['dt']) + endl
-        monitor_details = name + source + var_mon + indices + time_step
-        return monitor_details
 
     def create_md_string(self, net_dict):
         """
@@ -57,9 +42,12 @@ class MdExporter():
             # map expand functions for particular components
             func_map = {'neurongroup': {'f': expand_NeuronGroup,
                                         'h': 'NeuronGroup(s) '},
-                       'poissongroup': expand_PoissonGroup,
-                       'spikegeneratorgroup': expand_SpikeGenerator,
-                       'statemonitor': expand_StateMonitor,
+                       'poissongroup': {'f': expand_PoissonGroup,
+                                        'h': 'PoissonGroup(s) '},
+                       'spikegeneratorgroup': {'f': expand_SpikeGenerator,
+                                        'h': 'SpikeGenerator(s) '},
+                       'statemonitor': {'f': expand_StateMonitor,
+                                        'h': 'StateMonitor(s) '},
                        'spikemonitor': expand_SpikeMonitor,
                        'eventmonitor': expand_EventMonitor,
                        'populationratemonitor': expand_PopulationRateMonitor,

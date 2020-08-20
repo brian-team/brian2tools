@@ -120,7 +120,7 @@ def expand_equation(var, equation):
     if 'flags' in equation:
         rend_eqn += (' and ' +
                         ', '.join(str(f) for f in equation['flags']) +
-                        " as flag(s) associated.")
+                        " as flag(s) associated")
     return rend_eqn + endl
 
 def expand_equations(equations):
@@ -148,14 +148,63 @@ def expand_initializer(initializer):
                      ','.join([str(ind) for ind in initializer['index']]))
     return init_str + endl
 
-def expand_PoissonGroup():
-    pass
+def expand_PoissonGroup(poisngrp):
+    md_str = ''
+    md_str += ('PoissonGroup of name ' + bold(poisngrp['name']) + ', with \
+               population size ' + bold(poisngrp['N']) +
+               ' and rate as ' + render_expression(poisngrp['rates']) +
+               '.' + endl)
+    if 'identifiers' in poisngrp:
+        md_str += bold('Properties:') + endl
+        md_str += expand_identifiers(poisngrp['identifiers'])
+    if 'run_regularly' in poisngrp:
+        md_str += bold('Run regularly: ') + endl
+        for run_reg in poisngrp['run_regularly']:
+            md_str += ('run_regularly() of name ' + run_reg['name'] +
+                       'execute the code ' +
+                       render_expression(run_reg['code']) +
+                       ' for every ' + render_expression(run_reg['dt']) +
+                       '.' + endl)
+    return md_str
 
-def expand_SpikeGenerator():
-    pass
+def expand_SpikeGenerator(spkgen):
+    md_str = ''
+    md_str += ('SpikeGeneratorGroup of name ' + bold(spkgen['name']) +
+               ', with population size ' + bold(spkgen['N']) +
+               ', has neurons ' + 
+               ', '.join(str(i) for i in spkgen['indices']) +
+               ' spike at times ' + ', '.join(str(i) for t in spkgen['times'])
+               + ', with the period of ' +
+               ', '.join(render_expression(str(p)) for p in spkgen['period']) +
+               '.' + endl)
+    if 'run_regularly' in spkgen:
+        md_str += bold('Run regularly: ') + endl
+        for run_reg in spkgen['run_regularly']:
+            md_str += ('run_regularly() of name ' + run_reg['name'] +
+                       'execute the code ' +
+                       render_expression(run_reg['code']) +
+                       ' for every ' + render_expression(run_reg['dt']) +
+                       '.' + endl)
+    return md_str
 
-def expand_StateMonitor():
-    pass
+
+def expand_StateMonitor(statemon):
+    md_str = ''
+    md_str += ('StateMonitor of name ' + bold(statemon['name']) +
+               'monitors variable(s) ' +
+               ','.join([render_expression(var) for var in statemon['variables']]) +
+               ' of ' + statemon['source'] + '.')
+    if isinstance(statemon['record'], bool):
+        if statemon['record']:
+            md_str += ' All members of the source group are monitored'
+        else:
+            md_str += ' No members of the sorce group is monitored'
+    else:
+        md_str += (' Indices ' +
+                   ','.join([str(ind) for ind in statemon['record']]) +
+                   ' monitored for time step ' +
+                   render_expression(statemon['dt']) +
+                   '.' + endl)
 
 def expand_SpikeMonitor():
     pass
