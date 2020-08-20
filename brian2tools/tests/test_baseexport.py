@@ -52,11 +52,13 @@ def test_simple_neurongroup():
     area = 100 * umetre ** 2
     g_L = 1e-2 * siemens * cm ** -2 * area
     E_L = 1000
+    div_2 = 2
+    dim_2 = 0.02 * amp
     Cm = 1 * ufarad * cm ** -2 * area
     grp = NeuronGroup(10, '''dv/dt = I_leak / Cm : volt
                         I_leak = g_L*(E_L - v) : amp''')
-    grp.run_regularly('v = v / 2', dt=20 * ms, name='i_am_run_reg_senior')
-    grp.run_regularly('I_leak = I_leak + 0.002 * amp', dt=10 * ms,
+    grp.run_regularly('v = v / div_2', dt=20 * ms, name='i_am_run_reg_senior')
+    grp.run_regularly('I_leak = I_leak + dim_2', dt=10 * ms,
                       name='i_am_run_reg_junior')
 
     neuron_dict = collect_NeuronGroup(grp, get_local_namespace(0))
@@ -82,6 +84,8 @@ def test_simple_neurongroup():
     assert neuron_dict['equations']['I_leak']['expr'] == 'g_L*(E_L - v)'
     assert neuron_dict['identifiers']['g_L'] == g_L
     assert neuron_dict['identifiers']['Cm'] == Cm
+    assert neuron_dict['identifiers']['div_2'] == div_2
+    assert neuron_dict['identifiers']['dim_2'] == dim_2
 
     with pytest.raises(KeyError):
         neuron_dict['events']
@@ -90,9 +94,9 @@ def test_simple_neurongroup():
 
     assert neuron_dict['run_regularly'][0]['name'] == 'i_am_run_reg_senior'
     assert neuron_dict['run_regularly'][1]['name'] == 'i_am_run_reg_junior'
-    assert neuron_dict['run_regularly'][0]['code'] == 'v = v / 2'
+    assert neuron_dict['run_regularly'][0]['code'] == 'v = v / div_2'
     assert (neuron_dict['run_regularly'][1]['code'] ==
-            'I_leak = I_leak + 0.002 * amp')
+            'I_leak = I_leak + dim_2')
     assert neuron_dict['run_regularly'][0]['dt'] == 20 * ms
     assert neuron_dict['run_regularly'][1]['dt'] == 10 * ms
     assert neuron_dict['run_regularly'][0]['when'] == 'start'
@@ -226,7 +230,7 @@ def test_spikegenerator():
     time = [10] * ms
 
     spike_gen = SpikeGeneratorGroup(size, index, time)
-    spike_gen_dict = collect_SpikeGenerator(spike_gen)
+    spike_gen_dict = collect_SpikeGenerator(spike_gen, get_local_namespace(0))
 
     assert spike_gen_dict['N'] == size
     assert spike_gen_dict['indices'] == [0]
@@ -238,8 +242,10 @@ def test_spikegenerator():
 
     # example 2
     spike_gen2 = SpikeGeneratorGroup(10, index, time, period=20 * ms)
+    var = 0.00002
     spike_gen2.run_regularly('var = var + 1', dt=10 * ms, name='spikerr')
-    spike_gen_dict = collect_SpikeGenerator(spike_gen2)
+    spike_gen_dict = collect_SpikeGenerator(spike_gen2,
+                                            get_local_namespace(0))
 
     assert spike_gen_dict['N'] == 10
     assert spike_gen_dict['period'] == [20] * ms
@@ -252,6 +258,7 @@ def test_spikegenerator():
     assert spike_gen_dict['run_regularly'][0]['dt'] == 10 * ms
     assert spike_gen_dict['run_regularly'][0]['when'] == 'start'
     assert spike_gen_dict['run_regularly'][0]['order'] == 0
+    assert spike_gen_dict['identifiers']['var'] == var
     with pytest.raises(IndexError):
         spike_gen_dict['run_regularly'][1]
 
@@ -279,17 +286,22 @@ def test_poissongroup():
 
     # example2
     F = 10 * Hz
-    poisongrp = PoissonGroup(N, rates='F + 2 * Hz')
-    poisongrp.run_regularly('F = F + 3 * Hz', dt=10 * ms,
+    three = 3 * Hz
+    two = 2 * Hz
+    poisongrp = PoissonGroup(N, rates='F + two')
+    poisongrp.run_regularly('F = F + three', dt=10 * ms,
                             name="Run_at_0_01")
     poisson_dict = collect_PoissonGroup(poisongrp, get_local_namespace(0))
 
-    assert poisson_dict['rates'] == 'F + 2 * Hz'
+    assert poisson_dict['rates'] == 'F + two'
     assert poisson_dict['run_regularly'][0]['name'] == 'Run_at_0_01'
-    assert poisson_dict['run_regularly'][0]['code'] == 'F = F + 3 * Hz'
+    assert poisson_dict['run_regularly'][0]['code'] == 'F = F + three'
     assert poisson_dict['run_regularly'][0]['dt'] == 10 * ms
     assert poisson_dict['run_regularly'][0]['when'] == 'start'
     assert poisson_dict['run_regularly'][0]['order'] == 0
+
+    assert poisson_dict['identifiers']['three'] == three
+    assert poisson_dict['identifiers']['two'] == two
 
     with pytest.raises(IndexError):
         poisson_dict['run_regularly'][1]

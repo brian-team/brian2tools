@@ -59,14 +59,6 @@ def collect_NeuronGroup(group, run_namespace):
         neuron_dict['events'], event_identifiers = collect_Events(group)
         identifiers = identifiers | event_identifiers
 
-    # resolve group-specific identifiers
-    identifiers = group.resolve_all(identifiers, run_namespace)
-    # with the identifiers connected to group, prune away unwanted
-    identifiers = _prepare_identifiers(identifiers)
-    # check the dictionary is not empty
-    if identifiers:
-        neuron_dict['identifiers'] = identifiers
-
     # check any `run_regularly` / CodeRunner objects associated
     for obj in group.contained_objects:
         # Note: Thresholder, StateUpdater, Resetter are all derived from
@@ -75,18 +67,26 @@ def collect_NeuronGroup(group, run_namespace):
             if 'run_regularly' not in neuron_dict:
                 neuron_dict['run_regularly'] = []
             neuron_dict['run_regularly'].append({
-                                                'name': obj.name,
-                                                'code': obj.abstract_code,
-                                                'dt': obj.clock.dt,
-                                                'when': obj.when,
-                                                'order': obj.order
-                                                })
+                                            'name': obj.name,
+                                            'code': obj.abstract_code,
+                                            'dt': obj.clock.dt,
+                                            'when': obj.when,
+                                            'order': obj.order
+                                            })
+            identifiers = identifiers | get_identifiers(obj.abstract_code)
+
         # check StateUpdater when/order and assign to group level
         if isinstance(obj, StateUpdater):
             neuron_dict['when'] = obj.when
             neuron_dict['order'] = obj.order
-
-        # check Threshold
+    
+    # resolve group-specific identifiers
+    identifiers = group.resolve_all(identifiers, run_namespace)
+    # with the identifiers connected to group, prune away unwanted
+    identifiers = _prepare_identifiers(identifiers)
+    # check the dictionary is not empty
+    if identifiers:
+        neuron_dict['identifiers'] = identifiers
 
     return neuron_dict
 
@@ -175,7 +175,7 @@ def collect_Events(group):
     return event_dict, event_identifiers
 
 
-def collect_SpikeGenerator(spike_gen, run_namespace=None):
+def collect_SpikeGenerator(spike_gen, run_namespace):
     """
     Extract information from
     'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'and
@@ -196,7 +196,7 @@ def collect_SpikeGenerator(spike_gen, run_namespace=None):
     """
 
     spikegen_dict = {}
-
+    identifiers = set()
     # get name
     spikegen_dict['name'] = spike_gen.name
 
@@ -220,12 +220,20 @@ def collect_SpikeGenerator(spike_gen, run_namespace=None):
             if 'run_regularly' not in spikegen_dict:
                 spikegen_dict['run_regularly'] = []
             spikegen_dict['run_regularly'].append({
-                                                'name': obj.name,
-                                                'code': obj.abstract_code,
-                                                'dt': obj.clock.dt,
-                                                'when': obj.when,
-                                                'order': obj.order
-                                                })
+                                            'name': obj.name,
+                                            'code': obj.abstract_code,
+                                            'dt': obj.clock.dt,
+                                            'when': obj.when,
+                                            'order': obj.order
+                                            })
+            identifiers = identifiers | get_identifiers(obj.abstract_code)
+    # resolve group-specific identifiers
+    identifiers = spike_gen.resolve_all(identifiers, run_namespace)
+    # with the identifiers connected to group, prune away unwanted
+    identifiers = _prepare_identifiers(identifiers)
+    # check the dictionary is not empty
+    if identifiers:
+        spikegen_dict['identifiers'] = identifiers
 
     return spikegen_dict
 
@@ -263,27 +271,28 @@ def collect_PoissonGroup(poisson_grp, run_namespace):
     if isinstance(poisson_grp._rates, str):
         poisson_identifiers |= (get_identifiers(poisson_grp._rates))
 
-    # resolve object-specific identifiers
-    poisson_identifiers = poisson_grp.resolve_all(poisson_identifiers,
-                                                  run_namespace)
-    # prune away unwanted from the identifiers connected to poissongroup
-    poisson_identifiers = _prepare_identifiers(poisson_identifiers)
-    # check identifiers are present
-    if poisson_identifiers:
-        poisson_grp_dict['identifiers'] = poisson_identifiers
-
     # `run_regularly` / CodeRunner objects of poisson_grp
     for obj in poisson_grp.contained_objects:
         if type(obj) == CodeRunner:
             if 'run_regularly' not in poisson_grp_dict:
                 poisson_grp_dict['run_regularly'] = []
             poisson_grp_dict['run_regularly'].append({
-                                                'name': obj.name,
-                                                'code': obj.abstract_code,
-                                                'dt': obj.clock.dt,
-                                                'when': obj.when,
-                                                'order': obj.order
-                                                })
+                                            'name': obj.name,
+                                            'code': obj.abstract_code,
+                                            'dt': obj.clock.dt,
+                                            'when': obj.when,
+                                            'order': obj.order
+                                            })
+            poisson_identifiers = (poisson_identifiers |
+                                   get_identifiers(obj.abstract_code))
+    # resolve group-specific identifiers
+    poisson_identifiers = poisson_grp.resolve_all(poisson_identifiers,
+                                                  run_namespace)
+    # with the identifiers connected to group, prune away unwanted
+    poisson_identifiers = _prepare_identifiers(poisson_identifiers)
+    # check the dictionary is not empty
+    if poisson_identifiers:
+        poisson_grp_dict['identifiers'] = poisson_identifiers
 
     return poisson_grp_dict
 
