@@ -9,7 +9,7 @@ from sympy.printing import latex
 from sympy.abc import *
 from sympy import Derivative, symbols
 import re
-from expander import *
+from .expander import *
 
 endl = '\n'
 
@@ -33,29 +33,6 @@ class MdExporter():
         monitor_details = name + source + var_mon + indices + time_step
         return monitor_details
 
-    def expand_initializers(initializers):
-        source = ''
-        for initializer in initializers:
-            source += '- Source group ' + initializer['source'] + ' initialized with '
-            source += 'the value of '
-            if type(initializer['value']) == str:
-                source += self.render_expression(str_to_sympy(initializer['value']))
-            else:
-                source += str(initializer['value'])
-            source += " to the variable " + self.render_expression(str_to_sympy(str(initializer['variable'])))
-
-            if type(initializer['index']) == str:
-                source += ' with condition ' + initializer['index']
-            elif type(initializer['index']) == bool:
-                if initializer['index']:
-                    source += ' to all indices '
-                else:
-                    source += ' to no indices'
-            else:
-                source += 'to indices ' + ','.join([str(ind) for ind in initializer['index']])
-            source += endl
-        return source
-
     def create_md_string(self, net_dict):
         """
         Create markdown code from the standard dictionary
@@ -73,8 +50,10 @@ class MdExporter():
         for run_indx in range(len(net_dict)):
             # details about the particular run
             run_dict = net_dict[run_indx]
-            run_string = ('Duration of simulation is ' + 
-                           str(run_dict['duration']) + endl)
+            run_string = (header('Run ' + str(run_indx + 1) + ' details', 3) +
+                          endl)
+            run_string += ('Duration of simulation is ' + 
+                            str(run_dict['duration']) + endl)
             # map expand functions for particular components
             func_map = {'neurongroup': {'f': expand_NeuronGroup,
                                         'h': 'NeuronGroup(s) '},
@@ -86,17 +65,28 @@ class MdExporter():
                        'populationratemonitor': expand_PopulationRateMonitor,
                        'synapses': expand_Synapses}
             # loop through the components
-            for (obj_key, obj_list) in run_dict['components']:
+            for (obj_key, obj_list) in run_dict['components'].items():
                 if obj_key in func_map.keys():
                     # loop through the members in list
-                    run_string += (bold(func_map['obj_key']['h'] +
-                                   'defined: ') + endl)
+                    run_string += (bold(func_map[obj_key]['h'] +
+                                   'defined:') + endl)
                     for obj_mem in obj_list:
-                        run_string += func_map[obj_key](obj_mem)
+                        run_string += '- ' + func_map[obj_key]['f'](obj_mem)
+            run_string += endl
+            # check if initializers are available, if so expand them
+            # TODO: need to update it for connectors
+            if 'initializers' in run_dict:
+                # loop through the members in list
+                run_string += bold('Initializer(s) defined:') + endl
+                # loop through the initits
+                for initit in run_dict['initializers']:
+                    # if initit['type'] == 'initializer'
+                    run_string += '- ' + expand_initializer(initit)
+
             overall_string += run_string
             # loop through initializer_connectors
             # TODO: update the name
-            for init_conn in run_dict['initializers']:
+            # for init_conn in run_dict['initializers']:
                 
         self.md_text = overall_string
 

@@ -8,6 +8,7 @@ from sympy.printing import latex
 from sympy.abc import *
 from sympy import Derivative, symbols
 from brian2.equations.equations import str_to_sympy
+from brian2 import Quantity
 import re
 
 endl = '\n'
@@ -24,7 +25,10 @@ def _equation_separator(equation):
 
 
 def render_expression(expression, diff=False):
-    expression = str_to_sympy(expression)
+    if isinstance(expression, Quantity):
+        expression = str(expression)
+    else:
+        expression = str_to_sympy(expression)
     if diff:
         # independent variable is always 't'
         t = symbols('t')
@@ -41,6 +45,9 @@ def expand_NeuronGroup(neurongrp):
                population size ' + bold(neurongrp['N']) + '.' + endl
     md_str += bold('Dynamics:') + endl
     md_str += expand_equations(neurongrp['equations'])
+    if neurongrp['user_method']:
+        md_str += (neurongrp['user_method'] + 
+                   ' method is used for integration' + endl)
     if 'events' in neurongrp:
         md_str += bold('Events:') + endl
         md_str += expand_events(neurongrp['events'])
@@ -54,63 +61,92 @@ def expand_NeuronGroup(neurongrp):
                        'execute the code ' +
                        render_expression(str(run_reg['code'])) +
                        ' for every ' + str(run_reg['dt'])) + endl
-    return md_str + endl
+    return md_str
 
+def expand_identifier(ident_key, ident_value):
+    ident_str = ''
+    if type(ident_value) != dict:
+            ident_str += (render_expression(str(ident_key)) + ": " +
+                          render_expression(ident_value))
+    else:
+        ident_str += (render_expression(str(ident_key)) + 'of type ' +
+                        ident_value['type'])
+        if ident_value['type'] is 'timedarray':
+            ident_str += ('with dimentsion' + str(ident_value['ndim']) +
+                            ' and dt as ' + ident_value['dt'])
+    return ident_str + ', '
 
 def expand_identifiers(identifiers):
-    ident_str = ''
-    for key, value in identifiers.items():
-        if type(value) != dict:
-            ident_str += (render_expression(str(key)) + ": " +
-                          render_expression(str(value)))
-        else:
-            ident_str += (render_expression(str(key)) + 'of type ' + value['type'])
-            if value['type'] is 'timedarray':
-                ident_str += ('with dimentsion' + str(value['ndim']) +
-                              ' and dt as ' + value['dt'])
-        ident_str += ', '
-    ident_str = ident_str[:-2] + endl
-    return ident_str
 
+    idents_str = ''
+    for key, value in identifiers.items():
+        idents_str += expand_identifier(key, value)
+    idents_str = idents_str[:-2] + endl
+    return idents_str
+
+def expand_event(event_name, event_details):
+    event_str = ''
+    event_str += 'Event ' + bold(event_name) + ', '
+    event_str += ('after ' +
+                   render_expression(event_details['threshold']['code']))
+    if 'reset' in event_details:
+        lhs, rhs = _equation_separator(event_details['reset']['code'])
+        event_str += (', ' + render_expression(lhs) + '&#8592;' +
+                        render_expression(rhs))
+    if 'refractory' in event_details:
+        event_str += ', with refractory ' 
+        if type(event_details['refractory']) != 'str':
+            event_str += str(event_details['refractory'])
+        else:
+            event_str += render_expression(event_details['refractory'])
+    return event_str + endl
 
 def expand_events(events):
-    event_str = ''
+    events_str = ''
     for name, details in events.items():
-        event_str += 'Event ' + bold(name) + endl
-        event_str += ('After ' +
-                       render_expression(details['threshold']['code']) + ', ')
-        if 'reset' in details:
-            lhs, rhs = _equation_separator(details['reset']['code'])
-            event_str += (render_expression(lhs) + '&#8592;' +
-                          render_expression(rhs))
-        if 'refractory' in details:
-            event_str += ', with refractory ' 
-            if type(details['refractory']) != 'str':
-                event_str += str(details['refractory'])
-            else:
-                event_str += render_expression(details['refractory'])
-        event_str += endl
-    return event_str
+        events_str += expand_event(name, details)
+    return events_str
 
+def expand_equation(var, equation):
+    rend_eqn = ''   
+    if equation['type'] == 'differential equation':
+        rend_eqn =  render_expression(var, diff=True)
+    elif equation['type'] == 'subexpression':
+        rend_eqn =  render_expression(var)
+    if 'expr' in equation:
+        rend_eqn +=  '&#8592;' + render_expression(equation['expr'])
+    rend_eqn += (", where unit of " + render_expression(var) +
+                    " is " + str(equation['unit']))
+    if 'flags' in equation:
+        rend_eqn += (' and ' +
+                        ', '.join(str(f) for f in equation['flags']) +
+                        " as flag(s) associated.")
+    return rend_eqn + endl
 
 def expand_equations(equations):
-    rend_eqn = ''
+    rend_eqns = ''
     for (var, equation) in equations.items():
-        if equation['type'] == 'differential equation':
-            rend_eqn =  render_expression(var, diff=True)
-        elif equation['type'] == 'subexpression':
-            rend_eqn =  render_expression(var)
-        if 'expr' in equation:
-            rend_eqn +=  '&#8592;' + render_expression(equation['expr'])
-        rend_eqn += (", where unit of " + render_expression(var) +
-                        " is " + str(equation['unit']))
-        if 'flags' in equation:
-            rend_eqn += (' and ' +
-                            ', '.join(str(f) for f in equation['flags']) +
-                            " as flags associated.")
-        rend_eqn += endl
-    return rend_eqn
+        rend_eqns += expand_equation(var, equation)
+    return rend_eqns
 
+def expand_initializer(initializer):
+    init_str = ''
+    init_str += ('Source group ' + initializer['source'] + ' initialized \
+                  with the value of ' +
+                  render_expression(initializer['value']) +
+                  " to the variable " +
+                  render_expression(initializer['variable']))
+    if type(initializer['index']) == str:
+        init_str += ' with condition ' + initializer['index']
+    elif type(initializer['index']) == bool:
+        if initializer['index']:
+            init_str += ' to all indices '
+        else:
+            init_str += ' to no indices'
+    else:
+        init_str += ('to indices ' +
+                     ','.join([str(ind) for ind in initializer['index']]))
+    return init_str + endl
 
 def expand_PoissonGroup():
     pass
