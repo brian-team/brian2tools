@@ -523,8 +523,6 @@ def test_Synapses():
     syn_dict = collect_Synapses(S, get_local_namespace(0))
 
     assert syn_dict['name'] == S.name
-    assert syn_dict['order'] == 0
-    assert syn_dict['when'] == 'start'
 
     pathways = syn_dict['pathways'][0]
     assert pathways['clock'] == S._pathways[0].clock.dt
@@ -597,7 +595,7 @@ def test_ExportDevice_options():
     Test the run and build options of ExportDevice
     """
     # test1
-    set_device('ExportDevice')
+    set_device('exporter')
     grp = NeuronGroup(10, 'eqn = 1:1', method='exact')
     run(100 * ms)
     _ = StateMonitor(grp, 'eqn', record=False)
@@ -612,7 +610,7 @@ def test_ExportDevice_options():
     # test3
     start_scope()
     net = Network()
-    set_device('ExportDevice', build_on_run=False)
+    set_device('exporter', build_on_run=False)
     grp = NeuronGroup(10, 'eqn = 1:1', method='exact')
     net.add(grp)
     net.run(10 * ms)
@@ -632,7 +630,7 @@ def test_ExportDevice_basic():
     by ExportDevice
     """
     start_scope()
-    set_device('ExportDevice')
+    set_device('exporter')
 
     grp = NeuronGroup(10, 'dv/dt = (1-v)/tau :1', method='exact',
                       threshold='v > 0.5', reset='v = 0', refractory=2 * ms)
@@ -663,7 +661,7 @@ def test_ExportDevice_basic():
     device.reinit()
 
     start_scope()
-    set_device('ExportDevice', build_on_run=False)
+    set_device('exporter', build_on_run=False)
     tau = 10 * ms
     v0 = -70 * mV
     vth = 800 * mV
@@ -735,7 +733,7 @@ def test_ExportDevice_basic():
 def test_synapse_init():
     # check initializations validity for synapse variables
     start_scope()
-    set_device('ExportDevice')
+    set_device('exporter')
     eqn = 'dv/dt = -v/tau :1'
     tau = 1 * ms
     w = 1
@@ -766,7 +764,7 @@ def test_synapse_init():
 def test_synapse_connect_cond():
     # check connectors
     start_scope()
-    set_device('ExportDevice')
+    set_device('exporter')
     eqn = 'dv/dt = (1 - v)/tau :1'
     tau = 1 * ms
     P = NeuronGroup(5, eqn, method='euler', threshold='v>0.8')
@@ -792,7 +790,7 @@ def test_synapse_connect_cond():
 def test_synapse_connect_ij():
     # connector test 2
     start_scope()
-    set_device('ExportDevice', build_on_run=False)
+    set_device('exporter', build_on_run=False)
     tau = 10 * ms
     eqn = 'dv/dt = (1 - v)/tau :1'
     my_prob = -1
@@ -813,7 +811,7 @@ def test_synapse_connect_ij():
 def test_synapse_connect_generator():
     # connector test 3
     start_scope()
-    set_device('ExportDevice', build_on_run=False)
+    set_device('exporter', build_on_run=False)
     tau = 1 * ms
     eqn = 'dv/dt = (1 - v)/tau :1'
     Source = NeuronGroup(10, eqn, method='exact', threshold='v>0.9')
@@ -832,7 +830,7 @@ def test_ExportDevice_unsupported():
     are raising Error
     """
     start_scope()
-    set_device('ExportDevice')
+    set_device('exporter')
     eqn = '''
     v = 1 :1
     g :1
