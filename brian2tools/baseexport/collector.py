@@ -5,11 +5,15 @@ dictionary format. The parts of the file shall be reused
 with standard format exporter.
 """
 from brian2.equations.equations import PARAMETER
+from brian2.utils.stringtools import get_identifiers
 from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
+from brian2.synapses.synapses import SummedVariableUpdater, SynapticPathway
+from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
+from .helper import _prepare_identifiers
 
 
-def collect_NeuronGroup(group):
+def collect_NeuronGroup(group, run_namespace):
     """
     Collect information from `brian2.groups.neurongroup.NeuronGroup`
     and return them in a dictionary format
@@ -19,12 +23,18 @@ def collect_NeuronGroup(group):
     group : brian2.groups.neurongroup.NeuronGroup
         NeuronGroup object
 
+    run_namespace : dict
+        Namespace dictionary
+
     Returns
     -------
     neuron_dict : dict
         Dictionary with extracted information
     """
     neuron_dict = {}
+
+    # identifiers belonging to the NeuronGroup
+    identifiers = set()
 
     # get name
     neuron_dict['name'] = group.name
@@ -42,10 +52,12 @@ def collect_NeuronGroup(group):
 
     # get equations
     neuron_dict['equations'] = collect_Equations(group.user_equations)
+    identifiers = identifiers | group.user_equations.identifiers
 
     # check spike event is defined
     if group.events:
-        neuron_dict['events'] = collect_Events(group)
+        neuron_dict['events'], event_identifiers = collect_Events(group)
+        identifiers = identifiers | event_identifiers
 
     # check any `run_regularly` / CodeRunner objects associated
     for obj in group.contained_objects:
@@ -55,18 +67,26 @@ def collect_NeuronGroup(group):
             if 'run_regularly' not in neuron_dict:
                 neuron_dict['run_regularly'] = []
             neuron_dict['run_regularly'].append({
-                                                'name': obj.name,
-                                                'code': obj.abstract_code,
-                                                'dt': obj.clock.dt,
-                                                'when': obj.when,
-                                                'order': obj.order
-                                                })
+                                            'name': obj.name,
+                                            'code': obj.abstract_code,
+                                            'dt': obj.clock.dt,
+                                            'when': obj.when,
+                                            'order': obj.order
+                                            })
+            identifiers = identifiers | get_identifiers(obj.abstract_code)
+
         # check StateUpdater when/order and assign to group level
         if isinstance(obj, StateUpdater):
             neuron_dict['when'] = obj.when
             neuron_dict['order'] = obj.order
-
-        # check Threshold
+    
+    # resolve group-specific identifiers
+    identifiers = group.resolve_all(identifiers, run_namespace)
+    # with the identifiers connected to group, prune away unwanted
+    identifiers = _prepare_identifiers(identifiers)
+    # check the dictionary is not empty
+    if identifiers:
+        neuron_dict['identifiers'] = identifiers
 
     return neuron_dict
 
@@ -120,9 +140,14 @@ def collect_Events(group):
     -------
     event_dict : dict
         Dictionary with extracted information
+
+    event_identifiers : set
+        Set of identifiers related to events
     """
 
     event_dict = {}
+    event_identifiers = set()
+
     # loop over the thresholder to check `spike` or custom event
     for event in group.thresholder:
         # for simplicity create subdict variable for particular event
@@ -133,6 +158,7 @@ def collect_Events(group):
                                       'when': group.thresholder[event].when,
                                       'order': group.thresholder[event].order,
                                       'dt': group.thresholder[event].clock.dt}
+        event_identifiers |= get_identifiers(group.events[event])
 
         # check reset is defined
         if event in group.event_codes:
@@ -140,15 +166,16 @@ def collect_Events(group):
                                       'when': group.resetter[event].when,
                                       'order': group.resetter[event].order,
                                       'dt': group.resetter[event].clock.dt}
+            event_identifiers |= get_identifiers(group.event_codes[event])
 
     # check refractory is defined (only for spike event)
     if event == 'spike' and group._refractory:
         event_subdict['refractory'] = group._refractory
 
-    return event_dict
+    return event_dict, event_identifiers
 
 
-def collect_SpikeGenerator(spike_gen):
+def collect_SpikeGenerator(spike_gen, run_namespace):
     """
     Extract information from
     'brian2.input.spikegeneratorgroup.SpikeGeneratorGroup'and
@@ -159,6 +186,9 @@ def collect_SpikeGenerator(spike_gen):
     spike_gen : brian2.input.spikegeneratorgroup.SpikeGeneratorGroup
             SpikeGenerator object
 
+    run_namespace : dict
+            Namespace dictionary
+
     Returns
     -------
     spikegen_dict : dict
@@ -166,7 +196,7 @@ def collect_SpikeGenerator(spike_gen):
     """
 
     spikegen_dict = {}
-
+    identifiers = set()
     # get name
     spikegen_dict['name'] = spike_gen.name
 
@@ -190,17 +220,25 @@ def collect_SpikeGenerator(spike_gen):
             if 'run_regularly' not in spikegen_dict:
                 spikegen_dict['run_regularly'] = []
             spikegen_dict['run_regularly'].append({
-                                                'name': obj.name,
-                                                'code': obj.abstract_code,
-                                                'dt': obj.clock.dt,
-                                                'when': obj.when,
-                                                'order': obj.order
-                                                })
+                                            'name': obj.name,
+                                            'code': obj.abstract_code,
+                                            'dt': obj.clock.dt,
+                                            'when': obj.when,
+                                            'order': obj.order
+                                            })
+            identifiers = identifiers | get_identifiers(obj.abstract_code)
+    # resolve group-specific identifiers
+    identifiers = spike_gen.resolve_all(identifiers, run_namespace)
+    # with the identifiers connected to group, prune away unwanted
+    identifiers = _prepare_identifiers(identifiers)
+    # check the dictionary is not empty
+    if identifiers:
+        spikegen_dict['identifiers'] = identifiers
 
     return spikegen_dict
 
 
-def collect_PoissonGroup(poisson_grp):
+def collect_PoissonGroup(poisson_grp, run_namespace):
     """
     Extract information from 'brian2.input.poissongroup.PoissonGroup'
     and represent them in a dictionary format
@@ -210,6 +248,9 @@ def collect_PoissonGroup(poisson_grp):
     poisson_grp : brian2.input.poissongroup.PoissonGroup
             PoissonGroup object
 
+    run_namespace : dict
+            Namespace dictionary
+
     Returns
     -------
     poisson_grp_dict : dict
@@ -217,6 +258,7 @@ def collect_PoissonGroup(poisson_grp):
     """
 
     poisson_grp_dict = {}
+    poisson_identifiers = set()
 
     # get name
     poisson_grp_dict['name'] = poisson_grp._name
@@ -226,6 +268,8 @@ def collect_PoissonGroup(poisson_grp):
 
     # get rates (can be Quantity or str)
     poisson_grp_dict['rates'] = poisson_grp._rates
+    if isinstance(poisson_grp._rates, str):
+        poisson_identifiers |= (get_identifiers(poisson_grp._rates))
 
     # `run_regularly` / CodeRunner objects of poisson_grp
     for obj in poisson_grp.contained_objects:
@@ -233,12 +277,22 @@ def collect_PoissonGroup(poisson_grp):
             if 'run_regularly' not in poisson_grp_dict:
                 poisson_grp_dict['run_regularly'] = []
             poisson_grp_dict['run_regularly'].append({
-                                                'name': obj.name,
-                                                'code': obj.abstract_code,
-                                                'dt': obj.clock.dt,
-                                                'when': obj.when,
-                                                'order': obj.order
-                                                })
+                                            'name': obj.name,
+                                            'code': obj.abstract_code,
+                                            'dt': obj.clock.dt,
+                                            'when': obj.when,
+                                            'order': obj.order
+                                            })
+            poisson_identifiers = (poisson_identifiers |
+                                   get_identifiers(obj.abstract_code))
+    # resolve group-specific identifiers
+    poisson_identifiers = poisson_grp.resolve_all(poisson_identifiers,
+                                                  run_namespace)
+    # with the identifiers connected to group, prune away unwanted
+    poisson_identifiers = _prepare_identifiers(poisson_identifiers)
+    # check the dictionary is not empty
+    if poisson_identifiers:
+        poisson_grp_dict['identifiers'] = poisson_identifiers
 
     return poisson_grp_dict
 
@@ -306,34 +360,8 @@ def collect_SpikeMonitor(spike_mon):
     spike_mon_dict : dict
             Dictionary representation of the collected details
     """
-
-    spike_mon_dict = {}
-
-    # collect name
-    spike_mon_dict['name'] = spike_mon.name
-
-    # collect source object name
-    spike_mon_dict['source'] = spike_mon.source.name
-
-    # collect record variables
-    # by default spike_mon.record_variables is set() so change to list
-    spike_mon_dict['variables'] = list(spike_mon.record_variables)
-
-    # collect record indices and time
-    # when `record = True`, `spike_mon.record` stores
-    # the bool value without making it to a list unlike StateMonitor
-    spike_mon_dict['record'] = spike_mon.record
-
-    # collect name of the event
-    spike_mon_dict['event'] = spike_mon.event
-
-    # collect time-step
-    spike_mon_dict['dt'] = spike_mon.clock.dt
-
-    # collect when and order
-    spike_mon_dict['when'] = spike_mon.when
-    spike_mon_dict['order'] = spike_mon.order
-
+    # pass to EventMonitor as they both are identical
+    spike_mon_dict = collect_EventMonitor(spike_mon)
     return spike_mon_dict
 
 
@@ -412,3 +440,122 @@ def collect_PopulationRateMonitor(poprate_mon):
     poprate_mon_dict['order'] = poprate_mon.order
 
     return poprate_mon_dict
+
+
+def collect_Synapses(synapses, run_namespace):
+    """
+    Collect information from `brian2.synapses.synapses.Synapses`
+    and represent them in dictionary format
+
+    Parameters
+    ----------
+    synapses : brian2.synapses.synapses.Synapses
+        Synapses object
+
+    run_namespace : dict
+        Namespace dictionary
+
+    Returns
+    -------
+    synapse_dict : dict
+        Standard dictionary format with collected information
+    """
+    identifiers = set()
+    synapse_dict = {}
+    # get synapses object name
+    synapse_dict['name'] = synapses.name
+
+    # get source and target groups
+    synapse_dict['source'] = synapses.source.name
+    synapse_dict['target'] = synapses.target.name
+
+    # get governing equations
+    synapse_equations = collect_Equations(synapses.equations)
+    # get identifiers from equations
+    identifiers = identifiers | synapses.equations.identifiers
+    if synapses.event_driven:
+        synapse_equations.update(collect_Equations(synapses.event_driven))
+        identifiers = identifiers | synapses.event_driven.identifiers
+    # check equations is not empty
+    if synapse_equations:
+        synapse_dict['equations'] = synapse_equations
+    # check state updaters
+    if (synapses.state_updater and
+        isinstance(synapses.state_updater.method_choice, str)):
+        synapse_dict['user_method'] = synapses.state_updater.method_choice
+    # loop over the contained objects
+    summed_variables = []
+    pathways = []
+    for obj in synapses.contained_objects:
+        # check summed variables
+        if isinstance(obj, SummedVariableUpdater):
+            summed_var = {'code': obj.abstract_code, 'target': obj.target.name,
+                          'name': obj.name, 'dt': obj.clock.dt,
+                          'when': obj.when, 'order': obj.order
+                         }
+            summed_variables.append(summed_var)
+        # check synapse pathways
+        if isinstance(obj, SynapticPathway):
+            path = {'prepost': obj.prepost, 'event': obj.event,
+                    'code': obj.code, 'source': obj.source.name,
+                    'target': obj.target.name, 'name': obj.name,
+                    'clock': obj.clock.dt, 'order': obj.order,
+                    'when': obj.when
+                   }
+            # check delay is defined
+            if obj.variables['delay'].scalar:
+               path.update({'delay': obj.delay[:]})
+            pathways.append(path)
+            # check any identifiers specific to pathway expression
+            identifiers = identifiers | get_identifiers(obj.code)
+
+    # check any summed variables are used
+    if summed_variables:
+        synapse_dict['summed_variables'] = summed_variables
+    # check any pathways are defined
+    if pathways:
+        synapse_dict['pathways'] = pathways
+    # resolve identifiers and add to dict
+    identifiers = synapses.resolve_all(identifiers, run_namespace)
+    identifiers = _prepare_identifiers(identifiers)
+    if identifiers:
+        synapse_dict['identifiers'] = identifiers
+
+    return synapse_dict
+
+
+def collect_PoissonInput(poinp, run_namespace):
+    """
+    Collect details of `PoissonInput` and represent them in dictionary
+
+    Parameters
+    ----------
+    poinp : brian2.input.poissoninput.PoissonInput
+            PoissonInput object
+
+    run_namespace : dict
+            Namespace dictionary
+
+    Returns
+    -------
+    poinp_dict : dict
+            Dictionary representation of the collected details
+    """
+    poinp_dict = {}
+    poinp_dict['target'] = poinp._group.name
+    poinp_dict['rate'] = poinp.rate
+    poinp_dict['N'] = poinp.N
+    poinp_dict['when'] = poinp.when
+    poinp_dict['order'] = poinp.order
+    poinp_dict['clock'] = poinp.clock.dt
+    poinp_dict['weight'] = poinp._weight
+    poinp_dict['target_var'] = poinp._target_var
+    # collect identifiers, resolve and prune
+    if isinstance(poinp_dict['weight'], str):
+        identifiers = get_identifiers(poinp_dict['weight'])
+        identifiers = poinp._group.resolve_all(identifiers, run_namespace)
+        identifiers = _prepare_identifiers(identifiers)
+        if identifiers:
+            poinp_dict['identifiers'] = identifiers
+
+    return poinp_dict

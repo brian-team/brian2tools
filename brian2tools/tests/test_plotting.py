@@ -9,7 +9,7 @@ import numpy as np
 # We avoid "from brian2 import *", as this would also import Brian's test
 # function which will then be collected by py.test
 from brian2 import (NeuronGroup, SpikeMonitor, PopulationRateMonitor,
-                    StateMonitor, Synapses, run)
+                    StateMonitor, Synapses, run, set_device)
 from brian2 import Cylinder, Soma, Section
 from brian2 import ms, mV, um
 
@@ -19,6 +19,7 @@ from brian2tools import (brian_plot, plot_synapses, plot_raster, plot_state,
                          plot_morphology)
 
 def test_plot_monitors():
+    set_device('runtime')
     group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt', threshold='False',
                         method='linear')
     group.v = np.linspace(0, 1, 10)*mV
@@ -49,6 +50,7 @@ def test_plot_monitors():
 
 
 def test_plot_synapses():
+    set_device('runtime')
     group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt', threshold='False')
     group.v = np.linspace(0, 1, 10)*mV
     synapses = Synapses(group, group, 'w : volt', on_pre='v += w')
@@ -102,6 +104,7 @@ def test_plot_synapses():
 
 
 def test_plot_morphology():
+    set_device('runtime')
     # Only testing 2D plotting for now
     morpho = Soma(diameter=30*um)
     morpho.axon = Cylinder(diameter=10*um, n=10, length=100*um)
