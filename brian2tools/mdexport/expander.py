@@ -60,8 +60,9 @@ def expand_NeuronGroup(neurongrp):
             md_str += ('run_regularly() of name ' + run_reg['name'] +
                        'execute the code ' +
                        render_expression(str(run_reg['code'])) +
-                       ' for every ' + str(run_reg['dt'])) + endl
+                       ' for every ' + str(run_reg['dt']) + endl)
     return md_str
+
 
 def expand_identifier(ident_key, ident_value):
     ident_str = ''
@@ -76,6 +77,7 @@ def expand_identifier(ident_key, ident_value):
                             ' and dt as ' + ident_value['dt'])
     return ident_str + ', '
 
+
 def expand_identifiers(identifiers):
 
     idents_str = ''
@@ -83,6 +85,7 @@ def expand_identifiers(identifiers):
         idents_str += expand_identifier(key, value)
     idents_str = idents_str[:-2] + endl
     return idents_str
+
 
 def expand_event(event_name, event_details):
     event_str = ''
@@ -101,11 +104,13 @@ def expand_event(event_name, event_details):
             event_str += render_expression(event_details['refractory'])
     return event_str + endl
 
+
 def expand_events(events):
     events_str = ''
     for name, details in events.items():
         events_str += expand_event(name, details)
     return events_str
+
 
 def expand_equation(var, equation):
     rend_eqn = ''   
@@ -123,11 +128,13 @@ def expand_equation(var, equation):
                         " as flag(s) associated")
     return rend_eqn + endl
 
+
 def expand_equations(equations):
     rend_eqns = ''
     for (var, equation) in equations.items():
         rend_eqns += expand_equation(var, equation)
     return rend_eqns
+
 
 def expand_initializer(initializer):
     init_str = ''
@@ -148,6 +155,7 @@ def expand_initializer(initializer):
                      ','.join([str(ind) for ind in initializer['index']]))
     return init_str + endl
 
+
 def expand_PoissonGroup(poisngrp):
     md_str = ''
     md_str += ('PoissonGroup of name ' + bold(poisngrp['name']) + ', with \
@@ -164,18 +172,20 @@ def expand_PoissonGroup(poisngrp):
                        'execute the code ' +
                        render_expression(run_reg['code']) +
                        ' for every ' + render_expression(run_reg['dt']) +
-                       '.' + endl)
+                       endl)
     return md_str
 
-def expand_SpikeGenerator(spkgen):
+
+def expand_SpikeGeneratorGroup(spkgen):
     md_str = ''
     md_str += ('SpikeGeneratorGroup of name ' + bold(spkgen['name']) +
                ', with population size ' + bold(spkgen['N']) +
-               ', has neurons ' + 
+               ', has neurons ' +
                ', '.join(str(i) for i in spkgen['indices']) +
-               ' spike at times ' + ', '.join(str(i) for t in spkgen['times'])
-               + ', with the period of ' +
-               ', '.join(render_expression(str(p)) for p in spkgen['period']) +
+               ' that spike at times ' +
+               ', '.join(str(t) for t in spkgen['times']) +
+               ', with period(s)  ' + render_expression(spkgen['period']) +
+               #', '.join(render_expression(p) for p in spkgen['period']) +
                '.' + endl)
     if 'run_regularly' in spkgen:
         md_str += bold('Run regularly: ') + endl
@@ -184,36 +194,65 @@ def expand_SpikeGenerator(spkgen):
                        'execute the code ' +
                        render_expression(run_reg['code']) +
                        ' for every ' + render_expression(run_reg['dt']) +
-                       '.' + endl)
+                       endl)
     return md_str
 
 
 def expand_StateMonitor(statemon):
     md_str = ''
     md_str += ('StateMonitor of name ' + bold(statemon['name']) +
-               'monitors variable(s) ' +
+               ' monitors variable(s) ' +
                ','.join([render_expression(var) for var in statemon['variables']]) +
                ' of ' + statemon['source'] + '.')
     if isinstance(statemon['record'], bool):
         if statemon['record']:
-            md_str += ' All members of the source group are monitored'
+            md_str += ' for all members'
         else:
-            md_str += ' No members of the sorce group is monitored'
+            md_str += ' for no members'
     else:
-        md_str += (' Indices ' +
-                   ','.join([str(ind) for ind in statemon['record']]) +
-                   ' monitored for time step ' +
-                   render_expression(statemon['dt']) +
-                   '.' + endl)
+        md_str += (', for indices: ' +
+                   ','.join([str(ind) for ind in statemon['record']]))
 
-def expand_SpikeMonitor():
-    pass
+    md_str += (' in time step ' +
+                 render_expression(statemon['dt']) +
+                 '.' + endl)
+    return md_str
 
-def expand_EventMonitor():
-    pass
 
-def expand_PopulationRateMonitor():
-    pass
+def expand_SpikeMonitor(spikemon):
+    return expand_EventMonitor(spikemon)
+
+
+def expand_EventMonitor(eventmon):
+    md_str = ''
+    md_str += ('SpikeMonitor of name ' + bold(eventmon['name']) +
+               ' monitors variable(s) ' +
+               ','.join([render_expression(var) for var in eventmon['variables']]) +
+               ' of ' + eventmon['source'] + '.')
+    if isinstance(eventmon['record'], bool):
+        if eventmon['record']:
+            md_str += ' for all members'
+        else:
+            md_str += ' for no members'
+    else:
+        md_str += (', for indices: ' +
+                   ','.join([str(ind) for ind in eventmon['record']]))
+
+    md_str += (' in time step ' +
+                 render_expression(eventmon['dt']) +
+                 ' when event ' + bold(eventmon['event']) +
+                 ' is triggered.' + endl)
+    return md_str
+
+
+def expand_PopulationRateMonitor(popratemon):
+    md_str = ''
+    md_str += ('PopulationRateMonitor of name ' + bold(popratemon['name']) +
+               ' monitors the population of ' + popratemon['source'] + ','+
+               ' for time step ' + render_expression(popratemon['dt']) + '.' +
+               endl)
+    return md_str    
+
 
 def expand_Synapses():
     pass

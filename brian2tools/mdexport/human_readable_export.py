@@ -28,7 +28,7 @@ class MdExporter():
         if len(net_dict) > 1:
             n_runs += "s"
         overall_string += "The Network consists of {} \
-                           simulation ".format(len(net_dict)) + (n_runs +
+                           simulation ".format(bold(len(net_dict))) + (n_runs +
                            endl + horizontal_rule() + endl)
         
         # start going to the dictionary items in particular run instance
@@ -38,19 +38,22 @@ class MdExporter():
             run_string = (header('Run ' + str(run_indx + 1) + ' details', 3) +
                           endl)
             run_string += ('Duration of simulation is ' + 
-                            str(run_dict['duration']) + endl)
+                            bold(str(run_dict['duration'])) + endl)
             # map expand functions for particular components
             func_map = {'neurongroup': {'f': expand_NeuronGroup,
                                         'h': 'NeuronGroup(s) '},
                        'poissongroup': {'f': expand_PoissonGroup,
                                         'h': 'PoissonGroup(s) '},
-                       'spikegeneratorgroup': {'f': expand_SpikeGenerator,
-                                        'h': 'SpikeGenerator(s) '},
+                       'spikegeneratorgroup': {'f': expand_SpikeGeneratorGroup,
+                                        'h': 'SpikeGeneratorGroup(s) '},
                        'statemonitor': {'f': expand_StateMonitor,
                                         'h': 'StateMonitor(s) '},
-                       'spikemonitor': expand_SpikeMonitor,
-                       'eventmonitor': expand_EventMonitor,
-                       'populationratemonitor': expand_PopulationRateMonitor,
+                       'spikemonitor': {'f': expand_SpikeMonitor,
+                                        'h': 'SpikeMonitor(s)'},
+                       'eventmonitor': {'f': expand_EventMonitor,
+                                        'h': 'EventMonitor(s) '},
+                       'populationratemonitor': {'f': expand_PopulationRateMonitor,
+                                                 'h': 'PopulationRateMonitor(s) '},
                        'synapses': expand_Synapses}
             # loop through the components
             for (obj_key, obj_list) in run_dict['components'].items():
@@ -60,7 +63,7 @@ class MdExporter():
                                    'defined:') + endl)
                     for obj_mem in obj_list:
                         run_string += '- ' + func_map[obj_key]['f'](obj_mem)
-            run_string += endl
+                run_string += endl
             # check if initializers are available, if so expand them
             # TODO: need to update it for connectors
             if 'initializers' in run_dict:
