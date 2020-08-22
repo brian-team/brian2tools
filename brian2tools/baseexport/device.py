@@ -1,10 +1,14 @@
+from brian2.core.variables import DynamicArrayVariable
 from brian2.devices.device import RuntimeDevice, Device, all_devices
 from brian2.groups import NeuronGroup
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
 from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
-                    EventMonitor, PopulationRateMonitor)
+                    EventMonitor, PopulationRateMonitor, Synapses,
+                    Quantity)
 from brian2.utils.logger import get_logger
-from .helper import _prune_identifiers, _resolve_identifiers_from_string
+from brian2.utils.stringtools import get_identifiers
+from .helper import _prepare_identifiers
+import numpy as np
 from .collector import *
 try:
     import pprint
@@ -51,9 +55,10 @@ class BaseExporter(RuntimeDevice):
         self.build_options = None
         self.supported_objs = (NeuronGroup, SpikeGeneratorGroup,
                                PoissonGroup, StateMonitor, SpikeMonitor,
-                               EventMonitor, PopulationRateMonitor)
+                               EventMonitor, PopulationRateMonitor, Synapses)
         self.runs = []
-        self.initializers = []
+        self.initializers_connectors = []
+        self.array_cache = {}
 
     def reinit(self):
         """
@@ -69,6 +74,32 @@ class BaseExporter(RuntimeDevice):
         # set the saved options
         self.build_on_run = prev_build_on_run
         self.build_options = prev_build_options
+
+    def init_with_zeros(self, var, dtype):
+        self.array_cache[var] = np.zeros(var.size, dtype=dtype)
+
+    def init_with_arange(self, var, start, dtype):
+        self.array_cache[var] = np.arange(0, var.size, dtype=dtype) + start
+
+    def fill_with_array(self, var, arr):
+        arr = np.asarray(arr)
+        if arr.size == 0:
+            return  # nothing to do
+        if isinstance(var, DynamicArrayVariable):
+            # We can never be sure about the size of a dynamic array, so
+            # we can't do correct broadcasting. Therefore, we do not cache
+            # them at all for now.
+            self.array_cache[var] = None
+        else:
+            new_arr = np.empty(var.size, dtype=var.dtype)
+            new_arr[:] = arr
+            self.array_cache[var] = new_arr
+
+    def code_object(self, owner, name, abstract_code, variables, template_name,
+                    variable_indices, codeobj_class=None,
+                    template_kwds=None, override_conditional_write=None,
+                    compiler_kwds=None):
+        pass  # Do nothing
 
     def network_run(self, network, duration, namespace=None, level=0, **kwds):
         """
@@ -104,6 +135,7 @@ class BaseExporter(RuntimeDevice):
         run_dict = {}          # dictionary with components of particular run
         run_components = {}    # network components during the run
         run_inactive = []      # inactive objects for the run
+
         # dictionary to store objects and its collector functions
         collector_map={'neurongroup': {'f': collect_NeuronGroup, 'n': True},
                        'poissongroup': {'f': collect_PoissonGroup, 'n': True},
@@ -117,7 +149,10 @@ class BaseExporter(RuntimeDevice):
                                         'n': False},
                        'populationratemonitor':
                                        {'f': collect_PopulationRateMonitor,
-                                        'n': False}}
+                                        'n': False},
+                        'synapses': {'f': collect_Synapses, 'n': True},
+                        'poissoninput': {'f': collect_PoissonInput, 'n': True}
+                      }
 
         # loop through all the objects of network
         for object in network.objects:
@@ -156,9 +191,9 @@ class BaseExporter(RuntimeDevice):
         # copy fields to run_dict
         run_dict = {'components': run_components,
                     'duration': duration}
-        # check any initializers defined in the run scope
-        if self.initializers:
-            run_dict['initializers'] = self.initializers
+        # check any initializers and connectors defined in the run scope
+        if self.initializers_connectors:
+            run_dict['initializers_connectors'] = self.initializers_connectors
         # check any inactive objects present for this run
         if run_inactive:
             run_dict['inactive'] = run_inactive
@@ -168,7 +203,7 @@ class BaseExporter(RuntimeDevice):
         # reset the dict, lists at run_level,
         # so it won't be repeated for other runs
         # TODO: but it doesn't make any diff, should compare and remove
-        self.initializers = []
+        self.initializers_connectors = []
         run_dict = {}
         run_components = {}
         run_inactive = []
@@ -184,6 +219,13 @@ class BaseExporter(RuntimeDevice):
             # call build
             self.build(direct_call=False, **self.build_options)
 
+    def get_value(self, var, access_data=True):
+        if self.array_cache.get(var, None) is not None:
+            return self.array_cache[var]
+        else:
+            raise NotImplementedError(('Cannot get variable "%s" this way in '
+                                       'device mode.') % var.name)
+
     def variableview_set_with_expression_conditional(self, variableview,
                                                      cond, code,
                                                      run_namespace,
@@ -193,14 +235,16 @@ class BaseExporter(RuntimeDevice):
         for eg. obj.var['i>5'] = 'rand() * -78 * mV'
         """
         # get resolved and clean identifiers
-        ident_dict = _resolve_identifiers_from_string(code, run_namespace)
+        ident_set = get_identifiers(code)
+        ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
+        ident_dict = _prepare_identifiers(ident_dict)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'index': cond, 'value': code}
+                     'index': cond, 'value': code, 'type': 'initializer'}
         # if identifiers are defined, then add the field
         if ident_dict:
             init_dict.update({'identifiers': ident_dict})
-        self.initializers.append(init_dict)
+        self.initializers_connectors.append(init_dict)
 
     def variableview_set_with_expression(self, variableview, item, code,
                                          run_namespace, check_units=True):
@@ -210,41 +254,119 @@ class BaseExporter(RuntimeDevice):
         obj.var = 'rand() * -78 * mV'
         """
         # get resolved and clean identifiers
-        ident_dict = _resolve_identifiers_from_string(code, run_namespace)
+        ident_set = get_identifiers(code)
+        ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
+        ident_dict = _prepare_identifiers(ident_dict)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'value': code}
+                     'value': code, 'type': 'initializer'}
         if ident_dict:
             init_dict.update({'identifiers': ident_dict})
-        # check item is of slice type, if so pass to indices
-        # else pass the boolean
-        if type(item) == slice:
-            init_dict['index'] = variableview.group.indices[item][:]
+        # check type is slice and True
+        if type(item) == slice and item.start is None and item.stop is None:
+            init_dict['index'] = True
+        elif ((isinstance(item, int) or (isinstance(item, np.ndarray) and
+               item.shape == ()))):
+            if self.array_cache.get(variableview.variable, None) is not None:
+                self.array_cache[variableview.variable][item] = code
+            init_dict['index'] = item
         else:
-            init_dict['index'] = bool(item)
-        self.initializers.append(init_dict)
+            # We have to calculate indices. This will not work for synaptic
+            # variables
+            try:
+                init_dict['index'] = np.asarray(variableview.indexing(item,
+                                            index_var=variableview.index_var))
+            except NotImplementedError:
+                raise NotImplementedError(('Cannot set variable "%s" this way'
+                                           ' in device mode,try using string '
+                                           'expressions') % variableview.name)
+        self.initializers_connectors.append(init_dict)
 
     def variableview_set_with_index_array(self, variableview, item, value,
                                           check_units=True):
         """
         Capture setters with particular,
-        for eg. obj.var[0:2] = 'rand() * -78 * mV' or
-        obj.var = 'rand() * -78 * mV'
+        for eg. obj.var[0:2] = -78 * mV
         """
+        # happens when dimensionless is passed like int/float
+        if not isinstance(value, Quantity):
+            value = Quantity(value)
         init_dict = {'source': variableview.group.name,
                      'variable': variableview.name,
-                     'value': value}
-        # check type is slice, if so pass to indices
-        # else pass the boolean
-        if type(item) == slice:
-            if item.start is None and item.stop is None:
-                init_dict['index'] = True
-            else:
-                init_dict['index'] = variableview.group.indices[item][:]
-        # does this work?
+                     'value': value, 'type': 'initializer'}
+        # check type is slice and True
+        if type(item) == slice and item.start is None and item.stop is None:
+            init_dict['index'] = True
+        elif ((isinstance(item, int) or (isinstance(item, np.ndarray) and
+              item.shape == ())) and value.size == 1):
+            if self.array_cache.get(variableview.variable, None) is not None:
+                self.array_cache[variableview.variable][item] = value
+            init_dict['index'] = item
         else:
-            init_dict['index'] = bool(item)
-        self.initializers.append(init_dict)
+            # We have to calculate indices. This will not work for synaptic
+            # variables
+            try:
+                init_dict['index'] = np.asarray(variableview.indexing(item,
+                                            index_var=variableview.index_var))
+            except NotImplementedError:
+                raise NotImplementedError(('Cannot set variable "%s" this way'
+                                           'in device mode, '
+                                           'try using string '
+                                           'expressions') % variableview.name)
+        self.initializers_connectors.append(init_dict)
+
+    def synaptic_pathway_before_run(self, pathway, run_namespace):
+        """
+        Get synaptic pathways and pass it to dictionary
+        """
+        # handled in the collect_synapses()
+        pass
+
+    def synapses_connect(self, synapses, condition=None, i=None,
+                         j=None, p=1, n=1, skip_if_invalid=False,
+                         namespace=None, level=0):
+        """
+        Override synapses_connect() to get details from Synapses.connect()
+        """
+        # if namespace not defined
+        if namespace is None:
+            namespace = get_local_namespace(level + 2)
+        # prepare objects using `before_run()`
+        synapses.before_run(namespace)
+        if condition is not None:
+            if i is not None or j is not None:
+                raise ValueError("Cannot combine condition with i or j "
+                                 "arguments")
+        connect = {}
+        # string statements that shall have identifers
+        strings_with_identifers = []
+        if condition:
+            connect.update({'condition': condition})
+            strings_with_identifers.append(condition)
+        elif i is not None or j is not None:
+            if i is not None:
+                connect.update({'i': i})
+            if j is not None:
+                connect.update({'j': j})
+        connect.update({'probability': p, 'n_connections': n,
+                        'synapses': synapses.name,
+                        'source': synapses.source.name,
+                        'target': synapses.target.name, 'type': 'connect'
+                        })
+        # get resolved and clean identifiers
+        strings_with_identifers.append(str(p))
+        strings_with_identifers.append(str(n))
+        identifers_set = set()
+        for string_expr in strings_with_identifers:
+            identifers_set = identifers_set | get_identifiers(string_expr)
+        ident_dict = synapses.resolve_all(identifers_set, namespace)
+        ident_dict = _prepare_identifiers(ident_dict)
+        if ident_dict:
+            connect.update({'identifiers': ident_dict})
+        self.initializers_connectors.append(connect)
+        # update `_connect_called` to allow initialization on
+        # synaptic variables
+        synapses._connect_called = True
 
     def build(self, direct_call=True, debug=False):
         """
@@ -257,7 +379,8 @@ class BaseExporter(RuntimeDevice):
             To check the call to build() was made directly
 
         debug: bool, optional
-            To build the device in debug mode
+            To build the device in debug mode, which prints out the dictionary
+            information
         """
         # buil_on_run = True but called build() directly
         if self.build_on_run and direct_call:
@@ -283,15 +406,14 @@ class BaseExporter(RuntimeDevice):
         if debug:
             logger.debug("Building ExportDevice in debug mode")
             # print dictionary format using pprint
+            old_threshold = np.get_printoptions()['threshold']
+            np.set_printoptions(threshold=10)
             if pprint_available:
                 pprint.pprint(self.runs)
+            # reset to avoid affecting overall remaining session
+            np.set_printoptions(old_threshold)
 
-    def synaptic_pathway_before_run(self, pathway, run_namespace):
-        pass
 
-
-msg = "The package is under development and may give incorrect results"
-logger.warn(msg)
 # instantiate StdDevice object and add to all_devices
 std_device = BaseExporter()
-all_devices['ExportDevice'] = std_device
+all_devices['exporter'] = std_device
