@@ -10,6 +10,7 @@ from sympy import Derivative, symbols
 from brian2.equations.equations import str_to_sympy
 from brian2 import Quantity
 import re
+import numpy as np
 
 endl = '\n'
 
@@ -55,11 +56,13 @@ def expand_NeuronGroup(neurongrp):
         md_str += bold('Properties:') + endl
         md_str += expand_identifiers(neurongrp['identifiers'])
     if 'run_regularly' in neurongrp:
-        md_str += bold('Run regularly: ') + endl
+        md_str += bold('Run regularly(s): ') + endl
         for run_reg in neurongrp['run_regularly']:
+            lhs, rhs = _equation_separator(run_reg['code'])
             md_str += ('run_regularly() of name ' + run_reg['name'] +
-                       'execute the code ' +
-                       render_expression(str(run_reg['code'])) +
+                       ' execute the code ' +
+                       render_expression(lhs) + '&#8592;' +
+                       render_expression(rhs) +
                        ' for every ' + str(run_reg['dt']) + endl)
     return md_str
 
@@ -156,6 +159,50 @@ def expand_initializer(initializer):
     return init_str + endl
 
 
+def expand_connector(connector):
+    con_str = ''
+    con_str += ('Synaptic connection from ' + connector['source'] +
+                ' to ' + connector['target'])
+    if 'i' in connector:
+        con_str += '. Connection from source group indices '
+        if isinstance(connector['i'], np.array):
+            con_str += ': ' + ', '.join(str(ind) for ind in connector['i'])
+        else: 
+            con_str += ' with generator syntax ' + connector['i']
+        if 'j' in connector:
+            con_str += ' to target group indices: '
+            if isinstance(connector['j'], np.array):
+                con_str += ', '.join(str(ind) for ind in connector['j'])
+            else: 
+                con_str += ' with generator syntax ' + connector['j']
+        else:
+            con_str += ' to all traget group members'
+
+    elif 'j' in connector:
+        con_str += '. Connection for all members in source group'
+        if isinstance(connector['j'], np.array):
+                con_str += ' to target group indices: '
+                con_str += ', '.join(str(ind) for ind in connector['j'])
+        else: 
+            con_str += (' to target group with generator syntax ' +
+                        connector['j'])
+
+    elif 'condition' in connector:
+        con_str += (' with condition ' +
+                    render_expression(connector['condition']))
+    if connector['p'] != 1:
+        con_str += (', with probabilty ' +
+                    render_expression(connector['probability']))
+    if connector['n'] != 1:
+         con_str += (', with number of connections ' +
+                    render_expression(connector['n_connections']))
+    if 'identifiers' in connector:
+        con_str += endl
+        con_str += ('Identifier(s) associated: ' +
+                      expand_identifiers(connector['identifier']))
+    return con_str + endl
+
+
 def expand_PoissonGroup(poisngrp):
     md_str = ''
     md_str += ('PoissonGroup of name ' + bold(poisngrp['name']) + ', with \
@@ -225,7 +272,7 @@ def expand_SpikeMonitor(spikemon):
 
 def expand_EventMonitor(eventmon):
     md_str = ''
-    md_str += ('SpikeMonitor of name ' + bold(eventmon['name']) +
+    md_str += ('SpikeMonitor of name ' + eventmon['name'] +
                ' monitors variable(s) ' +
                ','.join([render_expression(var) for var in eventmon['variables']]) +
                ' of ' + eventmon['source'] + '.')
@@ -253,6 +300,70 @@ def expand_PopulationRateMonitor(popratemon):
                endl)
     return md_str    
 
+def expand_pathway(pathway):
+    md_str = ('Pathway of name ' + pathway['name'] +' with type ' +
+               bold(pathway['prepost']) + ' from ' + pathway['source'] +
+               ' to ' + pathway['target'] + ', ' + 'runs statement(s) ' +
+               pathway['code'] + 'for event ' + pathway['event'])
+    if 'delay' in pathway:
+        md_str += (' and with synaptic delay of ' + 
+        render_expression(pathway['delay']))
+    return md_str + endl
 
-def expand_Synapses():
-    pass
+def expand_pathways(pathways):
+    path_str = ''
+    for pathway in pathways:
+        path_str += expand_pathway(pathway)
+    return path_str
+
+def expand_summed_variable(sum_variable):
+    md_str = ('Summed variable of name ' + sum_variable['name'] +
+              ' that updates target group ' + sum_variable['target'] +
+              ' with statement' + render_expression(sum_variable['code'])
+             )
+    return md_str
+
+def expand_summed_variables(sum_variables):
+    sum_var_str = ''
+    for sum_var in sum_variables:
+        sum_var_str += expand_summed_variable(sum_var)
+    return sum_var_str
+
+
+def expand_Synapses(synapse):
+    md_str = ''
+    md_str += ('Synapses of name: ' + synapse['name'] +
+               ' with projection from ' + synapse['source'] +
+               ' to ' + synapse['target']
+               )
+    if 'equations' in synapse:
+        md_str += bold('Dynamics:') + endl
+        md_str += expand_equations(synapse['equations'])
+        if 'user_method' in synapse:
+            md_str += (synapse['user_method'] + 
+                   ' method is used for integration' + endl)
+    if 'pathways' in synapse:
+        md_str += bold('Pathways:') + endl
+        md_str += expand_pathways(synapse['pathways'])
+    if 'summed_variables' in synapse:
+        md_str += bold('Summed variables: ') + endl
+        md_str += expand_summed_variables(synapse['summed_variables'])
+    if 'identifiers' in synapse:
+        md_str += bold('Properties:') + endl
+        md_str += expand_identifiers(synapse['identifiers'])
+    return md_str
+
+
+def expand_PoissonInput(poinp):
+    md_str = ''
+    md_str += ('PoissonInput of name ' + poinp['name'] + ', with \
+               size ' + bold(poinp['N']) +
+               ' gives input to variable ' +
+               render_expression(poinp['target_var']) +
+               ' with rate ' + render_expression(poinp['rate']) +
+               ' and with weight of ' + render_expression(poinp['weight']) +
+               endl)
+    if 'identifiers' in poinp:
+        md_str += bold('Properties:') + endl
+        md_str += expand_identifiers(poinp['identifiers'])
+    return md_str

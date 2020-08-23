@@ -38,7 +38,7 @@ class MdExporter():
             run_string = (header('Run ' + str(run_indx + 1) + ' details', 3) +
                           endl)
             run_string += ('Duration of simulation is ' + 
-                            bold(str(run_dict['duration'])) + endl)
+                            bold(str(run_dict['duration'])) + endl + endl)
             # map expand functions for particular components
             func_map = {'neurongroup': {'f': expand_NeuronGroup,
                                         'h': 'NeuronGroup(s) '},
@@ -54,7 +54,10 @@ class MdExporter():
                                         'h': 'EventMonitor(s) '},
                        'populationratemonitor': {'f': expand_PopulationRateMonitor,
                                                  'h': 'PopulationRateMonitor(s) '},
-                       'synapses': expand_Synapses}
+                       'synapses': {'f': expand_Synapses,
+                                    'h': 'Synapses '},
+                       'poissoninput': {'f': expand_PoissonInput,
+                                         'h': 'PoissonInput(s)'}}
             # loop through the components
             for (obj_key, obj_list) in run_dict['components'].items():
                 if obj_key in func_map.keys():
@@ -64,20 +67,29 @@ class MdExporter():
                     for obj_mem in obj_list:
                         run_string += '- ' + func_map[obj_key]['f'](obj_mem)
                 run_string += endl
+            initializer = []
+            connector = []
             # check if initializers are available, if so expand them
-            # TODO: need to update it for connectors
-            if 'initializers' in run_dict:
+            if 'initializers_connectors' in run_dict:
                 # loop through the members in list
+                for init_cont in run_dict['initializers_connectors']:
+                    if init_cont['type'] is 'initializer':
+                        initializer.append(init_cont)
+                    else:
+                        connector.append(init_cont)
+            if initializer:
                 run_string += bold('Initializer(s) defined:') + endl
                 # loop through the initits
-                for initit in run_dict['initializers']:
-                    # if initit['type'] == 'initializer'
+                for initit in initializer:
                     run_string += '- ' + expand_initializer(initit)
-
+            if connector:
+                run_string += endl
+                run_string += bold('Synaptic Connection(s) defined:') + endl
+                # loop through the connectors
+                for connect in connector:
+                    run_string += '- ' + expand_connector(connect)
+            # TODO: add inactive
             overall_string += run_string
-            # loop through initializer_connectors
-            # TODO: update the name
-            # for init_conn in run_dict['initializers']:
                 
         self.md_text = overall_string
 
