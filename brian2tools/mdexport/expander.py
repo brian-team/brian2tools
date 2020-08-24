@@ -29,6 +29,8 @@ def render_expression(expression, diff=False):
     if isinstance(expression, Quantity):
         expression = str(expression)
     else:
+        if not isinstance(expression, str):
+            expression = str(expression)
         expression = str_to_sympy(expression)
     if diff:
         # independent variable is always 't'
@@ -37,6 +39,16 @@ def render_expression(expression, diff=False):
     rend_exp = latex(expression, mode='equation',
                     itex=True, long_frac_ratio = 2/2)
     return rend_exp
+
+
+def expand_runregularly(run_reg):
+    lhs, rhs = _equation_separator(run_reg['code'])
+    md_str = ('run_regularly of name ' + run_reg['name'] +
+                ' execute the code ' +
+                render_expression(lhs) + '&#8592;' +
+                render_expression(rhs) +
+                ' for every ' + render_expression(run_reg['dt']) + endl)
+    return md_str
 
 
 def expand_NeuronGroup(neurongrp):
@@ -58,26 +70,23 @@ def expand_NeuronGroup(neurongrp):
     if 'run_regularly' in neurongrp:
         md_str += bold('Run regularly(s): ') + endl
         for run_reg in neurongrp['run_regularly']:
-            lhs, rhs = _equation_separator(run_reg['code'])
-            md_str += ('run_regularly() of name ' + run_reg['name'] +
-                       ' execute the code ' +
-                       render_expression(lhs) + '&#8592;' +
-                       render_expression(rhs) +
-                       ' for every ' + str(run_reg['dt']) + endl)
+            md_str += expand_runregularly(run_reg)
+
     return md_str
 
 
 def expand_identifier(ident_key, ident_value):
     ident_str = ''
     if type(ident_value) != dict:
-            ident_str += (render_expression(str(ident_key)) + ": " +
+            ident_str += (render_expression(ident_key) + ": " +
                           render_expression(ident_value))
     else:
-        ident_str += (render_expression(str(ident_key)) + 'of type ' +
+        ident_str += (render_expression(ident_key) + ' of type ' +
                         ident_value['type'])
         if ident_value['type'] is 'timedarray':
-            ident_str += ('with dimentsion' + str(ident_value['ndim']) +
-                            ' and dt as ' + ident_value['dt'])
+            ident_str += (' with dimentsion ' +
+                          render_expression(ident_value['ndim']) +
+                          ' and dt as ' + render_expression(ident_value['dt']))
     return ident_str + ', '
 
 
@@ -101,10 +110,8 @@ def expand_event(event_name, event_details):
                         render_expression(rhs))
     if 'refractory' in event_details:
         event_str += ', with refractory ' 
-        if type(event_details['refractory']) != 'str':
-            event_str += str(event_details['refractory'])
-        else:
-            event_str += render_expression(event_details['refractory'])
+        event_str += render_expression(event_details['refractory'])
+
     return event_str + endl
 
 
@@ -118,9 +125,11 @@ def expand_events(events):
 def expand_equation(var, equation):
     rend_eqn = ''   
     if equation['type'] == 'differential equation':
-        rend_eqn =  render_expression(var, diff=True)
+        rend_eqn +=  render_expression(var, diff=True)
     elif equation['type'] == 'subexpression':
-        rend_eqn =  render_expression(var)
+        rend_eqn +=  render_expression(var)
+    else:
+        rend_eqn += 'Parameter ' + render_expression(var)
     if 'expr' in equation:
         rend_eqn +=  '&#8592;' + render_expression(equation['expr'])
     rend_eqn += (", where unit of " + render_expression(var) +
@@ -140,22 +149,30 @@ def expand_equations(equations):
 
 
 def expand_initializer(initializer):
+
     init_str = ''
     init_str += ('Source group ' + initializer['source'] + ' initialized \
                   with the value of ' +
                   render_expression(initializer['value']) +
                   " to the variable " +
                   render_expression(initializer['variable']))
-    if type(initializer['index']) == str:
+    # TODO: not happy with this checking
+    if (isinstance(initializer['index'], str) and 
+       (initializer['index'] != 'True' and initializer['index'] != 'False')):
         init_str += ' with condition ' + initializer['index']
-    elif type(initializer['index']) == bool:
-        if initializer['index']:
-            init_str += ' to all indices '
+    elif (isinstance(initializer['index'], bool) or
+         (initializer['index'] == 'True' or initializer['index'] == 'False')):
+        if initializer['index'] or initializer['index'] == 'True':
+            init_str += ' to all members '
         else:
-            init_str += ' to no indices'
+            init_str += ' to no members'
     else:
-        init_str += ('to indices ' +
+        init_str += (' to member(s) ' +
                      ','.join([str(ind) for ind in initializer['index']]))
+    if 'identifiers' in initializer:
+        init_str += endl
+        init_str += ('Identifier(s) associated: ' +
+                      expand_identifiers(initializer['identifiers']))
     return init_str + endl
 
 
@@ -164,15 +181,21 @@ def expand_connector(connector):
     con_str += ('Synaptic connection from ' + connector['source'] +
                 ' to ' + connector['target'])
     if 'i' in connector:
-        con_str += '. Connection from source group indices '
-        if isinstance(connector['i'], np.array):
-            con_str += ': ' + ', '.join(str(ind) for ind in connector['i'])
+        con_str += '. Connection from source group indices: '
+        if not isinstance(connector['i'], str):
+            if hasattr(connector['i'], '__iter__'):
+                con_str += ', '.join(str(ind) for ind in connector['i'])
+            else:
+                con_str += str(connector['i'])
         else: 
             con_str += ' with generator syntax ' + connector['i']
         if 'j' in connector:
             con_str += ' to target group indices: '
-            if isinstance(connector['j'], np.array):
-                con_str += ', '.join(str(ind) for ind in connector['j'])
+            if not isinstance(connector['j'], str):
+                if hasattr(connector['j'], '__iter__'):
+                    con_str += ', '.join(str(ind) for ind in connector['j'])
+                else:
+                    con_str += str(connector['j'])
             else: 
                 con_str += ' with generator syntax ' + connector['j']
         else:
@@ -180,9 +203,12 @@ def expand_connector(connector):
 
     elif 'j' in connector:
         con_str += '. Connection for all members in source group'
-        if isinstance(connector['j'], np.array):
+        if not isinstance(connector['j'], str):
                 con_str += ' to target group indices: '
-                con_str += ', '.join(str(ind) for ind in connector['j'])
+                if hasattr(connector['j'], '__iter__'):
+                    con_str += ', '.join(str(ind) for ind in connector['j'])
+                else:
+                    con_str += str(connector['j'])
         else: 
             con_str += (' to target group with generator syntax ' +
                         connector['j'])
@@ -190,16 +216,16 @@ def expand_connector(connector):
     elif 'condition' in connector:
         con_str += (' with condition ' +
                     render_expression(connector['condition']))
-    if connector['p'] != 1:
+    if connector['probability'] != 1:
         con_str += (', with probabilty ' +
                     render_expression(connector['probability']))
-    if connector['n'] != 1:
+    if connector['n_connections'] != 1:
          con_str += (', with number of connections ' +
-                    render_expression(connector['n_connections']))
+                     render_expression(connector['n_connections']))
     if 'identifiers' in connector:
         con_str += endl
         con_str += ('Identifier(s) associated: ' +
-                      expand_identifiers(connector['identifier']))
+                      expand_identifiers(connector['identifiers']))
     return con_str + endl
 
 
@@ -215,11 +241,8 @@ def expand_PoissonGroup(poisngrp):
     if 'run_regularly' in poisngrp:
         md_str += bold('Run regularly: ') + endl
         for run_reg in poisngrp['run_regularly']:
-            md_str += ('run_regularly() of name ' + run_reg['name'] +
-                       'execute the code ' +
-                       render_expression(run_reg['code']) +
-                       ' for every ' + render_expression(run_reg['dt']) +
-                       endl)
+            md_str += expand_runregularly(run_reg)
+
     return md_str
 
 
@@ -237,11 +260,8 @@ def expand_SpikeGeneratorGroup(spkgen):
     if 'run_regularly' in spkgen:
         md_str += bold('Run regularly: ') + endl
         for run_reg in spkgen['run_regularly']:
-            md_str += ('run_regularly() of name ' + run_reg['name'] +
-                       'execute the code ' +
-                       render_expression(run_reg['code']) +
-                       ' for every ' + render_expression(run_reg['dt']) +
-                       endl)
+            md_str += expand_runregularly(run_reg)
+
     return md_str
 
 
@@ -250,15 +270,17 @@ def expand_StateMonitor(statemon):
     md_str += ('StateMonitor of name ' + bold(statemon['name']) +
                ' monitors variable(s) ' +
                ','.join([render_expression(var) for var in statemon['variables']]) +
-               ' of ' + statemon['source'] + '.')
+               ' of ' + statemon['source'])
     if isinstance(statemon['record'], bool):
         if statemon['record']:
             md_str += ' for all members'
-        else:
-            md_str += ' for no members'
     else:
-        md_str += (', for indices: ' +
-                   ','.join([str(ind) for ind in statemon['record']]))
+        # another horrible hack (before with initializers)
+        if not statemon['record'].size:
+            md_str += ' for no member'
+        else:
+            md_str += (', for member(s): ' +
+                       ','.join([str(ind) for ind in statemon['record']]))
 
     md_str += (' in time step ' +
                  render_expression(statemon['dt']) +
@@ -279,12 +301,13 @@ def expand_EventMonitor(eventmon):
     if isinstance(eventmon['record'], bool):
         if eventmon['record']:
             md_str += ' for all members'
-        else:
-            md_str += ' for no members'
     else:
-        md_str += (', for indices: ' +
-                   ','.join([str(ind) for ind in eventmon['record']]))
-
+        # another horrible hack (before with initializers)
+        if not eventmon['record'].size:
+            md_str += ' for no member'
+        else:
+            md_str += (', for member(s): ' +
+                       ','.join([str(ind) for ind in eventmon['record']]))
     md_str += (' in time step ' +
                  render_expression(eventmon['dt']) +
                  ' when event ' + bold(eventmon['event']) +
@@ -334,7 +357,7 @@ def expand_Synapses(synapse):
     md_str = ''
     md_str += ('Synapses of name: ' + synapse['name'] +
                ' with projection from ' + synapse['source'] +
-               ' to ' + synapse['target']
+               ' to ' + synapse['target'] + endl
                )
     if 'equations' in synapse:
         md_str += bold('Dynamics:') + endl
@@ -361,7 +384,7 @@ def expand_PoissonInput(poinp):
                ' gives input to variable ' +
                render_expression(poinp['target_var']) +
                ' with rate ' + render_expression(poinp['rate']) +
-               ' and with weight of ' + render_expression(poinp['weight']) +
+               ' and weight of ' + render_expression(poinp['weight']) +
                endl)
     if 'identifiers' in poinp:
         md_str += bold('Properties:') + endl
