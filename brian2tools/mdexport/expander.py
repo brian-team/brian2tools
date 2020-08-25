@@ -12,63 +12,86 @@ from brian2 import Quantity
 import re
 import numpy as np
 
-endl = '\n'
+endl = '\n\n'
+tab = '\t'
 
-def _equation_separator(equation):
-    """
-    Separates *equation* (str) to LHS and RHS.
-    """
-    try:
-        lhs, rhs = re.split('<=|>=|==|=|>|<', equation)
-    except ValueError:
-        return None
-    return lhs.strip(), rhs.strip()
+def _prepare_math_statements(statements, differential=False,
+                           seperate=False, equals='&#8592;'):
+
+    rend_str = ''
+    list_eqns = re.split(';|\n', statements)
+    for statement in list_eqns:
+        if not statement.strip():
+            if seperate:
+                lhs, rhs = re.split('\+=|=', statement)
+                if '+=' in statement:
+                    rend_str += (_render_expression(lhs) +
+                                '+=' +_render_expression(rhs))
+                else:
+                    rend_str += (_render_expression(lhs) +
+                                equals +  _render_expression(rhs))
+            else:
+                rend_str += _render_expression(statement, differential)
+            rend_str += ', '
+    return rend_str[:-2]
 
 
-def render_expression(expression, diff=False):
+def _render_expression(expression, differential=False,
+                       github_md=True):
+    
     if isinstance(expression, Quantity):
         expression = str(expression)
     else:
         if not isinstance(expression, str):
             expression = str(expression)
         expression = str_to_sympy(expression)
-    if diff:
+    if differential:
         # independent variable is always 't'
         t = symbols('t')
         expression = Derivative(expression, 't')
+
     rend_exp = latex(expression, mode='equation',
-                    itex=True, long_frac_ratio = 2/2)
-    return rend_exp
+                    itex=True, mul_symbol='.')
+    # horrible thing
+    rend_exp = rend_exp.replace('_placeholder_{arg}','-')
+    rend_exp = rend_exp.replace('\operatorname','')
+    
+    if github_md:
+        rend_exp = rend_exp[2:][:-2]
+        git_rend_exp = (
+        '<img src="https://render.githubusercontent.com/render/math?math=' +
+        rend_exp + '">'
+        )
+        return git_rend_exp
+    return rend_exp[1:][:-1]
 
 
 def expand_runregularly(run_reg):
-    lhs, rhs = _equation_separator(run_reg['code'])
-    md_str = ('run_regularly of name ' + run_reg['name'] +
-                ' execute the code ' +
-                render_expression(lhs) + '&#8592;' +
-                render_expression(rhs) +
-                ' for every ' + render_expression(run_reg['dt']) + endl)
+    md_str = (tab + 'For every ' +  _render_expression(run_reg['dt']) +
+              ' code: ' +
+                _prepare_math_statements(run_reg['code'], seperate=True) +
+                ' will be executed' + endl)
     return md_str
 
 
 def expand_NeuronGroup(neurongrp):
     
     md_str = ''
-    md_str += 'Neurongroup of name ' + bold(neurongrp['name']) + ', with \
+    md_str += 'Name ' + bold(neurongrp['name']) + ', with \
                population size ' + bold(neurongrp['N']) + '.' + endl
-    md_str += bold('Dynamics:') + endl
+    md_str += tab + bold('Dynamics:') + endl
     md_str += expand_equations(neurongrp['equations'])
     if neurongrp['user_method']:
-        md_str += (neurongrp['user_method'] + 
+        md_str += (tab + neurongrp['user_method'] +
                    ' method is used for integration' + endl)
     if 'events' in neurongrp:
-        md_str += bold('Events:') + endl
+        md_str += tab + bold('Events:') + endl
         md_str += expand_events(neurongrp['events'])
     if 'identifiers' in neurongrp:
-        md_str += bold('Properties:') + endl
+        md_str += tab + bold('Properties:') + endl
         md_str += expand_identifiers(neurongrp['identifiers'])
     if 'run_regularly' in neurongrp:
-        md_str += bold('Run regularly(s): ') + endl
+        md_str += tab + bold('Run regularly(s): ') + endl
         for run_reg in neurongrp['run_regularly']:
             md_str += expand_runregularly(run_reg)
 
@@ -78,15 +101,15 @@ def expand_NeuronGroup(neurongrp):
 def expand_identifier(ident_key, ident_value):
     ident_str = ''
     if type(ident_value) != dict:
-            ident_str += (render_expression(ident_key) + ": " +
-                          render_expression(ident_value))
+            ident_str += (_render_expression(ident_key) + ": " +
+                          _render_expression(ident_value))
     else:
-        ident_str += (render_expression(ident_key) + ' of type ' +
+        ident_str += (_render_expression(ident_key) + ' of type ' +
                         ident_value['type'])
         if ident_value['type'] is 'timedarray':
             ident_str += (' with dimentsion ' +
-                          render_expression(ident_value['ndim']) +
-                          ' and dt as ' + render_expression(ident_value['dt']))
+                          _render_expression(ident_value['ndim']) +
+                          ' and dt as ' + _render_expression(ident_value['dt']))
     return ident_str + ', '
 
 
@@ -95,22 +118,24 @@ def expand_identifiers(identifiers):
     idents_str = ''
     for key, value in identifiers.items():
         idents_str += expand_identifier(key, value)
-    idents_str = idents_str[:-2] + endl
+    idents_str = tab + idents_str[:-2] + endl
     return idents_str
 
 
 def expand_event(event_name, event_details):
     event_str = ''
-    event_str += 'Event ' + bold(event_name) + ', '
+    event_str += tab + 'Event ' + bold(event_name) + ', '
     event_str += ('after ' +
-                   render_expression(event_details['threshold']['code']))
+                   _render_expression(event_details['threshold']['code']))
     if 'reset' in event_details:
-        lhs, rhs = _equation_separator(event_details['reset']['code'])
-        event_str += (', ' + render_expression(lhs) + '&#8592;' +
-                        render_expression(rhs))
+        event_str += (', ' + 
+                      _prepare_math_statements(
+                                    event_details['reset']['code'],
+                                    seperate=True)
+                     )
     if 'refractory' in event_details:
         event_str += ', with refractory ' 
-        event_str += render_expression(event_details['refractory'])
+        event_str += _render_expression(event_details['refractory'])
 
     return event_str + endl
 
@@ -125,20 +150,20 @@ def expand_events(events):
 def expand_equation(var, equation):
     rend_eqn = ''   
     if equation['type'] == 'differential equation':
-        rend_eqn +=  render_expression(var, diff=True)
+        rend_eqn +=  _render_expression(var, differential=True)
     elif equation['type'] == 'subexpression':
-        rend_eqn +=  render_expression(var)
+        rend_eqn +=  _render_expression(var)
     else:
-        rend_eqn += 'Parameter ' + render_expression(var)
+        rend_eqn += 'Parameter ' + _render_expression(var)
     if 'expr' in equation:
-        rend_eqn +=  '&#8592;' + render_expression(equation['expr'])
-    rend_eqn += (", where unit of " + render_expression(var) +
+        rend_eqn +=  '&#8592;' + _render_expression(equation['expr'])
+    rend_eqn += (", where unit of " + _render_expression(var) +
                     " is " + str(equation['unit']))
     if 'flags' in equation:
         rend_eqn += (' and ' +
                         ', '.join(str(f) for f in equation['flags']) +
                         " as flag(s) associated")
-    return rend_eqn + endl
+    return tab + rend_eqn + endl
 
 
 def expand_equations(equations):
@@ -151,15 +176,14 @@ def expand_equations(equations):
 def expand_initializer(initializer):
 
     init_str = ''
-    init_str += ('Source group ' + initializer['source'] + ' initialized \
-                  with the value of ' +
-                  render_expression(initializer['value']) +
-                  " to the variable " +
-                  render_expression(initializer['variable']))
+    init_str += ('Variable ' + _render_expression(initializer['variable']) +
+                 ' of ' +  initializer['source'] + ' initialized with ' +
+                  _render_expression(initializer['value']) 
+                )
     # TODO: not happy with this checking
     if (isinstance(initializer['index'], str) and 
        (initializer['index'] != 'True' and initializer['index'] != 'False')):
-        init_str += ' with condition ' + initializer['index']
+        init_str += ' on condition ' + initializer['index']
     elif (isinstance(initializer['index'], bool) or
          (initializer['index'] == 'True' or initializer['index'] == 'False')):
         if initializer['index'] or initializer['index'] == 'True':
@@ -170,18 +194,17 @@ def expand_initializer(initializer):
         init_str += (' to member(s) ' +
                      ','.join([str(ind) for ind in initializer['index']]))
     if 'identifiers' in initializer:
-        init_str += endl
-        init_str += ('Identifier(s) associated: ' +
+        init_str += ('. Identifier(s) associated: ' +
                       expand_identifiers(initializer['identifiers']))
     return init_str + endl
 
 
 def expand_connector(connector):
     con_str = ''
-    con_str += ('Synaptic connection from ' + connector['source'] +
+    con_str += ('Connection from ' + connector['source'] +
                 ' to ' + connector['target'])
     if 'i' in connector:
-        con_str += '. Connection from source group indices: '
+        con_str += '. From source group indices: '
         if not isinstance(connector['i'], str):
             if hasattr(connector['i'], '__iter__'):
                 con_str += ', '.join(str(ind) for ind in connector['i'])
@@ -215,31 +238,30 @@ def expand_connector(connector):
 
     elif 'condition' in connector:
         con_str += (' with condition ' +
-                    render_expression(connector['condition']))
+                    _render_expression(connector['condition']))
     if connector['probability'] != 1:
         con_str += (', with probabilty ' +
-                    render_expression(connector['probability']))
+                    _render_expression(connector['probability']))
     if connector['n_connections'] != 1:
          con_str += (', with number of connections ' +
-                     render_expression(connector['n_connections']))
+                     _render_expression(connector['n_connections']))
     if 'identifiers' in connector:
-        con_str += endl
-        con_str += ('Identifier(s) associated: ' +
+        con_str += ('. Identifier(s) associated: ' +
                       expand_identifiers(connector['identifiers']))
     return con_str + endl
 
 
 def expand_PoissonGroup(poisngrp):
     md_str = ''
-    md_str += ('PoissonGroup of name ' + bold(poisngrp['name']) + ', with \
+    md_str += (tab + 'Name ' + bold(poisngrp['name']) + ', with \
                population size ' + bold(poisngrp['N']) +
-               ' and rate as ' + render_expression(poisngrp['rates']) +
+               ' and rate as ' + _render_expression(poisngrp['rates']) +
                '.' + endl)
     if 'identifiers' in poisngrp:
-        md_str += bold('Properties:') + endl
+        md_str += tab + bold('Properties:') + endl
         md_str += expand_identifiers(poisngrp['identifiers'])
     if 'run_regularly' in poisngrp:
-        md_str += bold('Run regularly: ') + endl
+        md_str += tab + bold('Run regularly: ') + endl
         for run_reg in poisngrp['run_regularly']:
             md_str += expand_runregularly(run_reg)
 
@@ -248,17 +270,16 @@ def expand_PoissonGroup(poisngrp):
 
 def expand_SpikeGeneratorGroup(spkgen):
     md_str = ''
-    md_str += ('SpikeGeneratorGroup of name ' + bold(spkgen['name']) +
+    md_str += (tab + 'Name ' + bold(spkgen['name']) +
                ', with population size ' + bold(spkgen['N']) +
                ', has neurons ' +
                ', '.join(str(i) for i in spkgen['indices']) +
                ' that spike at times ' +
                ', '.join(str(t) for t in spkgen['times']) +
-               ', with period(s)  ' + render_expression(spkgen['period']) +
-               #', '.join(render_expression(p) for p in spkgen['period']) +
+               ', with period(s)  ' + _render_expression(spkgen['period']) +
                '.' + endl)
     if 'run_regularly' in spkgen:
-        md_str += bold('Run regularly: ') + endl
+        md_str += tab + bold('Run regularly: ') + endl
         for run_reg in spkgen['run_regularly']:
             md_str += expand_runregularly(run_reg)
 
@@ -267,9 +288,8 @@ def expand_SpikeGeneratorGroup(spkgen):
 
 def expand_StateMonitor(statemon):
     md_str = ''
-    md_str += ('StateMonitor of name ' + bold(statemon['name']) +
-               ' monitors variable(s) ' +
-               ','.join([render_expression(var) for var in statemon['variables']]) +
+    md_str += (tab + 'Monitors variable(s): ' +
+               ','.join([_render_expression(var) for var in statemon['variables']]) +
                ' of ' + statemon['source'])
     if isinstance(statemon['record'], bool):
         if statemon['record']:
@@ -282,8 +302,8 @@ def expand_StateMonitor(statemon):
             md_str += (', for member(s): ' +
                        ','.join([str(ind) for ind in statemon['record']]))
 
-    md_str += (' in time step ' +
-                 render_expression(statemon['dt']) +
+    md_str += (' with time step ' +
+                 _render_expression(statemon['dt']) +
                  '.' + endl)
     return md_str
 
@@ -294,9 +314,8 @@ def expand_SpikeMonitor(spikemon):
 
 def expand_EventMonitor(eventmon):
     md_str = ''
-    md_str += ('SpikeMonitor of name ' + eventmon['name'] +
-               ' monitors variable(s) ' +
-               ','.join([render_expression(var) for var in eventmon['variables']]) +
+    md_str += (tab + 'Monitors variable(s): ' +
+               ','.join([_render_expression(var) for var in eventmon['variables']]) +
                ' of ' + eventmon['source'] + '.')
     if isinstance(eventmon['record'], bool):
         if eventmon['record']:
@@ -308,8 +327,8 @@ def expand_EventMonitor(eventmon):
         else:
             md_str += (', for member(s): ' +
                        ','.join([str(ind) for ind in eventmon['record']]))
-    md_str += (' in time step ' +
-                 render_expression(eventmon['dt']) +
+    md_str += (' with time step ' +
+                 _render_expression(eventmon['dt']) +
                  ' when event ' + bold(eventmon['event']) +
                  ' is triggered.' + endl)
     return md_str
@@ -317,21 +336,23 @@ def expand_EventMonitor(eventmon):
 
 def expand_PopulationRateMonitor(popratemon):
     md_str = ''
-    md_str += ('PopulationRateMonitor of name ' + bold(popratemon['name']) +
-               ' monitors the population of ' + popratemon['source'] + ','+
-               ' for time step ' + render_expression(popratemon['dt']) + '.' +
+    md_str += (tab + 'Monitors the population of ' + popratemon['source'] + 
+               ', with time step ' + _render_expression(popratemon['dt']) +
                endl)
-    return md_str    
+    return md_str
+
 
 def expand_pathway(pathway):
-    md_str = ('Pathway of name ' + pathway['name'] +' with type ' +
-               bold(pathway['prepost']) + ' from ' + pathway['source'] +
-               ' to ' + pathway['target'] + ', ' + 'runs statement(s) ' +
-               pathway['code'] + 'for event ' + pathway['event'])
+    md_str = (tab + 'On ' + bold(pathway['prepost']) +
+             ' of event ' + pathway['event'] + ' statement(s): ' +
+              _prepare_math_statements(pathway['code'], seperate=True) +
+              ' is executed'
+             )
     if 'delay' in pathway:
-        md_str += (' and with synaptic delay of ' + 
-        render_expression(pathway['delay']))
+        md_str += (', with synaptic delay of ' +
+        _render_expression(pathway['delay']))
     return md_str + endl
+
 
 def expand_pathways(pathways):
     path_str = ''
@@ -339,12 +360,13 @@ def expand_pathways(pathways):
         path_str += expand_pathway(pathway)
     return path_str
 
+
 def expand_summed_variable(sum_variable):
-    md_str = ('Summed variable of name ' + sum_variable['name'] +
-              ' that updates target group ' + sum_variable['target'] +
-              ' with statement' + render_expression(sum_variable['code'])
-             )
+    md_str = (tab + 'Updates target group ' + sum_variable['target'] +
+              ' with statement: ' + _render_expression(sum_variable['code']) +
+              endl)
     return md_str
+
 
 def expand_summed_variables(sum_variables):
     sum_var_str = ''
@@ -355,38 +377,36 @@ def expand_summed_variables(sum_variables):
 
 def expand_Synapses(synapse):
     md_str = ''
-    md_str += ('Synapses of name: ' + synapse['name'] +
-               ' with projection from ' + synapse['source'] +
+    md_str += (tab + 'From ' + synapse['source'] +
                ' to ' + synapse['target'] + endl
                )
     if 'equations' in synapse:
-        md_str += bold('Dynamics:') + endl
-        md_str += expand_equations(synapse['equations'])
+        md_str += tab + bold('Dynamics:') + endl
+        md_str += tab + expand_equations(synapse['equations'])
         if 'user_method' in synapse:
-            md_str += (synapse['user_method'] + 
+            md_str += (tab + synapse['user_method'] + 
                    ' method is used for integration' + endl)
     if 'pathways' in synapse:
-        md_str += bold('Pathways:') + endl
+        md_str += tab + bold('Pathways:') + endl
         md_str += expand_pathways(synapse['pathways'])
     if 'summed_variables' in synapse:
-        md_str += bold('Summed variables: ') + endl
+        md_str += tab + bold('Summed variables: ') + endl
         md_str += expand_summed_variables(synapse['summed_variables'])
     if 'identifiers' in synapse:
-        md_str += bold('Properties:') + endl
+        md_str += tab + bold('Properties:') + endl
         md_str += expand_identifiers(synapse['identifiers'])
     return md_str
 
 
 def expand_PoissonInput(poinp):
     md_str = ''
-    md_str += ('PoissonInput of name ' + poinp['name'] + ', with \
-               size ' + bold(poinp['N']) +
+    md_str += (tab + 'PoissonInput with size ' + bold(poinp['N']) +
                ' gives input to variable ' +
-               render_expression(poinp['target_var']) +
-               ' with rate ' + render_expression(poinp['rate']) +
-               ' and weight of ' + render_expression(poinp['weight']) +
+               _render_expression(poinp['target_var']) +
+               ' with rate ' + _render_expression(poinp['rate']) +
+               ' and weight of ' + _render_expression(poinp['weight']) +
                endl)
     if 'identifiers' in poinp:
-        md_str += bold('Properties:') + endl
+        md_str += tab + bold('Properties:') + endl
         md_str += expand_identifiers(poinp['identifiers'])
     return md_str

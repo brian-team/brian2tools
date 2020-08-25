@@ -104,7 +104,8 @@ class Human_Readable(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, author=None,
-              add_meta=False, output=None, format='std_dict', verbose=True):
+              add_meta=False, output=None, format='std_dict', verbose=True,
+              write_file=True):
         """
         Build the exporter
 
@@ -167,6 +168,10 @@ class Human_Readable(BaseExporter):
         self.md_text = md_exporter.create_md_string(self.runs)
 
         if debug:
+            if write_file:
+                text_file = open(user_file[:-3] + '.md', "w")
+                text_file.write(self.md_text)
+                text_file.close()
             if add_meta:
                 print(meta_data + self.md_text)
             else:

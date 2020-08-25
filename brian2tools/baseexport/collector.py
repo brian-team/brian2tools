@@ -492,7 +492,7 @@ def collect_Synapses(synapses, run_namespace):
     for obj in synapses.contained_objects:
         # check summed variables
         if isinstance(obj, SummedVariableUpdater):
-            summed_var = {'code': obj.abstract_code, 'target': obj.target.name,
+            summed_var = {'code': obj.expression, 'target': obj.target.name,
                           'name': obj.name, 'dt': obj.clock.dt,
                           'when': obj.when, 'order': obj.order
                          }

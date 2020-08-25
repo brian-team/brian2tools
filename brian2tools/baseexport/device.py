@@ -4,7 +4,7 @@ from brian2.groups import NeuronGroup
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
 from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
                     EventMonitor, PopulationRateMonitor, Synapses,
-                    Quantity)
+                    Quantity, PoissonInput)
 from brian2.utils.logger import get_logger
 from brian2.utils.stringtools import get_identifiers
 from .helper import _prepare_identifiers
@@ -55,7 +55,8 @@ class BaseExporter(RuntimeDevice):
         self.build_options = None
         self.supported_objs = (NeuronGroup, SpikeGeneratorGroup,
                                PoissonGroup, StateMonitor, SpikeMonitor,
-                               EventMonitor, PopulationRateMonitor, Synapses)
+                               EventMonitor, PopulationRateMonitor, Synapses,
+                               PoissonInput)
         self.runs = []
         self.initializers_connectors = []
         self.array_cache = {}
