@@ -4,6 +4,7 @@ from BrianObjects and represent them in a standard
 dictionary format. The parts of the file shall be reused
 with standard format exporter.
 """
+from brian2.codegen.translation import analyse_identifiers
 from brian2.equations.equations import PARAMETER
 from brian2.utils.stringtools import get_identifiers
 from brian2.groups.neurongroup import StateUpdater
@@ -510,7 +511,8 @@ def collect_Synapses(synapses, run_namespace):
                path.update({'delay': obj.delay[:]})
             pathways.append(path)
             # check any identifiers specific to pathway expression
-            identifiers = identifiers | get_identifiers(obj.code)
+            _, _, unknown = analyse_identifiers(obj.code, obj.variables)
+            identifiers = identifiers | unknown
 
     # check any summed variables are used
     if summed_variables:
