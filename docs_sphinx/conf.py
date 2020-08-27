@@ -72,7 +72,7 @@ MOCK_MODULES = ['matplotlib', 'matplotlib.colors', 'matplotlib.patches', 'matplo
                 'lems', 'lems.api',
                 'brian2',
                 'brian2.core', 'brian2.core.functions', 'brian2.core.magic', 'brian2.core.namespace', 'brian2.core.network', 'brian2.core.variables',
-                'brian2.codegen',
+                'brian2.codegen', 'brian2.codegen.translation',
                 'brian2.devices', 'brian2.devices.device',
                 'brian2.equations', 'brian2.equations.equations',
                 'brian2.groups', 'brian2.groups.group', 'brian2.groups.neurongroup',
