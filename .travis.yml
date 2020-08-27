@@ -54,7 +54,7 @@ install:
   - if [[ $BRIAN2_MASTER == 'false' ]]; then
       conda install --yes --quiet anaconda-client conda-build;
     else
-      conda install --yes --quiet -c conda-forge 'pylems >=0.4.9' 'matplotlib >=1.3.1' libneuroml pytest;
+      conda install --yes --quiet -c conda-forge 'pylems >=0.4.9' 'matplotlib >=1.3.1' libneuroml pytest markdown_strings;
       pip install --quiet https://github.com/brian-team/brian2/archive/master.zip;
     fi
 
