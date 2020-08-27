@@ -21,18 +21,23 @@ def _prepare_math_statements(statements, differential=False,
     rend_str = ''
     list_eqns = re.split(';|\n', statements)
     for statement in list_eqns:
-        if not statement.strip():
-            if seperate:
-                lhs, rhs = re.split('\+=|=', statement)
+        # bad way
+        if seperate:
+
+           if ('+=' in statement or '=' in statement or
+               '-=' in statement):
+    
+                lhs, rhs = re.split('-=|\+=|=', statement)
                 if '+=' in statement:
                     rend_str += (_render_expression(lhs) +
                                 '+=' +_render_expression(rhs))
                 else:
                     rend_str += (_render_expression(lhs) +
                                 equals +  _render_expression(rhs))
-            else:
-                rend_str += _render_expression(statement, differential)
-            rend_str += ', '
+        else:
+            rend_str += _render_expression(statement, differential)
+        rend_str += ', '
+
     return rend_str[:-2]
 
 
@@ -55,7 +60,7 @@ def _render_expression(expression, differential=False,
     # horrible thing
     rend_exp = rend_exp.replace('_placeholder_{arg}','-')
     rend_exp = rend_exp.replace('\operatorname','')
-    
+
     if github_md:
         rend_exp = rend_exp[2:][:-2]
         git_rend_exp = (
@@ -191,8 +196,11 @@ def expand_initializer(initializer):
         else:
             init_str += ' to no members'
     else:
-        init_str += (' to member(s) ' +
-                     ','.join([str(ind) for ind in initializer['index']]))
+        init_str += ' to member(s) '
+        if not hasattr(initializer['index'], '__iter___'):
+            init_str += str(initializer['index'])
+        else:
+            init_str += ','.join([str(ind) for ind in initializer['index']])
     if 'identifiers' in initializer:
         init_str += ('. Identifier(s) associated: ' +
                       expand_identifiers(initializer['identifiers']))
@@ -272,11 +280,11 @@ def expand_SpikeGeneratorGroup(spkgen):
     md_str = ''
     md_str += (tab + 'Name ' + bold(spkgen['name']) +
                ', with population size ' + bold(spkgen['N']) +
-               ', has neurons ' +
+               ', has neuron(s) ' +
                ', '.join(str(i) for i in spkgen['indices']) +
                ' that spike at times ' +
                ', '.join(str(t) for t in spkgen['times']) +
-               ', with period(s)  ' + _render_expression(spkgen['period']) +
+               ', with period ' + str(spkgen['period']) +
                '.' + endl)
     if 'run_regularly' in spkgen:
         md_str += tab + bold('Run regularly: ') + endl
@@ -350,7 +358,8 @@ def expand_pathway(pathway):
              )
     if 'delay' in pathway:
         md_str += (', with synaptic delay of ' +
-        _render_expression(pathway['delay']))
+                   _render_expression(pathway['delay']))
+
     return md_str + endl
 
 

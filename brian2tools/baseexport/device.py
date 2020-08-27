@@ -86,7 +86,7 @@ class BaseExporter(RuntimeDevice):
         arr = np.asarray(arr)
         if arr.size == 0:
             return  # nothing to do
-        if isinstance(var, DynamicArrayVariable):
+        if isinstance(var, DynamicArrayVariable) and not var.scalar:
             # We can never be sure about the size of a dynamic array, so
             # we can't do correct broadcasting. Therefore, we do not cache
             # them at all for now.
@@ -341,7 +341,7 @@ class BaseExporter(RuntimeDevice):
         connect = {}
         # string statements that shall have identifers
         strings_with_identifers = []
-        if condition:
+        if condition and isinstance(condition, str):
             connect.update({'condition': condition})
             strings_with_identifers.append(condition)
         elif i is not None or j is not None:

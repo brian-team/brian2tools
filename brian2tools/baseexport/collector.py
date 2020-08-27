@@ -207,7 +207,7 @@ def collect_SpikeGenerator(spike_gen, run_namespace):
     spikegen_dict['indices'] = spike_gen._neuron_index[:]
 
     # get spike times for defined neurons
-    spikegen_dict['times'] = spike_gen.spike_time[:]
+    spikegen_dict['times'] = spike_gen._spike_time[:]
 
     # get spike period (default period is 0*second will be stored if not
     # mentioned by the user)
