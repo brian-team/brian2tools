@@ -2,8 +2,7 @@
 Expander functions of Brian objects used to expand
 to markdown text from standard dictionary representation
 """
-from markdown_strings import (header, horizontal_rule, 
-                              italics, unordered_list, bold)
+from markdown_strings import *
 from sympy.printing import latex
 from sympy.abc import *
 from sympy import Derivative, symbols
@@ -12,8 +11,31 @@ from brian2 import Quantity
 import re
 import numpy as np
 
-endl = '\n\n'
+endll = '\n\n'
 tab = '\t'
+
+
+def _check_plural(iterable, singular_word=None, allow_constants=True):
+    count = 0
+    singular_plural_dict = {'index': 'indices',
+                            'property': 'properties'
+    }
+    if hasattr(iterable, '__iter__'):
+        for _ in iterable:
+            count += 1
+            if count > 1:
+                if singular_word:
+                    try:
+                        return singular_plural_dict[singular_word]
+                    except:
+                        raise Exception("The singular word is not found in \
+                                         singular-plural dictionary.")
+                return 's'
+    elif not allow_constants:
+        raise IndexError("Suppose to be iterable object \
+                          but instance got {}".format(type(iterable)))
+    return ''
+
 
 def _prepare_math_statements(statements, differential=False,
                            seperate=False, equals='&#8592;'):
@@ -75,7 +97,7 @@ def expand_runregularly(run_reg):
     md_str = (tab + 'For every ' +  _render_expression(run_reg['dt']) +
               ' code: ' +
                 _prepare_math_statements(run_reg['code'], seperate=True) +
-                ' will be executed' + endl)
+                ' will be executed' + endll)
     return md_str
 
 
@@ -83,20 +105,21 @@ def expand_NeuronGroup(neurongrp):
     
     md_str = ''
     md_str += 'Name ' + bold(neurongrp['name']) + ', with \
-               population size ' + bold(neurongrp['N']) + '.' + endl
-    md_str += tab + bold('Dynamics:') + endl
+               population size ' + bold(neurongrp['N']) + '.' + endll
+    md_str += tab + bold('Dynamics:') + endll
     md_str += expand_equations(neurongrp['equations'])
     if neurongrp['user_method']:
         md_str += (tab + neurongrp['user_method'] +
-                   ' method is used for integration' + endl)
+                   ' method is used for integration' + endll)
     if 'events' in neurongrp:
-        md_str += tab + bold('Events:') + endl
+        md_str += tab + bold('Events:') + endll
         md_str += expand_events(neurongrp['events'])
     if 'identifiers' in neurongrp:
-        md_str += tab + bold('Properties:') + endl
+        md_str += tab + bold('Constants:') + endll
         md_str += expand_identifiers(neurongrp['identifiers'])
     if 'run_regularly' in neurongrp:
-        md_str += tab + bold('Run regularly(s): ') + endl
+        md_str += (tab + bold('Run regularly') + 
+        _check_plural(neurongrp['run_regularly']) + ': ' + endll)
         for run_reg in neurongrp['run_regularly']:
             md_str += expand_runregularly(run_reg)
 
@@ -123,7 +146,7 @@ def expand_identifiers(identifiers):
     idents_str = ''
     for key, value in identifiers.items():
         idents_str += expand_identifier(key, value)
-    idents_str = tab + idents_str[:-2] + endl
+    idents_str = tab + idents_str[:-2] + endll
     return idents_str
 
 
@@ -142,7 +165,7 @@ def expand_event(event_name, event_details):
         event_str += ', with refractory ' 
         event_str += _render_expression(event_details['refractory'])
 
-    return event_str + endl
+    return event_str + endll
 
 
 def expand_events(events):
@@ -165,10 +188,10 @@ def expand_equation(var, equation):
     rend_eqn += (", where unit of " + _render_expression(var) +
                     " is " + str(equation['unit']))
     if 'flags' in equation:
-        rend_eqn += (' and ' +
-                        ', '.join(str(f) for f in equation['flags']) +
-                        " as flag(s) associated")
-    return tab + rend_eqn + endl
+        rend_eqn += (' and ' + ', '.join(str(f) for f in equation['flags']) +
+                    ' as flag' + _check_plural(equation['flags']) +
+                    ' associated')
+    return tab + rend_eqn + endll
 
 
 def expand_equations(equations):
@@ -192,19 +215,21 @@ def expand_initializer(initializer):
     elif (isinstance(initializer['index'], bool) or
          (initializer['index'] == 'True' or initializer['index'] == 'False')):
         if initializer['index'] or initializer['index'] == 'True':
-            init_str += ' to all members '
+            init_str += ' to all members'
         else:
-            init_str += ' to no members'
+            init_str += ' to no member'
     else:
-        init_str += ' to member(s) '
+        init_str += ' to member' + _check_plural(initializer['index']) + ' '
         if not hasattr(initializer['index'], '__iter___'):
             init_str += str(initializer['index'])
         else:
             init_str += ','.join([str(ind) for ind in initializer['index']])
     if 'identifiers' in initializer:
-        init_str += ('. Identifier(s) associated: ' +
-                      expand_identifiers(initializer['identifiers']))
-    return init_str + endl
+        init_str += ('. Identifier' +
+                     _check_plural(initializer['identifiers']) +
+                     ' associated: ' +
+                     expand_identifiers(initializer['identifiers']))
+    return init_str + endll
 
 
 def expand_connector(connector):
@@ -212,7 +237,8 @@ def expand_connector(connector):
     con_str += ('Connection from ' + connector['source'] +
                 ' to ' + connector['target'])
     if 'i' in connector:
-        con_str += '. From source group indices: '
+        con_str += ('. From source group ' +
+                    _check_plural(connector['i'], 'index') + ': ')
         if not isinstance(connector['i'], str):
             if hasattr(connector['i'], '__iter__'):
                 con_str += ', '.join(str(ind) for ind in connector['i'])
@@ -221,7 +247,8 @@ def expand_connector(connector):
         else: 
             con_str += ' with generator syntax ' + connector['i']
         if 'j' in connector:
-            con_str += ' to target group indices: '
+            con_str += (' to target group ' +
+                        _check_plural(connector['j'], 'index') + ': ')
             if not isinstance(connector['j'], str):
                 if hasattr(connector['j'], '__iter__'):
                     con_str += ', '.join(str(ind) for ind in connector['j'])
@@ -235,7 +262,8 @@ def expand_connector(connector):
     elif 'j' in connector:
         con_str += '. Connection for all members in source group'
         if not isinstance(connector['j'], str):
-                con_str += ' to target group indices: '
+                con_str += (' to target group ' +
+                        _check_plural(connector['j'], 'index') + ': ')
                 if hasattr(connector['j'], '__iter__'):
                     con_str += ', '.join(str(ind) for ind in connector['j'])
                 else:
@@ -254,9 +282,9 @@ def expand_connector(connector):
          con_str += (', with number of connections ' +
                      _render_expression(connector['n_connections']))
     if 'identifiers' in connector:
-        con_str += ('. Identifier(s) associated: ' +
+        con_str += ('. Constants associated: ' +
                       expand_identifiers(connector['identifiers']))
-    return con_str + endl
+    return con_str + endll
 
 
 def expand_PoissonGroup(poisngrp):
@@ -264,12 +292,12 @@ def expand_PoissonGroup(poisngrp):
     md_str += (tab + 'Name ' + bold(poisngrp['name']) + ', with \
                population size ' + bold(poisngrp['N']) +
                ' and rate as ' + _render_expression(poisngrp['rates']) +
-               '.' + endl)
+               '.' + endll)
     if 'identifiers' in poisngrp:
-        md_str += tab + bold('Properties:') + endl
+        md_str += tab + bold('Constants:') + endll
         md_str += expand_identifiers(poisngrp['identifiers'])
     if 'run_regularly' in poisngrp:
-        md_str += tab + bold('Run regularly: ') + endl
+        md_str += tab + bold('Run regularly: ') + endll
         for run_reg in poisngrp['run_regularly']:
             md_str += expand_runregularly(run_reg)
 
@@ -280,14 +308,14 @@ def expand_SpikeGeneratorGroup(spkgen):
     md_str = ''
     md_str += (tab + 'Name ' + bold(spkgen['name']) +
                ', with population size ' + bold(spkgen['N']) +
-               ', has neuron(s) ' +
+               ', has neuron' + _check_plural(spkgen['indices']) + ': ' +
                ', '.join(str(i) for i in spkgen['indices']) +
                ' that spike at times ' +
                ', '.join(str(t) for t in spkgen['times']) +
                ', with period ' + str(spkgen['period']) +
-               '.' + endl)
+               '.' + endll)
     if 'run_regularly' in spkgen:
-        md_str += tab + bold('Run regularly: ') + endl
+        md_str += tab + bold('Run regularly: ') + endll
         for run_reg in spkgen['run_regularly']:
             md_str += expand_runregularly(run_reg)
 
@@ -296,8 +324,11 @@ def expand_SpikeGeneratorGroup(spkgen):
 
 def expand_StateMonitor(statemon):
     md_str = ''
-    md_str += (tab + 'Monitors variable(s): ' +
-               ','.join([_render_expression(var) for var in statemon['variables']]) +
+    md_str += (tab + 'Monitors variable' + 
+               _check_plural(statemon['variables']) + ': ' +
+               ','.join(
+                [_render_expression(var) for var in statemon['variables']]
+                       ) +
                ' of ' + statemon['source'])
     if isinstance(statemon['record'], bool):
         if statemon['record']:
@@ -307,12 +338,10 @@ def expand_StateMonitor(statemon):
         if not statemon['record'].size:
             md_str += ' for no member'
         else:
-            md_str += (', for member(s): ' +
-                       ','.join([str(ind) for ind in statemon['record']]))
-
-    md_str += (' with time step ' +
-                 _render_expression(statemon['dt']) +
-                 '.' + endl)
+            md_str += (', for member' + _check_plural(statemon['record']) +
+                       ': ' +
+                       ','.join([str(ind) for ind in statemon['record']]) +
+                       '.' + endll)
     return md_str
 
 
@@ -322,8 +351,11 @@ def expand_SpikeMonitor(spikemon):
 
 def expand_EventMonitor(eventmon):
     md_str = ''
-    md_str += (tab + 'Monitors variable(s): ' +
-               ','.join([_render_expression(var) for var in eventmon['variables']]) +
+    md_str += (tab + 'Monitors variable' +
+               _check_plural(eventmon['variables']) + ': ' +
+               ','.join(
+                   [_render_expression(var) for var in eventmon['variables']]
+                   ) +
                ' of ' + eventmon['source'] + '.')
     if isinstance(eventmon['record'], bool):
         if eventmon['record']:
@@ -333,34 +365,32 @@ def expand_EventMonitor(eventmon):
         if not eventmon['record'].size:
             md_str += ' for no member'
         else:
-            md_str += (', for member(s): ' +
+            md_str += (', for member' + _check_plural(eventmon['record']) +
+                       ': ' +
                        ','.join([str(ind) for ind in eventmon['record']]))
-    md_str += (' with time step ' +
-                 _render_expression(eventmon['dt']) +
-                 ' when event ' + bold(eventmon['event']) +
-                 ' is triggered.' + endl)
+    md_str += (' when event ' + bold(eventmon['event']) +
+                 ' is triggered.' + endll)
     return md_str
 
 
 def expand_PopulationRateMonitor(popratemon):
     md_str = ''
-    md_str += (tab + 'Monitors the population of ' + popratemon['source'] + 
-               ', with time step ' + _render_expression(popratemon['dt']) +
-               endl)
+    md_str += (tab + 'Monitors the population of ' + popratemon['source'] +
+               '.' + endll)
     return md_str
 
 
 def expand_pathway(pathway):
     md_str = (tab + 'On ' + bold(pathway['prepost']) +
-             ' of event ' + pathway['event'] + ' statement(s): ' +
+             ' of event ' + pathway['event'] + ' statements: ' +
               _prepare_math_statements(pathway['code'], seperate=True) +
-              ' is executed'
+              ' executed'
              )
     if 'delay' in pathway:
         md_str += (', with synaptic delay of ' +
                    _render_expression(pathway['delay']))
 
-    return md_str + endl
+    return md_str + endll
 
 
 def expand_pathways(pathways):
@@ -373,7 +403,7 @@ def expand_pathways(pathways):
 def expand_summed_variable(sum_variable):
     md_str = (tab + 'Updates target group ' + sum_variable['target'] +
               ' with statement: ' + _render_expression(sum_variable['code']) +
-              endl)
+              endll)
     return md_str
 
 
@@ -387,22 +417,22 @@ def expand_summed_variables(sum_variables):
 def expand_Synapses(synapse):
     md_str = ''
     md_str += (tab + 'From ' + synapse['source'] +
-               ' to ' + synapse['target'] + endl
+               ' to ' + synapse['target'] + endll
                )
     if 'equations' in synapse:
-        md_str += tab + bold('Dynamics:') + endl
+        md_str += tab + bold('Dynamics:') + endll
         md_str += tab + expand_equations(synapse['equations'])
         if 'user_method' in synapse:
             md_str += (tab + synapse['user_method'] + 
-                   ' method is used for integration' + endl)
+                   ' method is used for integration' + endll)
     if 'pathways' in synapse:
-        md_str += tab + bold('Pathways:') + endl
+        md_str += tab + bold('Pathways:') + endll
         md_str += expand_pathways(synapse['pathways'])
     if 'summed_variables' in synapse:
-        md_str += tab + bold('Summed variables: ') + endl
+        md_str += tab + bold('Summed variables: ') + endll
         md_str += expand_summed_variables(synapse['summed_variables'])
     if 'identifiers' in synapse:
-        md_str += tab + bold('Properties:') + endl
+        md_str += tab + bold('Constants:') + endll
         md_str += expand_identifiers(synapse['identifiers'])
     return md_str
 
@@ -414,8 +444,8 @@ def expand_PoissonInput(poinp):
                _render_expression(poinp['target_var']) +
                ' with rate ' + _render_expression(poinp['rate']) +
                ' and weight of ' + _render_expression(poinp['weight']) +
-               endl)
+               endll)
     if 'identifiers' in poinp:
-        md_str += tab + bold('Properties:') + endl
+        md_str += tab + bold('Constants:') + endll
         md_str += expand_identifiers(poinp['identifiers'])
     return md_str

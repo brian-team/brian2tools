@@ -11,8 +11,9 @@ from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
 from brian2.synapses.synapses import SummedVariableUpdater, SynapticPathway
 from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
+from brian2.units.fundamentalunits import Quantity
+from brian2 import second
 from .helper import _prepare_identifiers
-
 
 def collect_NeuronGroup(group, run_namespace):
     """
@@ -208,7 +209,7 @@ def collect_SpikeGenerator(spike_gen, run_namespace):
     spikegen_dict['indices'] = spike_gen._neuron_index[:]
 
     # get spike times for defined neurons
-    spikegen_dict['times'] = spike_gen._spike_time[:]
+    spikegen_dict['times'] = Quantity(spike_gen._spike_time[:], second)
 
     # get spike period (default period is 0*second will be stored if not
     # mentioned by the user)

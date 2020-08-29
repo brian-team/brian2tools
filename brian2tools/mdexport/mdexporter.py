@@ -13,7 +13,30 @@ from .expander import *
 
 endl = '\n'
 
-class MdExporter():
+
+def _check_plural(iterable, singular_word=None, allow_constants=True):
+    count = 0
+    singular_plural_dict = {'index': 'indices',
+                            'property': 'properties'
+    }
+    if hasattr(iterable, '__iter__'):
+        for _ in iterable:
+            count += 1
+            if count > 1:
+                if singular_word:
+                    try:
+                        return singular_plural_dict[singular_word]
+                    except:
+                        raise Exception("The singular word is not found in \
+                                         singular-plural dictionary.")
+                return 's'
+    elif not allow_constants:
+        raise IndexError("Suppose to be iterable object \
+                          but instance got {}".format(type(iterable)))
+    return ''
+
+
+class Std_mdexpander():
     """
     Build Markdown texts from run dictionary
     """
@@ -24,46 +47,52 @@ class MdExporter():
         """
         # details about network
         overall_string = header('Network details', 1) + endl
-        n_runs = "run"
+        n_runs = "s"
         if len(net_dict) > 1:
-            n_runs += "s"
-        overall_string += "The Network consists of {} \
-                           simulation ".format(bold(len(net_dict))) + (n_runs +
+            n_runs = ""
+        overall_string += ('The Network consist' + n_runs + ' of {} \
+                           simulation run'.format(
+                                                bold(len(net_dict))
+                                                ) +
+                           _check_plural(net_dict) +
                            endl + horizontal_rule() + endl)
-        
+
         # start going to the dictionary items in particular run instance
         for run_indx in range(len(net_dict)):
             # details about the particular run
             run_dict = net_dict[run_indx]
-            run_string = (header('Run ' + str(run_indx + 1) + ' details', 3) +
-                          endl)
+            if len(net_dict) > 1:
+                run_string = (header('Run ' + str(run_indx + 1) + ' details', 3) +
+                            endl)
+            else:
+                run_string = endl
             run_string += ('Duration of simulation is ' + 
                             bold(str(run_dict['duration'])) + endl + endl)
             # map expand functions for particular components
             func_map = {'neurongroup': {'f': expand_NeuronGroup,
-                                        'h': 'NeuronGroup(s) '},
+                                        'h': 'NeuronGroup'},
                        'poissongroup': {'f': expand_PoissonGroup,
-                                        'h': 'PoissonGroup(s) '},
+                                        'h': 'PoissonGroup'},
                        'spikegeneratorgroup': {'f': expand_SpikeGeneratorGroup,
-                                        'h': 'SpikeGeneratorGroup(s) '},
+                                        'h': 'SpikeGeneratorGroup'},
                        'statemonitor': {'f': expand_StateMonitor,
-                                        'h': 'StateMonitor(s) '},
+                                        'h': 'StateMonitor'},
                        'spikemonitor': {'f': expand_SpikeMonitor,
-                                        'h': 'SpikeMonitor(s)'},
+                                        'h': 'SpikeMonitor'},
                        'eventmonitor': {'f': expand_EventMonitor,
-                                        'h': 'EventMonitor(s) '},
+                                        'h': 'EventMonitor'},
                        'populationratemonitor': {'f': expand_PopulationRateMonitor,
-                                                 'h': 'PopulationRateMonitor(s) '},
+                                                 'h': 'PopulationRateMonitor'},
                        'synapses': {'f': expand_Synapses,
-                                    'h': 'Synapses '},
+                                    'h': 'Synapse'},
                        'poissoninput': {'f': expand_PoissonInput,
-                                         'h': 'PoissonInput(s)'}}
+                                         'h': 'PoissonInput'}}
             # loop through the components
             for (obj_key, obj_list) in run_dict['components'].items():
                 if obj_key in func_map.keys():
                     # loop through the members in list
-                    run_string += (bold(func_map[obj_key]['h'] +
-                                   'defined:') + endl)
+                    run_string += (bold(func_map[obj_key]['h'] + _check_plural(obj_list) +
+                                   ' defined:') + endl)
                     for obj_mem in obj_list:
                         run_string += '- ' + func_map[obj_key]['f'](obj_mem)
                 run_string += endl
@@ -78,25 +107,34 @@ class MdExporter():
                     else:
                         connector.append(init_cont)
             if initializer:
-                run_string += bold('Initializer(s) defined:') + endl
+                run_string += bold('Initializer' +
+                                   _check_plural(initializer) +
+                                   ' defined:') + endl
                 # loop through the initits
                 for initit in initializer:
                     run_string += '- ' + expand_initializer(initit)
             if connector:
                 run_string += endl
-                run_string += bold('Synaptic Connection(s) defined:') + endl
+                run_string += bold('Synaptic Connection' +
+                                   _check_plural(connector) +
+                                   ' defined:') + endl
                 # loop through the connectors
                 for connect in connector:
                     run_string += '- ' + expand_connector(connect)
-            # TODO: add inactive
+            if 'inactive' in run_dict:
+                run_string += endl
+                run_string += (bold('Inactive member' + 
+                               _check_plural(run_dict['inactive']) + ': ')
+                               + endl)
+                run_string += ', '.join(run_dict['inactive'])
             overall_string += run_string
-                
+
         self.md_text = overall_string
 
         return self.md_text
 
 
-class Human_Readable(BaseExporter):
+class MdExporter(BaseExporter):
     """
     Device to export Human-readable format (markdown) from
     the Brian model. It derives from BaseExporter to use the
@@ -164,7 +202,7 @@ class Human_Readable(BaseExporter):
         self.format = format
         self.verbose = verbose
         # start creating markdown code
-        md_exporter = MdExporter()
+        md_exporter = Std_mdexpander()
         self.md_text = md_exporter.create_md_string(self.runs)
 
         if debug:
@@ -176,7 +214,7 @@ class Human_Readable(BaseExporter):
                 print(meta_data + self.md_text)
             else:
                 print(self.md_text)
-            
 
-he_device = Human_Readable()
-all_devices['heexport'] = he_device
+
+he_device = MdExporter()
+all_devices['mdexport'] = he_device
