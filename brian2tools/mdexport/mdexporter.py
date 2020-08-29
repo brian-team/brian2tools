@@ -1,177 +1,48 @@
-import os, inspect, datetime
-import brian2
-from markdown_strings import (header, horizontal_rule, 
-                              italics, unordered_list, bold)
 from brian2.devices.device import all_devices
 from brian2tools.baseexport.device import BaseExporter
-from brian2.equations.equations import str_to_sympy
-from sympy.printing import latex
-from sympy.abc import *
-from sympy import Derivative, symbols
-import re
+import brian2
+import os, inspect, datetime
 from .expander import *
-
-endl = '\n'
-
-
-def _check_plural(iterable, singular_word=None, allow_constants=True):
-    count = 0
-    singular_plural_dict = {'index': 'indices',
-                            'property': 'properties'
-    }
-    if hasattr(iterable, '__iter__'):
-        for _ in iterable:
-            count += 1
-            if count > 1:
-                if singular_word:
-                    try:
-                        return singular_plural_dict[singular_word]
-                    except:
-                        raise Exception("The singular word is not found in \
-                                         singular-plural dictionary.")
-                return 's'
-    elif not allow_constants:
-        raise IndexError("Suppose to be iterable object \
-                          but instance got {}".format(type(iterable)))
-    return ''
-
-
-class Std_mdexpander():
-    """
-    Build Markdown texts from run dictionary
-    """
-
-    def create_md_string(self, net_dict):
-        """
-        Create markdown code from the standard dictionary
-        """
-        # details about network
-        overall_string = header('Network details', 1) + endl
-        n_runs = "s"
-        if len(net_dict) > 1:
-            n_runs = ""
-        overall_string += ('The Network consist' + n_runs + ' of {} \
-                           simulation run'.format(
-                                                bold(len(net_dict))
-                                                ) +
-                           _check_plural(net_dict) +
-                           endl + horizontal_rule() + endl)
-
-        # start going to the dictionary items in particular run instance
-        for run_indx in range(len(net_dict)):
-            # details about the particular run
-            run_dict = net_dict[run_indx]
-            if len(net_dict) > 1:
-                run_string = (header('Run ' + str(run_indx + 1) + ' details', 3) +
-                            endl)
-            else:
-                run_string = endl
-            run_string += ('Duration of simulation is ' + 
-                            bold(str(run_dict['duration'])) + endl + endl)
-            # map expand functions for particular components
-            func_map = {'neurongroup': {'f': expand_NeuronGroup,
-                                        'h': 'NeuronGroup'},
-                       'poissongroup': {'f': expand_PoissonGroup,
-                                        'h': 'PoissonGroup'},
-                       'spikegeneratorgroup': {'f': expand_SpikeGeneratorGroup,
-                                        'h': 'SpikeGeneratorGroup'},
-                       'statemonitor': {'f': expand_StateMonitor,
-                                        'h': 'StateMonitor'},
-                       'spikemonitor': {'f': expand_SpikeMonitor,
-                                        'h': 'SpikeMonitor'},
-                       'eventmonitor': {'f': expand_EventMonitor,
-                                        'h': 'EventMonitor'},
-                       'populationratemonitor': {'f': expand_PopulationRateMonitor,
-                                                 'h': 'PopulationRateMonitor'},
-                       'synapses': {'f': expand_Synapses,
-                                    'h': 'Synapse'},
-                       'poissoninput': {'f': expand_PoissonInput,
-                                         'h': 'PoissonInput'}}
-            # loop through the components
-            for (obj_key, obj_list) in run_dict['components'].items():
-                if obj_key in func_map.keys():
-                    # loop through the members in list
-                    run_string += (bold(func_map[obj_key]['h'] + _check_plural(obj_list) +
-                                   ' defined:') + endl)
-                    for obj_mem in obj_list:
-                        run_string += '- ' + func_map[obj_key]['f'](obj_mem)
-                run_string += endl
-            initializer = []
-            connector = []
-            # check if initializers are available, if so expand them
-            if 'initializers_connectors' in run_dict:
-                # loop through the members in list
-                for init_cont in run_dict['initializers_connectors']:
-                    if init_cont['type'] is 'initializer':
-                        initializer.append(init_cont)
-                    else:
-                        connector.append(init_cont)
-            if initializer:
-                run_string += bold('Initializer' +
-                                   _check_plural(initializer) +
-                                   ' defined:') + endl
-                # loop through the initits
-                for initit in initializer:
-                    run_string += '- ' + expand_initializer(initit)
-            if connector:
-                run_string += endl
-                run_string += bold('Synaptic Connection' +
-                                   _check_plural(connector) +
-                                   ' defined:') + endl
-                # loop through the connectors
-                for connect in connector:
-                    run_string += '- ' + expand_connector(connect)
-            if 'inactive' in run_dict:
-                run_string += endl
-                run_string += (bold('Inactive member' + 
-                               _check_plural(run_dict['inactive']) + ': ')
-                               + endl)
-                run_string += ', '.join(run_dict['inactive'])
-            overall_string += run_string
-
-        self.md_text = overall_string
-
-        return self.md_text
 
 
 class MdExporter(BaseExporter):
     """
-    Device to export Human-readable format (markdown) from
-    the Brian model. It derives from BaseExporter to use the
-    dictionary representation of the model
+    Device to export human-readable format in markdown from the Brian model.
+    The class derives from BaseExporter to use the dictionary representation
+    to export model descriptions.
     """
 
-    def build(self, direct_call=True, debug=False, author=None,
-              add_meta=False, output=None, format='std_dict', verbose=True,
-              write_file=True):
+    def build(self, direct_call=True, debug=False,
+              expand_class=None, filename=None, author=None,
+              add_meta=False):
         """
         Build the exporter
 
         Parameters
         ----------
         direct_call : bool
-            To check whether build() was called directly
+            To check whether build() called directly
         debug : bool, optional
-            To run in debug mode
+            To run in debug mode, that will print the output markdown text
+        expand_class : `Std_mdexpander` or its instance
+            Class that has collections of functions to expand baseexport
+            dictionary format in markdown
+        filename : str, optional
+            If mentioned, the markdown text would be written in that
+            particular filename. By default, the same python filename
+            is used
         author : str, optional
             Author field to add in the metadata
         add_meta : bool, optional
-            To attach meta field in output
-        output : str, optional
-            File name to write markdown script
-        format : str, optional
-            Format type to export markdown.
-            Available formats: {std_dict, custom_dict, nordlie}
-        verbose : bool, optional
-            Whether to verbose within the components
+            Whether to attach meta field in output markdown text
         """
-    
-        # get source file name
+
+        # get source file name, datetime and Brian version
         frame = inspect.stack()[1]
         user_file = inspect.getmodule(frame[0]).__file__
         date_time = datetime.datetime.now()
         brian_version = brian2.__version__
-        # if author given
+        # if author name is given
         if author:
             if type(author) != str:
                 raise Exception('Author field should be string, \
@@ -186,34 +57,37 @@ class MdExporter(BaseExporter):
                              date_time.strftime('%Y-%m-%d %H:%M:%S %Z'),
                              brian_version)) + endl + horizontal_rule() + endl
         self.meta_data = meta_data
-        # check filename
-        if output:
-            if type(output) != str:
-                raise Exception('Output filename should be string, \
-                                 not {} type'.format(type(author)))
+        # chech expand_class
+        if expand_class:
+            if not isinstance(expand_class, Std_mdexpander):
+                raise NotImplementedError('The expand class must be derived \
+                                           from `Std_mdexpander` to override \
+                                           expand functions')
+            self.expand_class = expand_class
         else:
-            output = 'output'
-        self.output = output
-        # check the format of exporting
-        self.format_options = {'std_dict', 'custom_dict', 'nordlie'}
-        if format not in self.format_options:
-            raise Exception('Unknown format options to export, valid formats \
-                             are: std_dict, custom_dict, nordlie')
-        self.format = format
-        self.verbose = verbose
-        # start creating markdown code
-        md_exporter = Std_mdexpander()
+            self.expand_class = Std_mdexpander
+        # check output filename
+        if filename:
+            if not isinstance(filename, str):
+                raise Exception('Output filename should be string, \
+                                 not {} type'.format(type(filename)))
+            self.filename = filename
+        else:
+            self.filename = user_file[:-3] # to remove '.py'
+        # start creating markdown descriptions using expand_class
+        md_exporter = self.expand_class
         self.md_text = md_exporter.create_md_string(self.runs)
-
+        # check whether meta data should be added
+        if add_meta:
+            self.md_text = meta_data + self.meta_data
+        # check whether in debug mode to print output in stdout
         if debug:
-            if write_file:
-                text_file = open(user_file[:-3] + '.md', "w")
-                text_file.write(self.md_text)
-                text_file.close()
-            if add_meta:
-                print(meta_data + self.md_text)
-            else:
-                print(self.md_text)
+            print(self.md_text)
+        else:
+            # start writing markdown text in file
+            md_file = open(self.filename + '.md', "w")
+            md_file.write(self.md_text)
+            md_file.close()
 
 
 he_device = MdExporter()
