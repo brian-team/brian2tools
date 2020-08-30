@@ -75,7 +75,7 @@ class MdExporter(BaseExporter):
         else:
             self.filename = user_file[:-3] # to remove '.py'
         # start creating markdown descriptions using expand_class
-        md_exporter = self.expand_class
+        md_exporter = self.expand_class()
         self.md_text = md_exporter.create_md_string(self.runs)
         # check whether meta data should be added
         if add_meta:
