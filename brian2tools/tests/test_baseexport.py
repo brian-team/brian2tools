@@ -236,8 +236,7 @@ def test_spikegenerator():
     assert spike_gen_dict['indices'] == [0]
     assert spike_gen_dict['indices'].dtype == int
 
-    assert spike_gen_dict['times'] == time
-    assert spike_gen_dict['times'].has_same_dimensions(10 * ms)
+    assert float(spike_gen_dict['times']) == float(time)
     assert spike_gen_dict['times'].dtype == float
 
     # example 2
