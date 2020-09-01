@@ -38,7 +38,7 @@ def _check_plural(iterable, singular_word=None, allow_constants=True):
     # dict where adding 's' at the end won't work
     singular_plural_dict = {'index': 'indices',
                             'property': 'properties'
-    }
+                           }
     # check iterable
     if hasattr(iterable, '__iter__'):
         for _ in iterable:
@@ -59,7 +59,7 @@ def _check_plural(iterable, singular_word=None, allow_constants=True):
 
 
 def _prepare_math_statements(statements, differential=False,
-                           seperate=False, equals='&#8592;'):
+                           separate=False, equals='&#8592;'):
     """
     Prepare statements to render in markdown format
 
@@ -67,12 +67,12 @@ def _prepare_math_statements(statements, differential=False,
     ----------
     statements : str
         String containing mathematical equations and statements
-    
+
     differential : bool, optional
-        Whether should be trated as variable in differential equation
-    
-    seperate : bool, optional
-        Whether lhs and rhs of the statement should be seperated and
+        Whether should be treated as variable in differential equation
+
+    separate : bool, optional
+        Whether lhs and rhs of the statement should be separated and
         rendered
     
     equals : str, optional
@@ -84,8 +84,8 @@ def _prepare_math_statements(statements, differential=False,
     list_eqns = re.split(';|\n', statements)
     # loop through each line
     for statement in list_eqns:
-        # check lhs-rhs to be seperated
-        if seperate:
+        # check lhs-rhs to be separated
+        if separate:
             # possible operators
             if ('+=' in statement or '=' in statement or
                '-=' in statement):
@@ -100,7 +100,7 @@ def _prepare_math_statements(statements, differential=False,
                 else:
                     rend_str += (_render_expression(lhs) +
                                 equals +  _render_expression(rhs))
-        # if need not seperate
+        # if need not separate
         else:
             rend_str += _render_expression(statement, differential)
         rend_str += ', '
@@ -160,7 +160,7 @@ def _render_expression(expression, differential=False,
         git_rend_exp = (
         '<img src="https://render.githubusercontent.com/render/math?math=' +
         rend_exp + '">'
-        )
+                       )
         return git_rend_exp
     # to remove `$`
     return rend_exp[1:][:-1]
@@ -339,8 +339,8 @@ class Std_mdexpander():
         ident_str = ''
         # if not `TimedArray` nor custom function
         if type(ident_value) != dict:
-                ident_str += (_render_expression(ident_key) + ": " +
-                            _render_expression(ident_value))
+            ident_str += (_render_expression(ident_key) + ": " +
+                        _render_expression(ident_value))
         # expand dictionary
         else:
             ident_str += (_render_expression(ident_key) + ' of type ' +
@@ -386,8 +386,8 @@ class Std_mdexpander():
             event_str += (', ' + 
                         _prepare_math_statements(
                                         event_details['reset']['code'],
-                                        seperate=True)
-                        )
+                                        separate=True)
+                         )
         if 'refractory' in event_details:
             event_str += ', with refractory ' 
             event_str += _render_expression(event_details['refractory'])
@@ -477,7 +477,9 @@ class Std_mdexpander():
             if not hasattr(initializer['index'], '__iter___'):
                 init_str += str(initializer['index'])
             else:
-                init_str += ','.join([str(ind) for ind in initializer['index']])
+                init_str += ','.join(
+                    [str(ind) for ind in initializer['index']]
+                                    )
         if 'identifiers' in initializer:
             init_str += ('. Identifier' +
                         _check_plural(initializer['identifiers']) +
@@ -506,7 +508,7 @@ class Std_mdexpander():
                     con_str += ', '.join(str(ind) for ind in connector['i'])
                 else:
                     con_str += str(connector['i'])
-            else: 
+            else:
                 con_str += ' with generator syntax ' + connector['i']
             if 'j' in connector:
                 con_str += (' to target group ' +
@@ -518,7 +520,7 @@ class Std_mdexpander():
                                             )
                     else:
                         con_str += str(connector['j'])
-                else: 
+                else:
                     con_str += ' with generator syntax ' + connector['j']
             else:
                 con_str += ' to all traget group members'
@@ -526,14 +528,14 @@ class Std_mdexpander():
         elif 'j' in connector:
             con_str += '. Connection for all members in source group'
             if not isinstance(connector['j'], str):
-                    con_str += (' to target group ' +
-                            _check_plural(connector['j'], 'index') + ': ')
-                    if hasattr(connector['j'], '__iter__'):
-                        con_str += ', '.join(
-                                        str(ind) for ind in connector['j']
-                                            )
-                    else:
-                        con_str += str(connector['j'])
+                con_str += (' to target group ' +
+                        _check_plural(connector['j'], 'index') + ': ')
+                if hasattr(connector['j'], '__iter__'):
+                    con_str += ', '.join(
+                                    str(ind) for ind in connector['j']
+                                        )
+                else:
+                    con_str += str(connector['j'])
             else: 
                 con_str += (' to target group with generator syntax ' +
                             connector['j'])
@@ -705,7 +707,7 @@ class Std_mdexpander():
         """
         md_str = (tab + 'On ' + bold(pathway['prepost']) +
                 ' of event ' + pathway['event'] + ' statements: ' +
-                _prepare_math_statements(pathway['code'], seperate=True) +
+                _prepare_math_statements(pathway['code'], separate=True) +
                 ' executed'
                 )
         # check delay is associated
@@ -817,8 +819,8 @@ class Std_mdexpander():
         run_reg : dict
             Standard dictionary representation for run_regularly()
         """
-        md_str = (tab + 'For every ' +  _render_expression(run_reg['dt']) +
+        md_str = (tab + 'For every ' + _render_expression(run_reg['dt']) +
                 ' code: ' +
-                    _prepare_math_statements(run_reg['code'], seperate=True) +
+                    _prepare_math_statements(run_reg['code'], separate=True) +
                     ' will be executed' + endll)
         return md_str

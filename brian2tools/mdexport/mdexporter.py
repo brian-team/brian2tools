@@ -1,7 +1,9 @@
 from brian2.devices.device import all_devices
 from brian2tools.baseexport.device import BaseExporter
 import brian2
-import os, inspect, datetime
+import os
+import inspect
+import datetime
 from .expander import *
 
 
@@ -73,7 +75,7 @@ class MdExporter(BaseExporter):
                                  not {} type'.format(type(filename)))
             self.filename = filename
         else:
-            self.filename = user_file[:-3] # to remove '.py'
+            self.filename = user_file[:-3]  # to remove '.py'
         # start creating markdown descriptions using expand_class
         md_exporter = self.expand_class()
         self.md_text = md_exporter.create_md_string(self.runs)
