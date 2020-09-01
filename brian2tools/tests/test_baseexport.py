@@ -227,7 +227,7 @@ def test_spikegenerator():
     # example 1
     size = 1
     index = [0]
-    time = [10] * ms
+    time = [0.01] * second
 
     spike_gen = SpikeGeneratorGroup(size, index, time)
     spike_gen_dict = collect_SpikeGenerator(spike_gen, get_local_namespace(0))
@@ -237,6 +237,7 @@ def test_spikegenerator():
     assert spike_gen_dict['indices'].dtype == int
 
     assert float(spike_gen_dict['times']) == float(time)
+    assert spike_gen_dict['times'][:].dimensions == second
     assert spike_gen_dict['times'].dtype == float
 
     # example 2
