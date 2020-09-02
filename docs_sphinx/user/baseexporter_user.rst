@@ -1,0 +1,143 @@
+Base exporter
+=============
+
+This is the user documentation of the `~brian2tools.baseexport` package, that
+provides functionality to represent Brian 2 models in a standard dictionary
+format. The standard dictionary has a simple and easy to access hierarchy of model
+information, that can be used for various model description exporters and custom
+descriptions.
+
+The `~brian2tools.baseexport` package is not meant to be used directly but to
+provide general platform to use other model description exporters on top of it.
+However, user can easily access the standard dictionary as mentioned in the 
+`Working example` section.
+
+.. contents::
+    Overview
+    :local:
+
+Working example
+---------------
+
+As a working example, let us take a simple unconnected Integrate & Fire neuron
+model with refractoriness and initializations,
+
+.. code:: python
+
+    from brian2 import *
+    import brian2tools.baseexport
+    import pprint    # to pretty print dictionary
+
+    set_device('exporter')   # set device mode
+
+    n = 100
+    duration = 1*second
+    tau = 10*ms
+    v_th = 1 * volt
+
+    eqn = '''
+    dv/dt = (v_rest - v) / tau : volt (unless refractory)
+    v_rest : volt
+    '''
+    group = NeuronGroup(n, eqn, threshold='v > v_th', reset='v = v_rest',
+                        refractory=5*ms, method='euler')
+    group.v = 0*mV
+    group.v_rest = 'rand() * 20*mV * i / (N-1)'
+
+    statemonitor = StateMonitor(group, 'v', record=True)
+    spikemonitor = SpikeMonitor(group, record=0)
+
+    run(duration)
+
+    pprint.pprint(device.runs)   # print standard dictionary
+
+
+The output standard dictionary would look similar to,
+
+.. code::
+
+    [{'components': {'neurongroup': [{'N': 100,
+                                    'equations': {'v': {'expr': '(v_rest - v) / tau',
+                                                        'flags': ['unless refractory'],
+                                                        'type': 'differential equation',
+                                                        'unit': volt,
+                                                        'var_type': 'float'},
+                                                    'v_rest': {'type': 'parameter',
+                                                            'unit': volt,
+                                                            'var_type': 'float'}},
+                                    'events': {'spike': {'refractory': 5. * msecond,
+                                                        'reset': {'code': 'v = v_rest',
+                                                                    'dt': 100. * usecond,
+                                                                    'order': 0,
+                                                                    'when': 'resets'},
+                                                        'threshold': {'code': 'v > v_th',
+                                                                        'dt': 100. * usecond,
+                                                                        'order': 0,
+                                                                        'when': 'thresholds'}}},
+                                    'identifiers': {'tau': 10. * msecond,
+                                                    'v_th': 1. * volt},
+                                    'name': 'neurongroup',
+                                    'order': 0,
+                                    'user_method': 'euler',
+                                    'when': 'groups'}],
+                    'spikemonitor': [{'dt': 100. * usecond,
+                                    'event': 'spike',
+                                    'name': 'spikemonitor',
+                                    'order': 1,
+                                    'record': 0,
+                                    'source': 'neurongroup',
+                                    'source_size': 100,
+                                    'variables': [],
+                                    'when': 'thresholds'}],
+                    'statemonitor': [{'dt': 100. * usecond,
+                                    'n_indices': 100,
+                                    'name': 'statemonitor',
+                                    'order': 0,
+                                    'record': True,
+                                    'source': 'neurongroup',
+                                    'variables': ['v'],
+                                    'when': 'start'}]},
+    'duration': 1. * second,
+    'initializers_connectors': [{'index': True,
+                                'source': 'neurongroup',
+                                'type': 'initializer',
+                                'value': 0. * volt,
+                                'variable': 'v'},
+                                {'identifiers': {'N': 100},
+                                'index': 'True',
+                                'source': 'neurongroup',
+                                'type': 'initializer',
+                                'value': 'rand() * 20*mV * i / (N-1)',
+                                'variable': 'v_rest'}]}]
+
+To the user side, the changes required to use the exporter are very minimal
+(very similar to access other Brian 2 device modes). To the standard ``brian2`` code,
+adding ``baseexport`` import statement and setting device ``exporter`` with proper 
+`build_options` are needed. To access the dictionary, ``device.runs`` can be used and
+to print the dictionary in `stdout`, `debug` mode can also be used. The changes needed
+to run in `debug` mode for the above example are,
+
+.. code:: python
+
+    from brian2 import *
+    import brian2tools.baseexport
+
+    set_device('exporter', build_on_run=False)   # build manually to run in debug mode
+
+   . . . .
+
+    run(duration)
+
+    device.build(debug=True)   # print standard dictionary
+
+Most of the standard dictionary items has the same object type as used in Brian 2. For instance,
+the `identifiers` and `dt` fields have values of type `Quantity` and `N` (population size)
+is of type `int`. The 
+
+Limitations
+-----------
+
+The Base export currently supports almost all Brian 2 features except,
+
+- Multicompartmental neurons (``SpatialNeuronGroup``)
+- ``store``/``restore`` mechanism

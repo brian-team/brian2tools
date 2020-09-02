@@ -8,3 +8,4 @@ User's guide
    plotting
    exporter_user
    nmlimport
+   baseexporter_user
