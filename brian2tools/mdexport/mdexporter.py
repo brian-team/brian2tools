@@ -15,8 +15,8 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False,
-              expand_class=None, filename=None, author=None,
-              add_meta=False):
+              expand_class=None, filename=None, brian_verbose=False,
+              author=None, add_meta=False):
         """
         Build the exporter
 
@@ -33,6 +33,11 @@ class MdExporter(BaseExporter):
             If mentioned, the markdown text would be written in that
             particular filename. By default, the same python filename
             is used
+        brian_verbose : bool, optional
+            Whether to use Brian-like words for markdown exporter and
+            if set `True`, the names will be Brian based.
+            For example, when set `False`, 'SpikeGeneratorGroup` will be
+            changed to something like, "'Spike generating source"
         author : str, optional
             Author field to add in the metadata
         add_meta : bool, optional
@@ -51,6 +56,8 @@ class MdExporter(BaseExporter):
                                  not {} type'.format(type(author)))
         else:
             author = '-'
+        # choose verbose style
+        self.brian_verbose = brian_verbose
         # prepare meta-data
         meta_data = italics('Filename: {}\
                              \nAuthor: {}\
@@ -78,7 +85,10 @@ class MdExporter(BaseExporter):
             self.filename = user_file[:-3]  # to remove '.py'
         # start creating markdown descriptions using expand_class
         md_exporter = self.expand_class()
-        self.md_text = md_exporter.create_md_string(self.runs)
+        self.md_text = md_exporter.create_md_string(
+                                            self.runs, 
+                                            brian_verbose=self.brian_verbose
+                                                   )
         # check whether meta data should be added
         if add_meta:
             self.md_text = meta_data + self.meta_data
@@ -93,4 +103,4 @@ class MdExporter(BaseExporter):
 
 
 he_device = MdExporter()
-all_devices['mdexport'] = he_device
+all_devices['markdown'] = he_device

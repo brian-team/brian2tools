@@ -17,155 +17,6 @@ endl = '\n'
 tab = '\t'
 
 
-def _check_plural(iterable, singular_word=None, allow_constants=True):
-    """
-    Helper function to attach plural form of the word
-    by examining the following iterable
-
-    Parameters
-    ----------
-    iterable : object with `__iter__` attribute
-        Object that has to be examined
-
-    singular_word : str, optional
-        Word whose plural form has to searched in `singular_plural_dict`
-
-    allow_constants : bool, optional
-        Whether to assume non iterable as singular, if set as `True`,
-        the `iterable` argument must be an iterable
-    """
-    count = 0
-    # dict where adding 's' at the end won't work
-    singular_plural_dict = {'index': 'indices',
-                            'property': 'properties'
-                           }
-    # check iterable
-    if hasattr(iterable, '__iter__'):
-        for _ in iterable:
-            count += 1
-            if count > 1:
-                if singular_word:
-                    try:
-                        return singular_plural_dict[singular_word]
-                    except KeyError:
-                        raise Exception("The singular word is not found in \
-                                         singular-plural dictionary.")
-                return 's'
-    # check allow constants
-    elif not allow_constants:
-        raise IndexError("Suppose to be iterable object \
-                          but instance got {}".format(type(iterable)))
-    return ''
-
-
-def _prepare_math_statements(statements, differential=False,
-                           separate=False, equals='&#8592;'):
-    """
-    Prepare statements to render in markdown format
-
-    Parameters
-    ----------
-    statements : str
-        String containing mathematical equations and statements
-
-    differential : bool, optional
-        Whether should be treated as variable in differential equation
-
-    separate : bool, optional
-        Whether lhs and rhs of the statement should be separated and
-        rendered
-    
-    equals : str, optional
-        Equals operator, by default arrow from right to left
-    """
-
-    rend_str = ''
-    # split multilines
-    list_eqns = re.split(';|\n', statements)
-    # loop through each line
-    for statement in list_eqns:
-        # check lhs-rhs to be separated
-        if separate:
-            # possible operators
-            if ('+=' in statement or '=' in statement or
-               '-=' in statement):
-                # join lhs and rhs
-                lhs, rhs = re.split('-=|\+=|=', statement)
-                if '+=' in statement:
-                    rend_str += (_render_expression(lhs) +
-                                '+=' +_render_expression(rhs))
-                elif '-=' in statement:
-                    rend_str += (_render_expression(lhs) +
-                                '-=' +_render_expression(rhs))
-                else:
-                    rend_str += (_render_expression(lhs) +
-                                equals +  _render_expression(rhs))
-        # if need not separate
-        else:
-            rend_str += _render_expression(statement, differential)
-        rend_str += ', '
-    # to remove ',' from last item
-    return rend_str[:-2]
-
-
-def _render_expression(expression, differential=False,
-                    github_md=True):
-    """
-    Helper function to render mathematical expression using
-    `sympy.printing.latex`
-
-    Parameters
-    ----------
-
-    expression : str, Quantity
-        Expression that has to rendered
-
-    differential : bool, optional
-        Whether should be treated as variable in differential equation
-    
-    github_md : bool, optional
-        Whether should render in GitHub supported markdown. Set `True`
-        as default and if set `False`, `MathJax` based rendering is done
-    
-    Returns
-    -------
-
-    rend_exp : str
-        Markdown text for the expression
-    """
-    # change to str
-    if isinstance(expression, Quantity):
-        expression = str(expression)
-    else:
-        if not isinstance(expression, str):
-            expression = str(expression)
-        # convert to sympy expression
-        expression = str_to_sympy(expression)
-    # check to be treated as differential variable
-    if differential:
-        # independent variable is always 't'
-        t = symbols('t')
-        expression = Derivative(expression, 't')
-    # render expression
-    rend_exp = latex(expression, mode='equation',
-                    itex=True, mul_symbol='.')
-    # horrible way to remove _placeholder_{arg} inside brackets
-    rend_exp = rend_exp.replace('_placeholder_{arg}', '-')
-    rend_exp = rend_exp.replace('\operatorname', '')
-    # check GitHub based markdown rendering
-    if github_md:
-        # to remove `$$`
-        rend_exp = rend_exp[2:][:-2]
-        # link to render as image
-        git_rend_exp = (
-        '<img src="https://render.githubusercontent.com/render/math?math=' +
-        rend_exp + '">'
-                       )
-        return git_rend_exp
-    # to remove `$`
-    return rend_exp[1:][:-1]
-
-
 class Std_mdexpander():
 
     """
@@ -182,7 +33,154 @@ class Std_mdexpander():
     functions.
     """
 
-    def create_md_string(self, net_dict):
+    def check_plural(self, iterable, singular_word=None,
+                     allow_constants=True):
+        """
+        Function to attach plural form of the word
+        by examining the following iterable
+
+        Parameters
+        ----------
+        iterable : object with `__iter__` attribute
+            Object that has to be examined
+
+        singular_word : str, optional
+            Word whose plural form has to searched in `singular_plural_dict`
+
+        allow_constants : bool, optional
+            Whether to assume non iterable as singular, if set as `True`,
+            the `iterable` argument must be an iterable
+        """
+        count = 0
+        # dict where adding 's' at the end won't work
+        singular_plural_dict = {'index': 'indices',
+                                'property': 'properties'
+                            }
+        # check iterable
+        if hasattr(iterable, '__iter__'):
+            for _ in iterable:
+                count += 1
+                if count > 1:
+                    if singular_word:
+                        try:
+                            return singular_plural_dict[singular_word]
+                        except KeyError:
+                            raise Exception("The singular word is not found \
+                                             in singular-plural dictionary.")
+                    return 's'
+        # check allow constants
+        elif not allow_constants:
+            raise IndexError("Suppose to be iterable object \
+                            but instance got {}".format(type(iterable)))
+        return ''
+
+    def prepare_math_statements(self, statements, differential=False,
+                                separate=False, equals='&#8592;'):
+        """
+        Prepare statements to render in markdown format
+
+        Parameters
+        ----------
+        statements : str
+            String containing mathematical equations and statements
+
+        differential : bool, optional
+            Whether should be treated as variable in differential equation
+
+        separate : bool, optional
+            Whether lhs and rhs of the statement should be separated and
+            rendered
+        
+        equals : str, optional
+            Equals operator, by default arrow from right to left
+        """
+
+        rend_str = ''
+        # split multilines
+        list_eqns = re.split(';|\n', statements)
+        # loop through each line
+        for statement in list_eqns:
+            # check lhs-rhs to be separated
+            if separate:
+                # possible operators
+                if ('+=' in statement or '=' in statement or
+                    '-=' in statement):
+                    # join lhs and rhs
+                    lhs, rhs = re.split('-=|\+=|=', statement)
+                    if '+=' in statement:
+                        rend_str += (self.render_expression(lhs) +
+                                     '+=' +self.render_expression(rhs))
+                    elif '-=' in statement:
+                        rend_str += (self.render_expression(lhs) +
+                                     '-=' +self.render_expression(rhs))
+                    else:
+                        rend_str += (self.render_expression(lhs) +
+                                     equals +  self.render_expression(rhs))
+            # if need not separate
+            else:
+                rend_str += self.render_expression(statement, differential)
+            rend_str += ', '
+        # to remove ',' from last item
+        return rend_str[:-2]
+
+    def render_expression(self, expression, differential=False,
+                          github_md=True):
+        """
+        Function to render mathematical expression using
+        `sympy.printing.latex`
+
+        Parameters
+        ----------
+
+        expression : str, Quantity
+            Expression that has to rendered
+
+        differential : bool, optional
+            Whether should be treated as variable in differential equation
+        
+        github_md : bool, optional
+            Whether should render in GitHub supported markdown. Set `True`
+            as default and if set `False`, `MathJax` based rendering is done
+        
+        Returns
+        -------
+
+        rend_exp : str
+            Markdown text for the expression
+        """
+        # change to str
+        if isinstance(expression, Quantity):
+            expression = str(expression)
+        else:
+            if not isinstance(expression, str):
+                expression = str(expression)
+            # convert to sympy expression
+            expression = str_to_sympy(expression)
+        # check to be treated as differential variable
+        if differential:
+            # independent variable is always 't'
+            t = symbols('t')
+            expression = Derivative(expression, 't')
+        # render expression
+        rend_exp = latex(expression, mode='equation',
+                         itex=True, mul_symbol='.')
+        # horrible way to remove _placeholder_{arg} inside brackets
+        rend_exp = rend_exp.replace('_placeholder_{arg}', '-')
+        rend_exp = rend_exp.replace('\operatorname', '')
+        # check GitHub based markdown rendering
+        if github_md:
+            # to remove `$$`
+            rend_exp = rend_exp[2:][:-2]
+            # link to render as image
+            git_rend_exp = (
+            '<img src="https://render.githubusercontent.com/render/math?math=' +
+            rend_exp + '">'
+                        )
+            return git_rend_exp
+        # to remove `$` (in most md compiler single $ is used)
+        return rend_exp[1:][:-1]
+
+    def create_md_string(self, net_dict, brian_verbose=False):
         """
         Create markdown text by checking the standard dictionary and call
         required expand functions and arrange the descriptions
@@ -197,7 +195,7 @@ class Std_mdexpander():
                            simulation run'.format(
                                                 bold(len(net_dict))
                                                 ) +
-                           _check_plural(net_dict) +
+                           self.check_plural(net_dict) +
                            endl + horizontal_rule() + endl)
         # start going to the dictionary items in particular run instance
         for run_indx in range(len(net_dict)):
@@ -213,33 +211,48 @@ class Std_mdexpander():
             run_string += ('Duration of simulation is ' +
                             bold(str(run_dict['duration'])) + endll)
             # map expand functions for particular components
+            # h: normal 
             func_map = {'neurongroup': {'f': self.expand_NeuronGroup,
-                                        'h': 'NeuronGroup'},
+                                        'hb': 'NeuronGroup',
+                                        'h': 'Neuron group'},
                        'poissongroup': {'f': self.expand_PoissonGroup,
-                                        'h': 'PoissonGroup'},
+                                        'hb': 'PoissonGroup',
+                                        'h': 'Poisson spike source'},
                        'spikegeneratorgroup':
                                     {'f': self.expand_SpikeGeneratorGroup,
-                                     'h': 'SpikeGeneratorGroup'},
+                                     'hb': 'SpikeGeneratorGroup',
+                                     'h': 'Spike generating source'},
                        'statemonitor': {'f': self.expand_StateMonitor,
-                                        'h': 'StateMonitor'},
+                                        'hb': 'StateMonitor',
+                                        'h': 'Activity recorder'},
                        'spikemonitor': {'f': self.expand_SpikeMonitor,
-                                        'h': 'SpikeMonitor'},
+                                        'hb': 'SpikeMonitor',
+                                        'h': 'Spiking activity recorder'},
                        'eventmonitor': {'f': self.expand_EventMonitor,
-                                        'h': 'EventMonitor'},
+                                        'hb': 'EventMonitor',
+                                        'h': 'Event activity recorder'},
                        'populationratemonitor':
                                     {'f': self.expand_PopulationRateMonitor,
-                                     'h': 'PopulationRateMonitor'},
+                                     'hb': 'PopulationRateMonitor',
+                                     'h': 'Population rate recorder'},
                        'synapses': {'f': self.expand_Synapses,
+                                    'hb': 'Synapse',
                                     'h': 'Synapse'},
                        'poissoninput': {'f': self.expand_PoissonInput,
-                                         'h': 'PoissonInput'}}
+                                         'hb': 'PoissonInput',
+                                         'h': 'Poisson input'}}
             # loop through the components
             for (obj_key, obj_list) in run_dict['components'].items():
                 # check the object component is in map
                 if obj_key in func_map.keys():
                     # loop through the members in list
-                    run_string += (bold(func_map[obj_key]['h'] +
-                                   _check_plural(obj_list) + ' defined:') +
+                    # check Brian based verbose is required
+                    if brian_verbose:
+                        obj_h = func_map[obj_key]['hb']
+                    else:
+                        obj_h = func_map[obj_key]['h']
+                    run_string += (bold(obj_h +
+                                   self.check_plural(obj_list) + ' defined:') +
                                    endl)
                     # point out components
                     for obj_mem in obj_list:
@@ -258,16 +271,20 @@ class Std_mdexpander():
                     else:
                         connector.append(init_cont)
             if initializer:
-                run_string += bold('Initializer' +
-                                   _check_plural(initializer) +
-                                   ' defined:') + endl
+                if brian_verbose:
+                    run_string += bold('Initializer' +
+                                    self.check_plural(initializer) +
+                                    ' defined:') + endl
+                else:
+                    run_string += bold('Initializing values at \
+                                        starting:') + endl
                 # loop through the initializers
                 for initit in initializer:
                     run_string += '- ' + self.expand_initializer(initit)
             if connector:
                 run_string += endl
                 run_string += bold('Synaptic Connection' +
-                                   _check_plural(connector) +
+                                   self.check_plural(connector) +
                                    ' defined:') + endl
                 # loop through the connectors
                 for connect in connector:
@@ -276,7 +293,7 @@ class Std_mdexpander():
             if 'inactive' in run_dict:
                 run_string += endl
                 run_string += (bold('Inactive member' + 
-                               _check_plural(run_dict['inactive']) + ':')
+                               self.check_plural(run_dict['inactive']) + ':')
                                + endl)
                 run_string += ', '.join(run_dict['inactive'])
             overall_string += run_string
@@ -317,7 +334,7 @@ class Std_mdexpander():
         # expand run_regularly()
         if 'run_regularly' in neurongrp:
             md_str += (tab + bold('Run regularly') + 
-            _check_plural(neurongrp['run_regularly']) + ': ' + endll)
+            self.check_plural(neurongrp['run_regularly']) + ': ' + endll)
             for run_reg in neurongrp['run_regularly']:
                 md_str += self.expand_runregularly(run_reg)
 
@@ -339,17 +356,17 @@ class Std_mdexpander():
         ident_str = ''
         # if not `TimedArray` nor custom function
         if type(ident_value) != dict:
-            ident_str += (_render_expression(ident_key) + ": " +
-                        _render_expression(ident_value))
+            ident_str += (self.render_expression(ident_key) + ": " +
+                        self.render_expression(ident_value))
         # expand dictionary
         else:
-            ident_str += (_render_expression(ident_key) + ' of type ' +
+            ident_str += (self.render_expression(ident_key) + ' of type ' +
                             ident_value['type'])
             if ident_value['type'] is 'timedarray':
-                ident_str += (' with dimentsion ' +
-                              _render_expression(ident_value['ndim']) +
+                ident_str += (' with dimension ' +
+                              self.render_expression(ident_value['ndim']) +
                               ' and dt as ' +
-                              _render_expression(ident_value['dt']))
+                              self.render_expression(ident_value['dt']))
         return ident_str + ', '
 
     def expand_identifiers(self, identifiers):
@@ -381,16 +398,16 @@ class Std_mdexpander():
         event_str = ''
         event_str += tab + 'Event ' + bold(event_name) + ', '
         event_str += ('after ' +
-                    _render_expression(event_details['threshold']['code']))
+                    self.render_expression(event_details['threshold']['code']))
         if 'reset' in event_details:
             event_str += (', ' + 
-                        _prepare_math_statements(
+                        self.prepare_math_statements(
                                         event_details['reset']['code'],
                                         separate=True)
                          )
         if 'refractory' in event_details:
             event_str += ', with refractory ' 
-            event_str += _render_expression(event_details['refractory'])
+            event_str += self.render_expression(event_details['refractory'])
 
         return event_str + endll
 
@@ -419,19 +436,19 @@ class Std_mdexpander():
         """
         rend_eqn = ''   
         if equation['type'] == 'differential equation':
-            rend_eqn +=  _render_expression(var, differential=True)
+            rend_eqn +=  self.render_expression(var, differential=True)
         elif equation['type'] == 'subexpression':
-            rend_eqn +=  _render_expression(var)
+            rend_eqn +=  self.render_expression(var)
         else:
-            rend_eqn += 'Parameter ' + _render_expression(var)
+            rend_eqn += 'Parameter ' + self.render_expression(var)
         if 'expr' in equation:
-            rend_eqn +=  '&#8592;' + _render_expression(equation['expr'])
-        rend_eqn += (", where unit of " + _render_expression(var) +
+            rend_eqn +=  '=' + self.render_expression(equation['expr'])
+        rend_eqn += (", where unit of " + self.render_expression(var) +
                         " is " + str(equation['unit']))
         if 'flags' in equation:
             rend_eqn += (' and ' +
                          ', '.join(str(f) for f in equation['flags']) +
-                         ' as flag' + _check_plural(equation['flags']) +
+                         ' as flag' + self.check_plural(equation['flags']) +
                          ' associated')
         return tab + rend_eqn + endll
 
@@ -456,9 +473,9 @@ class Std_mdexpander():
         """
         init_str = ''
         init_str += ('Variable ' +
-                     _render_expression(initializer['variable']) +
+                     self.render_expression(initializer['variable']) +
                      ' of ' +  initializer['source'] + ' initialized with ' +
-                     _render_expression(initializer['value'])
+                     self.render_expression(initializer['value'])
                     )
         # not a good checking
         if (isinstance(initializer['index'], str) and 
@@ -473,7 +490,7 @@ class Std_mdexpander():
                 init_str += ' to no member'
         else:
             init_str += (' to member' +
-                         _check_plural(initializer['index']) + ' ')
+                         self.check_plural(initializer['index']) + ' ')
             if not hasattr(initializer['index'], '__iter___'):
                 init_str += str(initializer['index'])
             else:
@@ -482,7 +499,7 @@ class Std_mdexpander():
                                     )
         if 'identifiers' in initializer:
             init_str += ('. Identifier' +
-                        _check_plural(initializer['identifiers']) +
+                        self.check_plural(initializer['identifiers']) +
                         ' associated: ' +
                         self.expand_identifiers(initializer['identifiers']))
         return init_str + endll
@@ -502,7 +519,7 @@ class Std_mdexpander():
                     ' to ' + connector['target'])
         if 'i' in connector:
             con_str += ('. From source group ' +
-                        _check_plural(connector['i'], 'index') + ': ')
+                        self.check_plural(connector['i'], 'index') + ': ')
             if not isinstance(connector['i'], str):
                 if hasattr(connector['i'], '__iter__'):
                     con_str += ', '.join(str(ind) for ind in connector['i'])
@@ -512,7 +529,7 @@ class Std_mdexpander():
                 con_str += ' with generator syntax ' + connector['i']
             if 'j' in connector:
                 con_str += (' to target group ' +
-                            _check_plural(connector['j'], 'index') + ': ')
+                            self.check_plural(connector['j'], 'index') + ': ')
                 if not isinstance(connector['j'], str):
                     if hasattr(connector['j'], '__iter__'):
                         con_str += ', '.join(
@@ -523,13 +540,13 @@ class Std_mdexpander():
                 else:
                     con_str += ' with generator syntax ' + connector['j']
             else:
-                con_str += ' to all traget group members'
+                con_str += ' to all target group members'
 
         elif 'j' in connector:
             con_str += '. Connection for all members in source group'
             if not isinstance(connector['j'], str):
                 con_str += (' to target group ' +
-                        _check_plural(connector['j'], 'index') + ': ')
+                        self.check_plural(connector['j'], 'index') + ': ')
                 if hasattr(connector['j'], '__iter__'):
                     con_str += ', '.join(
                                     str(ind) for ind in connector['j']
@@ -542,13 +559,13 @@ class Std_mdexpander():
 
         elif 'condition' in connector:
             con_str += (' with condition ' +
-                        _render_expression(connector['condition']))
+                        self.render_expression(connector['condition']))
         if connector['probability'] != 1:
-            con_str += (', with probabilty ' +
-                        _render_expression(connector['probability']))
+            con_str += (', with probability ' +
+                        self.render_expression(connector['probability']))
         if connector['n_connections'] != 1:
             con_str += (', with number of connections ' +
-                        _render_expression(connector['n_connections']))
+                        self.render_expression(connector['n_connections']))
         if 'identifiers' in connector:
             con_str += ('. Constants associated: ' +
                         self.expand_identifiers(connector['identifiers']))
@@ -568,7 +585,7 @@ class Std_mdexpander():
         md_str = ''
         md_str += (tab + 'Name ' + bold(poisngrp['name']) + ', with \
                 population size ' + bold(poisngrp['N']) +
-                ' and rate as ' + _render_expression(poisngrp['rates']) +
+                ' and rate as ' + self.render_expression(poisngrp['rates']) +
                 '.' + endll)
         if 'identifiers' in poisngrp:
             md_str += tab + bold('Constants:') + endll
@@ -593,7 +610,7 @@ class Std_mdexpander():
         md_str = ''
         md_str += (tab + 'Name ' + bold(spkgen['name']) +
                 ', with population size ' + bold(spkgen['N']) +
-                ', has neuron' + _check_plural(spkgen['indices']) + ': ' +
+                ', has neuron' + self.check_plural(spkgen['indices']) + ': ' +
                 ', '.join(str(i) for i in spkgen['indices']) +
                 ' that spike at times ' +
                 ', '.join(str(t) for t in spkgen['times']) +
@@ -618,9 +635,9 @@ class Std_mdexpander():
         """
         md_str = ''
         md_str += (tab + 'Monitors variable' + 
-                   _check_plural(statemon['variables']) + ': ' +
+                   self.check_plural(statemon['variables']) + ': ' +
                    ','.join(
-                    [_render_expression(var) for var in statemon['variables']]
+                    [self.render_expression(var) for var in statemon['variables']]
                            ) +
                    ' of ' + statemon['source'])
         if isinstance(statemon['record'], bool):
@@ -631,7 +648,7 @@ class Std_mdexpander():
             if not statemon['record'].size:
                 md_str += ' for no member'
             else:
-                md_str += (', for member' + _check_plural(statemon['record']) +
+                md_str += (', for member' + self.check_plural(statemon['record']) +
                         ': ' +
                         ','.join([str(ind) for ind in statemon['record']]) +
                         '.' + endll)
@@ -661,9 +678,9 @@ class Std_mdexpander():
         """
         md_str = ''
         md_str += (tab + 'Monitors variable' +
-                _check_plural(eventmon['variables']) + ': ' +
+                self.check_plural(eventmon['variables']) + ': ' +
                 ','.join(
-                    [_render_expression(var) for var in eventmon['variables']]
+                    [self.render_expression(var) for var in eventmon['variables']]
                     ) +
                 ' of ' + eventmon['source'] + '.')
         if isinstance(eventmon['record'], bool):
@@ -673,7 +690,7 @@ class Std_mdexpander():
             if not eventmon['record'].size:
                 md_str += ' for no member'
             else:
-                md_str += (', for member' + _check_plural(eventmon['record']) +
+                md_str += (', for member' + self.check_plural(eventmon['record']) +
                         ': ' +
                         ','.join([str(ind) for ind in eventmon['record']]))
         md_str += (' when event ' + bold(eventmon['event']) +
@@ -707,13 +724,13 @@ class Std_mdexpander():
         """
         md_str = (tab + 'On ' + bold(pathway['prepost']) +
                 ' of event ' + pathway['event'] + ' statements: ' +
-                _prepare_math_statements(pathway['code'], separate=True) +
+                self.prepare_math_statements(pathway['code'], separate=True) +
                 ' executed'
                 )
         # check delay is associated
         if 'delay' in pathway:
             md_str += (', with synaptic delay of ' +
-                    _render_expression(pathway['delay']))
+                    self.render_expression(pathway['delay']))
 
         return md_str + endll
 
@@ -738,7 +755,7 @@ class Std_mdexpander():
         """
         md_str = (tab + 'Updates target group ' + sum_variable['target'] +
                   ' with statement: ' +
-                  _render_expression(sum_variable['code']) +
+                  self.render_expression(sum_variable['code']) +
                   endll)
 
         return md_str
@@ -800,9 +817,9 @@ class Std_mdexpander():
         md_str = ''
         md_str += (tab + 'PoissonInput with size ' + bold(poinp['N']) +
                 ' gives input to variable ' +
-                _render_expression(poinp['target_var']) +
-                ' with rate ' + _render_expression(poinp['rate']) +
-                ' and weight of ' + _render_expression(poinp['weight']) +
+                self.render_expression(poinp['target_var']) +
+                ' with rate ' + self.render_expression(poinp['rate']) +
+                ' and weight of ' + self.render_expression(poinp['weight']) +
                 endll)
         if 'identifiers' in poinp:
             md_str += tab + bold('Constants:') + endll
@@ -819,8 +836,8 @@ class Std_mdexpander():
         run_reg : dict
             Standard dictionary representation for run_regularly()
         """
-        md_str = (tab + 'For every ' + _render_expression(run_reg['dt']) +
+        md_str = (tab + 'For every ' + self.render_expression(run_reg['dt']) +
                 ' code: ' +
-                    _prepare_math_statements(run_reg['code'], separate=True) +
+                    self.prepare_math_statements(run_reg['code'], separate=True) +
                     ' will be executed' + endll)
         return md_str
