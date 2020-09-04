@@ -123,8 +123,7 @@ class Std_mdexpander():
         # to remove ',' from last item
         return rend_str[:-2]
 
-    def render_expression(self, expression, differential=False,
-                          github_md=True):
+    def render_expression(self, expression, differential=False):
         """
         Function to render mathematical expression using
         `sympy.printing.latex`
@@ -137,10 +136,6 @@ class Std_mdexpander():
 
         differential : bool, optional
             Whether should be treated as variable in differential equation
-        
-        github_md : bool, optional
-            Whether should render in GitHub supported markdown. Set `True`
-            as default and if set `False`, `MathJax` based rendering is done
         
         Returns
         -------
@@ -168,7 +163,7 @@ class Std_mdexpander():
         rend_exp = rend_exp.replace('_placeholder_{arg}', '-')
         rend_exp = rend_exp.replace('\operatorname', '')
         # check GitHub based markdown rendering
-        if github_md:
+        if self.github_md:
             # to remove `$$`
             rend_exp = rend_exp[2:][:-2]
             # link to render as image
@@ -180,7 +175,7 @@ class Std_mdexpander():
         # to remove `$` (in most md compiler single $ is used)
         return rend_exp[1:][:-1]
 
-    def create_md_string(self, net_dict, brian_verbose=False):
+    def create_md_string(self, net_dict, brian_verbose=False, github_md=False):
         """
         Create markdown text by checking the standard dictionary and call
         required expand functions and arrange the descriptions
@@ -190,6 +185,8 @@ class Std_mdexpander():
         n_runs = 's'
         if len(net_dict) > 1:
             n_runs = ''
+        # check github based math rendering
+        self.github_md = github_md
         # start header to mention about no. of total run simulations
         overall_string += ('The Network consist' + n_runs + ' of {} \
                            simulation run'.format(
@@ -644,7 +641,7 @@ class Std_mdexpander():
             if statemon['record']:
                 md_str += ' for all members'
         else:
-            # another horrible hack (before with initializers)
+            # another bad hack (before with initializers)
             if not statemon['record'].size:
                 md_str += ' for no member'
             else:
@@ -682,7 +679,7 @@ class Std_mdexpander():
                 ','.join(
                     [self.render_expression(var) for var in eventmon['variables']]
                     ) +
-                ' of ' + eventmon['source'] + '.')
+                ' of ' + eventmon['source'])
         if isinstance(eventmon['record'], bool):
             if eventmon['record']:
                 md_str += ' for all members'

@@ -420,10 +420,10 @@ def test_spikemonitor():
 
     # example 3
     spk = SpikeGeneratorGroup(10, [2, 6, 8], [5 * ms, 10 * ms, 15 * ms])
-    spkmon = SpikeMonitor(spk, record=True)
+    spkmon = SpikeMonitor(spk, ['t', 'i'], record=0)
     smon_dict = collect_SpikeMonitor(spkmon)
 
-    assert smon_dict['record']
+    assert smon_dict['record'] == np.array([0])
     assert 't' in smon_dict['variables']
     assert smon_dict['source'] == spk.name
     assert smon_dict['when'] == 'thresholds'

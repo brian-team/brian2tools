@@ -16,7 +16,7 @@ class MdExporter(BaseExporter):
 
     def build(self, direct_call=True, debug=False,
               expand_class=None, filename=None, brian_verbose=False,
-              author=None, add_meta=False):
+              author=None, add_meta=False, github_md=False):
         """
         Build the exporter
 
@@ -24,24 +24,35 @@ class MdExporter(BaseExporter):
         ----------
         direct_call : bool
             To check whether build() called directly
+
         debug : bool, optional
             To run in debug mode, that will print the output markdown text
+
         expand_class : `Std_mdexpander` or its instance
             Class that has collections of functions to expand baseexport
             dictionary format in markdown
+
         filename : str, optional
             If mentioned, the markdown text would be written in that
             particular filename. By default, the same python filename
             is used
+
         brian_verbose : bool, optional
             Whether to use Brian-like words for markdown exporter and
             if set `True`, the names will be Brian based.
             For example, when set `False`, 'SpikeGeneratorGroup` will be
             changed to something like, "'Spike generating source"
+
         author : str, optional
             Author field to add in the metadata
+
         add_meta : bool, optional
             Whether to attach meta field in output markdown text
+
+        github_md : bool, optional
+            Whether should render in GitHub supported markdown. Set `False`
+            as default (`MathJax` based) and if set `False`, image has to
+            created and embedded
         """
 
         # get source file name, datetime and Brian version
@@ -87,7 +98,8 @@ class MdExporter(BaseExporter):
         md_exporter = self.expand_class()
         self.md_text = md_exporter.create_md_string(
                                             self.runs, 
-                                            brian_verbose=self.brian_verbose
+                                            brian_verbose=self.brian_verbose,
+                                            github_md=github_md
                                                    )
         # check whether meta data should be added
         if add_meta:

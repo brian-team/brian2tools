@@ -13,6 +13,7 @@ from brian2.synapses.synapses import SummedVariableUpdater, SynapticPathway
 from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
 from brian2.units.fundamentalunits import Quantity
 from brian2 import second
+import numpy as np
 from .helper import _prepare_identifiers
 
 def collect_NeuronGroup(group, run_namespace):
@@ -401,7 +402,12 @@ def collect_EventMonitor(event_mon):
     event_mon_dict['variables'] = list(event_mon.record_variables)
 
     # collect record indices and time
-    event_mon_dict['record'] = event_mon.record
+    # change to list if one member is minotor to have uniformity as
+    # for statemonitor
+    if hasattr(event_mon.record, '__iter__'):
+        event_mon_dict['record'] = event_mon.record
+    else:
+        event_mon_dict['record'] = np.array([event_mon.record])
 
     # collect time-step
     event_mon_dict['dt'] = event_mon.clock.dt
