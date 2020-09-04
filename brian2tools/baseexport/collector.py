@@ -395,9 +395,6 @@ def collect_EventMonitor(event_mon):
     # collect source object name
     event_mon_dict['source'] = event_mon.source.name
 
-    # collect source object size (shall be used for nmlexport)
-    event_mon_dict['source_size'] = event_mon.source.N
-
     # collect record variables, (done same as for SpikeMonitor)
     event_mon_dict['variables'] = list(event_mon.record_variables)
 
