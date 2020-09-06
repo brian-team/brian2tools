@@ -479,9 +479,9 @@ class Std_mdexpander():
         (initializer['index'] != 'True' and initializer['index'] != 'False')):
             init_str += ' on condition ' + initializer['index']
         elif (isinstance(initializer['index'], bool) or
-            (initializer['index'] == 'True' or
-             initializer['index'] == 'False')):
-            if initializer['index'] or initializer['index'] == 'True':
+            (initializer['index'] is 'True' or
+             initializer['index'] is 'False')):
+            if initializer['index'] or initializer['index'] is 'True':
                 init_str += ' to all members'
             else:
                 init_str += ' to no member'
@@ -783,7 +783,7 @@ class Std_mdexpander():
         # expand model equations
         if 'equations' in synapse:
             md_str += tab + bold('Dynamics:') + endll
-            md_str += tab + self.expand_equations(synapse['equations'])
+            md_str += self.expand_equations(synapse['equations'])
             if 'user_method' in synapse:
                 md_str += (tab + synapse['user_method'] + 
                     ' method is used for integration' + endll)

@@ -33,9 +33,10 @@ class MdExporter(BaseExporter):
             dictionary format in markdown
 
         filename : str, optional
+            By default, no file writing is done
             If mentioned, the markdown text would be written in that
-            particular filename. By default, the same python filename
-            is used
+            particular filename. When empty string '' is passed the user file
+            name would be taken
 
         brian_verbose : bool, optional
             Whether to use Brian-like words for markdown exporter and
@@ -79,20 +80,22 @@ class MdExporter(BaseExporter):
         self.meta_data = meta_data
         # chech expand_class
         if expand_class:
-            if not isinstance(expand_class, Std_mdexpander):
+            if not issubclass(expand_class, Std_mdexpander):
                 raise NotImplementedError('The expand class must be derived \
                                            from `Std_mdexpander` to override \
                                            expand functions')
             self.expand_class = expand_class
         else:
             self.expand_class = Std_mdexpander
+        # set as default value
+        self.filename = None
         # check output filename
         if filename:
             if not isinstance(filename, str):
                 raise Exception('Output filename should be string, \
                                  not {} type'.format(type(filename)))
             self.filename = filename
-        else:
+        elif isinstance(filename, str):
             self.filename = user_file[:-3]  # to remove '.py'
         # start creating markdown descriptions using expand_class
         md_exporter = self.expand_class()
@@ -107,12 +110,12 @@ class MdExporter(BaseExporter):
         # check whether in debug mode to print output in stdout
         if debug:
             print(self.md_text)
-        else:
+        elif self.filename:
             # start writing markdown text in file
             md_file = open(self.filename + '.md', "w")
             md_file.write(self.md_text)
             md_file.close()
 
 
-he_device = MdExporter()
-all_devices['markdown'] = he_device
+md_device = MdExporter()
+all_devices['markdown'] = md_device
