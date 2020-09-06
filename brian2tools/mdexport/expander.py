@@ -55,7 +55,7 @@ class Std_mdexpander():
         # dict where adding 's' at the end won't work
         singular_plural_dict = {'index': 'indices',
                                 'property': 'properties'
-                            }
+                               }
         # check iterable
         if hasattr(iterable, '__iter__'):
             for _ in iterable:
@@ -90,7 +90,7 @@ class Std_mdexpander():
         separate : bool, optional
             Whether lhs and rhs of the statement should be separated and
             rendered
-        
+
         equals : str, optional
             Equals operator, by default arrow from right to left
         """
@@ -109,10 +109,10 @@ class Std_mdexpander():
                     lhs, rhs = re.split('-=|\+=|=', statement)
                     if '+=' in statement:
                         rend_str += (self.render_expression(lhs) +
-                                     '+=' +self.render_expression(rhs))
+                                     '+=' + self.render_expression(rhs))
                     elif '-=' in statement:
                         rend_str += (self.render_expression(lhs) +
-                                     '-=' +self.render_expression(rhs))
+                                     '-=' + self.render_expression(rhs))
                     else:
                         rend_str += (self.render_expression(lhs) +
                                      equals +  self.render_expression(rhs))
@@ -168,7 +168,7 @@ class Std_mdexpander():
             rend_exp = rend_exp[2:][:-2]
             # link to render as image
             git_rend_exp = (
-            '<img src="https://render.githubusercontent.com/render/math?math=' +
+            '<img src="https://render.githubusercontent.com/render/math?math='+
             rend_exp + '">'
                         )
             return git_rend_exp
@@ -289,7 +289,7 @@ class Std_mdexpander():
             # check inactive objects
             if 'inactive' in run_dict:
                 run_string += endl
-                run_string += (bold('Inactive member' + 
+                run_string += (bold('Inactive member' +
                                self.check_plural(run_dict['inactive']) + ':')
                                + endl)
                 run_string += ', '.join(run_dict['inactive'])
@@ -330,7 +330,7 @@ class Std_mdexpander():
             md_str += self.expand_identifiers(neurongrp['identifiers'])
         # expand run_regularly()
         if 'run_regularly' in neurongrp:
-            md_str += (tab + bold('Run regularly') + 
+            md_str += (tab + bold('Run regularly') +
             self.check_plural(neurongrp['run_regularly']) + ': ' + endll)
             for run_reg in neurongrp['run_regularly']:
                 md_str += self.expand_runregularly(run_reg)
@@ -340,10 +340,10 @@ class Std_mdexpander():
     def expand_identifier(self, ident_key, ident_value):
         """
         Expand identifer (key-value form)
-        
+
         Parameters
         ----------
-        
+
         ident_key : str
             Identifier name
         ident_value : Quantity, str, dict
@@ -388,7 +388,7 @@ class Std_mdexpander():
 
         event_name : str
             name of the event
-        
+
         event_details : dict
             details of the event
         """
@@ -433,13 +433,13 @@ class Std_mdexpander():
         """
         rend_eqn = ''   
         if equation['type'] == 'differential equation':
-            rend_eqn +=  self.render_expression(var, differential=True)
+            rend_eqn += self.render_expression(var, differential=True)
         elif equation['type'] == 'subexpression':
-            rend_eqn +=  self.render_expression(var)
+            rend_eqn += self.render_expression(var)
         else:
             rend_eqn += 'Parameter ' + self.render_expression(var)
         if 'expr' in equation:
-            rend_eqn +=  '=' + self.render_expression(equation['expr'])
+            rend_eqn += '=' + self.render_expression(equation['expr'])
         rend_eqn += (", where unit of " + self.render_expression(var) +
                         " is " + str(equation['unit']))
         if 'flags' in equation:
@@ -475,7 +475,7 @@ class Std_mdexpander():
                      self.render_expression(initializer['value'])
                     )
         # not a good checking
-        if (isinstance(initializer['index'], str) and 
+        if (isinstance(initializer['index'], str) and
         (initializer['index'] != 'True' and initializer['index'] != 'False')):
             init_str += ' on condition ' + initializer['index']
         elif (isinstance(initializer['index'], bool) or
@@ -550,7 +550,7 @@ class Std_mdexpander():
                                         )
                 else:
                     con_str += str(connector['j'])
-            else: 
+            else:
                 con_str += (' to target group with generator syntax ' +
                             connector['j'])
 
@@ -631,12 +631,12 @@ class Std_mdexpander():
             Standard dictionary of StateMonitor
         """
         md_str = ''
-        md_str += (tab + 'Monitors variable' + 
-                   self.check_plural(statemon['variables']) + ': ' +
-                   ','.join(
-                    [self.render_expression(var) for var in statemon['variables']]
-                           ) +
-                   ' of ' + statemon['source'])
+        md_str += (tab + 'Monitors variable' +
+                self.check_plural(statemon['variables']) + ': ' +
+                ','.join(
+                [self.render_expression(var) for var in statemon['variables']]
+                        ) +
+                ' of ' + statemon['source'])
         if isinstance(statemon['record'], bool):
             if statemon['record']:
                 md_str += ' for all members'
@@ -645,10 +645,11 @@ class Std_mdexpander():
             if not statemon['record'].size:
                 md_str += ' for no member'
             else:
-                md_str += (', for member' + self.check_plural(statemon['record']) +
-                        ': ' +
-                        ','.join([str(ind) for ind in statemon['record']]) +
-                        '.' + endll)
+                md_str += (', for member' +
+                           self.check_plural(statemon['record']) +
+                           ': ' +
+                           ','.join([str(ind) for ind in statemon['record']]) +
+                           '.' + endll)
         return md_str
 
     def expand_SpikeMonitor(self, spikemon):
@@ -677,7 +678,7 @@ class Std_mdexpander():
         md_str += (tab + 'Monitors variable' +
                 self.check_plural(eventmon['variables']) + ': ' +
                 ','.join(
-                    [self.render_expression(var) for var in eventmon['variables']]
+                [self.render_expression(var) for var in eventmon['variables']]
                     ) +
                 ' of ' + eventmon['source'])
         if isinstance(eventmon['record'], bool):
@@ -687,9 +688,10 @@ class Std_mdexpander():
             if not eventmon['record'].size:
                 md_str += ' for no member'
             else:
-                md_str += (', for member' + self.check_plural(eventmon['record']) +
-                        ': ' +
-                        ','.join([str(ind) for ind in eventmon['record']]))
+                md_str += (
+                    ', for member' + self.check_plural(eventmon['record']) +
+                    ': ' +
+                    ','.join([str(ind) for ind in eventmon['record']]))
         md_str += (' when event ' + bold(eventmon['event']) +
                     ' is triggered.' + endll)
         return md_str
@@ -712,7 +714,7 @@ class Std_mdexpander():
     def expand_pathway(self, pathway):
         """
         Expand `SynapticPathway`
-        
+
         Parameters
         ----------
 
@@ -743,7 +745,7 @@ class Std_mdexpander():
     def expand_summed_variable(self, sum_variable):
         """
         Expand Summed variable
-        
+
         Parameters
         ----------
 
@@ -785,7 +787,7 @@ class Std_mdexpander():
             md_str += tab + bold('Dynamics:') + endll
             md_str += self.expand_equations(synapse['equations'])
             if 'user_method' in synapse:
-                md_str += (tab + synapse['user_method'] + 
+                md_str += (tab + synapse['user_method'] +
                     ' method is used for integration' + endll)
         # expand pathways using `expand_pathways`
         if 'pathways' in synapse:
@@ -835,6 +837,6 @@ class Std_mdexpander():
         """
         md_str = (tab + 'For every ' + self.render_expression(run_reg['dt']) +
                 ' code: ' +
-                    self.prepare_math_statements(run_reg['code'], separate=True) +
-                    ' will be executed' + endll)
+                self.prepare_math_statements(run_reg['code'], separate=True) +
+                ' will be executed' + endll)
         return md_str

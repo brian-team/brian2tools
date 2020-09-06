@@ -29,7 +29,7 @@ def _markdown_lint(md_str):
                     stack = stack[:-1]
                 elif char in ['}', ')']:
                     if ((stack[-1] == '{' and char == '}') or
-                        (stack[-1] == '(' and char == ')')):
+                       (stack[-1] == '(' and char == ')')):
                         stack = stack[:-1]
                 else:
                     stack.append(char)
@@ -54,7 +54,7 @@ def test_simple_syntax():
     rates = 'rand() * 5 * Hz'
     group = NeuronGroup(N, eqn, method='euler', threshold='v > v_th',
                         reset='v = v_rest; v = rand() * v_rest',
-                        refractory=refractory, 
+                        refractory=refractory,
                         events={'custom': 'v > v_th + 10 * mV',
                         'custom_1': 'v > v_th - 10 * mV'})
     group.run_on_event('custom', 'v = v_rest')
@@ -169,7 +169,7 @@ def test_from_papers_example():
     set_device('markdown')
     # Parameters
     simulation_duration = 6 * second
-    ## Neurons
+    # Neurons
     taum = 10*ms
     Ee = 0*mV
     vt = -54*mV
@@ -177,7 +177,7 @@ def test_from_papers_example():
     El = -74*mV
     taue = 5*ms
 
-    ## STDP
+    # STDP
     taupre = 20*ms
     taupost = taupre
     gmax = .01
@@ -186,7 +186,7 @@ def test_from_papers_example():
     dApost *= gmax
     dApre *= gmax
 
-    ## Dopamine signaling
+    # Dopamine signaling
     tauc = 1000*ms
     taud = 200*ms
     taus = 1*ms
@@ -194,27 +194,27 @@ def test_from_papers_example():
 
     # Setting the stage
 
-    ## Stimuli section
+    # Stimuli section
     input_indices = array([0, 1, 0, 1, 1, 0,
-                        0, 1, 0, 1, 1, 0])
-    input_times = array([ 500,  550, 1000, 1010, 1500, 1510,
-                        3500, 3550, 4000, 4010, 4500, 4510])*ms
+                           0, 1, 0, 1, 1, 0])
+    input_times = array([500,  550, 1000, 1010, 1500, 1510,
+                         3500, 3550, 4000, 4010, 4500, 4510])*ms
     input = SpikeGeneratorGroup(2, input_indices, input_times)
 
     neurons = NeuronGroup(2, '''dv/dt = (ge * (Ee-vr) + El - v) / taum : volt
                                 dge/dt = -ge / taue : 1''',
-                        threshold='v>vt', reset='v = vr',
-                        method='exact')
+                          threshold='v>vt', reset='v = vr',
+                          method='exact')
     neurons.v = vr
     neurons_monitor = SpikeMonitor(neurons)
 
     synapse = Synapses(input, neurons,
-                    model='''s: volt''',
-                    on_pre='v += s')
+                       model='''s: volt''',
+                       on_pre='v += s')
     synapse.connect(i=[0, 1], j=[0, 1])
     synapse.s = 100. * mV
 
-    ## STDP section
+    # STDP section
     synapse_stdp = Synapses(neurons, neurons,
                     model='''mode: 1
                             dc/dt = -c / tauc : 1 (clock-driven)
@@ -232,29 +232,29 @@ def test_from_papers_example():
                             s = clip(s + (1-mode) * Apre, -gmax, gmax)
                             ''',
                     method='euler'
-                    )
+                           )
     synapse_stdp.connect(i=0, j=1)
     synapse_stdp.mode = 0
     synapse_stdp.s = 1e-10
     synapse_stdp.c = 1e-10
     synapse_stdp.d = 0
-    synapse_stdp_monitor = StateMonitor(synapse_stdp, ['s', 'c', 'd'], record=[0])
-
-    ## Dopamine signaling section
+    synapse_stdp_monitor = StateMonitor(synapse_stdp, ['s', 'c', 'd'],
+                                        record=[0])
+    # Dopamine signaling section
     dopamine_indices = array([0, 0, 0])
     dopamine_times = array([3520, 4020, 4520])*ms
     dopamine = SpikeGeneratorGroup(1, dopamine_indices, dopamine_times)
     dopamine_monitor = SpikeMonitor(dopamine)
     reward = Synapses(dopamine, synapse_stdp, model='''''',
-                                on_pre='''d_post += epsilon_dopa''',
-                                method='exact')
+                      on_pre='''d_post += epsilon_dopa''',
+                      method='exact')
     reward.connect()
 
     # Simulation
-    ## Classical STDP
+    # Classical STDP
     synapse_stdp.mode = 0
     run(simulation_duration/2)
-    ## Dopamine modulated STDP
+    # Dopamine modulated STDP
     synapse_stdp.mode = 1
     run(simulation_duration/2)
     md_str = device.md_text
@@ -267,11 +267,14 @@ def test_custom_expander():
     Test custom expander class
     """
     class Custom(Std_mdexpander):
+
         def expand_NeuronGroup(self, grp_dict):
             idt = self.expand_identifiers(grp_dict['identifiers'])
             return "This is my custom neurongroup: " + grp_dict['name'] + idt
+
         def expand_StateMonitor(self, mon_dict):
             return "I monitor " + mon_dict['source']
+
         def expand_identifiers(self, identifiers):
             return 'Identifiers are not shown'
 

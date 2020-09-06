@@ -81,8 +81,9 @@ class MdExporter(BaseExporter):
         # chech expand_class
         if expand_class:
             if not issubclass(expand_class, Std_mdexpander):
-                raise NotImplementedError('The expand class must be derived \
-                                           from `Std_mdexpander` to override \
+                raise NotImplementedError('The expand class must be a \
+                                           sub-class of `Std_mdexpander` \
+                                           to override \
                                            expand functions')
             self.expand_class = expand_class
         else:
@@ -100,7 +101,7 @@ class MdExporter(BaseExporter):
         # start creating markdown descriptions using expand_class
         md_exporter = self.expand_class()
         self.md_text = md_exporter.create_md_string(
-                                            self.runs, 
+                                            self.runs,
                                             brian_verbose=self.brian_verbose,
                                             github_md=github_md
                                                    )

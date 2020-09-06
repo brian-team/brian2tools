@@ -759,7 +759,7 @@ def test_synapse_init():
     S.g['i>10'] = 10
     S.g[-1] = -1
     S.g[10000] = 'rand() + w + w'
-    mon = StateMonitor(S, 'g', record=[0,1])
+    mon = StateMonitor(S, 'g', record=[0, 1])
     run(1*ms)
     # not allowable
     with pytest.raises(NotImplementedError):
