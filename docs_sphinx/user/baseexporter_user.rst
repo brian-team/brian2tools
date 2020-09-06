@@ -111,11 +111,11 @@ The output standard dictionary would look similar to,
                                 'variable': 'v_rest'}]}]
 
 To the user side, the changes required to use the exporter are very minimal
-(very similar to access other Brian 2 device modes). To the standard ``brian2`` code,
+(very similar to accessing other Brian 2 device modes). In the standard ``brian2`` code,
 adding ``baseexport`` import statement and setting device ``exporter`` with proper 
-`build_options` are needed. To access the dictionary, ``device.runs`` can be used and
-to print the dictionary in `stdout`, `debug` mode can also be used. The changes needed
-to run in `debug` mode for the above example are,
+`build_options` will be sufficient to use the exporter. ``device.runs`` can be used
+to access the dictionary and to print the dictionary in `stdout`, `debug` mode shall
+be used. The changes needed to run in `debug` mode for the above example is,
 
 .. code:: python
 
@@ -130,9 +130,9 @@ to run in `debug` mode for the above example are,
 
     device.build(debug=True)   # print standard dictionary
 
-Most of the standard dictionary items has the same object type as used in Brian 2. For instance,
-the `identifiers` and `dt` fields have values of type `Quantity` and `N` (population size)
-is of type `int`. The 
+Most of the standard dictionary items have the same object type as in Brian2. For instance,
+`identifiers` and `dt` fields have values of type `Quantity` and wherein `N` (population size)
+is of type `int`.
 
 Limitations
 -----------

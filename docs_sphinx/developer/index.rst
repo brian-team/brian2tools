@@ -7,4 +7,5 @@ Developer's guide
 
    coding
    exporter_developer
+   markdown_developer
    releases

@@ -9,3 +9,4 @@ User's guide
    exporter_user
    nmlimport
    baseexporter_user
+   mdexporter_user
