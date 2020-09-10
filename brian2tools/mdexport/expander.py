@@ -10,6 +10,9 @@ from sympy.abc import *
 from markdown_strings import *
 import numpy as np
 import re
+import inspect
+import datetime
+import brian2
 
 # define variables for often used delimiters
 endll = '\n\n'
@@ -17,7 +20,7 @@ endl = '\n'
 tab = '\t'
 
 
-class Std_mdexpander():
+class MdExpander():
 
     """
     Build Markdown texts from run dictionary.
@@ -32,6 +35,60 @@ class Std_mdexpander():
     markdown expander class to override the required changes in expand
     functions.
     """
+    def __init__(self, brian_verbose=False,
+                 author=None, add_meta=False, github_md=False):
+        """
+        Constructor for `MdExpander`
+
+        Parameters
+        ----------
+
+        brian_verbose : bool, optional
+            Whether to use Brian-like words for markdown exporter and
+            if set `True`, the names will be Brian based.
+            For example, when set `False`, 'SpikeGeneratorGroup` will be
+            changed to something like, "'Spike generating source"
+
+        author : str, optional
+            Author field to add in the metadata
+
+        add_meta : bool, optional
+            Whether to attach meta field in output markdown text
+
+        github_md : bool, optional
+            Whether should render in GitHub supported markdown. Set `False`
+            as default (`MathJax` based) and if set `False`, image has to
+            created and embedded
+        """
+
+        self.brian_verbose = brian_verbose
+        # if author name is given
+        if author:
+            if type(author) != str:
+                raise Exception('Author field should be string, \
+                                 not {} type'.format(type(author)))
+        else:
+            author = '-'
+        self.author = author
+
+        # get source file name, datetime and Brian version
+        frame = inspect.stack()[1]
+        user_file = inspect.getmodule(frame[0]).__file__
+        date_time = datetime.datetime.now()
+        brian_version = brian2.__version__
+
+        # prepare meta-data
+        meta_data = italics('Filename: {}\
+                             \nAuthor: {}\
+                             \nDate and localtime: {}\
+                             \nBrian version: {}'.format(user_file, author,
+                             date_time.strftime('%Y-%m-%d %H:%M:%S %Z'),
+                             brian_version)) + endl + horizontal_rule() + endl
+
+        self.meta_data = meta_data
+
+        self.add_meta = add_meta
+        self.github_md = github_md
 
     def check_plural(self, iterable, singular_word=None,
                      allow_constants=True):
@@ -175,40 +232,28 @@ class Std_mdexpander():
         # to remove `$` (in most md compiler single $ is used)
         return rend_exp[1:][:-1]
 
-    def create_md_string(self, net_dict, brian_verbose=False, github_md=False):
+    def create_md_string(self, net_dict):
         """
         Create markdown text by checking the standard dictionary and call
         required expand functions and arrange the descriptions
         """
-        # get details about network runs
-        overall_string = header('Network details', 1) + endl
-        n_runs = 's'
-        if len(net_dict) > 1:
-            n_runs = ''
-        # check github based math rendering
-        self.github_md = github_md
-        # start header to mention about no. of total run simulations
-        overall_string += ('The Network consist' + n_runs + ' of {} \
-                           simulation run'.format(
-                                                bold(len(net_dict))
-                                                ) +
-                           self.check_plural(net_dict) +
-                           endl + horizontal_rule() + endl)
+        # expand network header
+        overall_string = self.expand_network_header(net_dict)
+
         # start going to the dictionary items in particular run instance
         for run_indx in range(len(net_dict)):
+
             # details about the particular run
             run_dict = net_dict[run_indx]
-            # start run header to say about duration
+            # expand run header
             if len(net_dict) > 1:
-                run_string = (header('Run ' + str(run_indx + 1) +
-                              ' details', 3) +
-                              endl)
+                run_string = self.expand_run_header(run_dict, run_indx,
+                                                    single_run=False)
             else:
-                run_string = endl
-            run_string += ('Duration of simulation is ' +
-                            bold(str(run_dict['duration'])) + endll)
+                run_string = self.expand_run_header(run_dict, run_indx)
+
             # map expand functions for particular components
-            # h: normal 
+            # h: "general user" naming / 'hb': "Brian" user naming
             func_map = {'neurongroup': {'f': self.expand_NeuronGroup,
                                         'hb': 'NeuronGroup',
                                         'h': 'Neuron group'},
@@ -244,7 +289,7 @@ class Std_mdexpander():
                 if obj_key in func_map.keys():
                     # loop through the members in list
                     # check Brian based verbose is required
-                    if brian_verbose:
+                    if self.brian_verbose:
                         obj_h = func_map[obj_key]['hb']
                     else:
                         obj_h = func_map[obj_key]['h']
@@ -268,7 +313,7 @@ class Std_mdexpander():
                     else:
                         connector.append(init_cont)
             if initializer:
-                if brian_verbose:
+                if self.brian_verbose:
                     run_string += bold('Initializer' +
                                     self.check_plural(initializer) +
                                     ' defined:') + endl
@@ -294,10 +339,56 @@ class Std_mdexpander():
                                + endl)
                 run_string += ', '.join(run_dict['inactive'])
             overall_string += run_string
+
         # final markdown text to pass to `build()`
         self.md_text = overall_string
 
+        if self.add_meta:
+            self.md_text = self.meta_data + self.md_text
+
         return self.md_text
+
+    def expand_network_header(self, net_dict):
+        """
+        Expand function to write network header
+        """
+        md_str = header('Network details', 1) + endl
+        n_runs = ''
+        if len(net_dict) > 1:
+            n_runs += 's'
+        # mention about no. of total run simulations
+        md_str += ('The Network consist' + n_runs + ' of {} simulation \
+                    run'.format(bold(len(net_dict))) +
+                    self.check_plural(net_dict) + endl + horizontal_rule() +
+                    endl)
+        return md_str
+
+    def expand_run_header(self, run_dict, run_indx, single_run=False):
+        """
+        Expand run() header
+
+        Parameters
+        ----------
+
+        run_dict : dict
+            run dictionary
+        
+        run_indx : int
+            Index of run
+
+        single_run : bool, optional
+            Whether only single run() defined for the network
+        """
+        md_str = ''
+
+        if not single_run:
+            md_str += header('Run ' + str(run_indx + 1) + ' details', 3)
+
+        md_str += endl
+        md_str += ('Duration of simulation is ' +
+                    bold(str(run_dict['duration'])) + endll)
+
+        return md_str
 
     def expand_NeuronGroup(self, neurongrp):
         """

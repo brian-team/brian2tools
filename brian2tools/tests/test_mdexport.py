@@ -8,7 +8,7 @@ from brian2 import (NeuronGroup, StateMonitor, Network, set_device,
 from brian2 import (ms, nS, mV, Hz, volt, second, umetre, msiemens, cm,
                     ufarad, siemens)
 from brian2tools import mdexport
-from brian2tools.mdexport.expander import Std_mdexpander
+from brian2tools.mdexport.expander import MdExpander
 import pytest
 import re
 
@@ -132,12 +132,12 @@ def test_common_example():
     dh/dt = alpha_h*(1-h)-beta_h*h : 1
     dge/dt = -ge*(1./taue) : siemens
     dgi/dt = -gi*(1./taui) : siemens
-    alpha_m = 0.32*(mV**-1)*4*mV/exprel((13*mV-v+VT)/(4*mV))/ms : Hz
+    alpha_m = 0.32*(mV**-1)*4*mV/exprel((13.0*mV-v+VT)/(4*mV))/ms : Hz
     beta_m = 0.28*(mV**-1)*5*mV/exprel((v-VT-40*mV)/(5*mV))/ms : Hz
-    alpha_h = 0.128*exp((17*mV-v+VT)/(18*mV))/ms : Hz
+    alpha_h = 0.128*exp((17*mV-v+VT)/(18.0*mV))/ms : Hz
     beta_h = 4./(1+exp((40*mV-v+VT)/(5*mV)))/ms : Hz
-    alpha_n = 0.032*(mV**-1)*5*mV/exprel((15*mV-v+VT)/(5*mV))/ms : Hz
-    beta_n = .5*exp((10*mV-v+VT)/(40*mV))/ms : Hz
+    alpha_n = 0.032*(mV**-1)*5*mV/exprel((15.*mV-v+VT)/(5.*mV))/ms : Hz
+    beta_n = .5*exp((10*mV-v+VT)/(40.*mV))/ms : Hz
     ''')
 
     P = NeuronGroup(4000, model=eqs, threshold='v>-20*mV', refractory=3*ms,
@@ -156,9 +156,10 @@ def test_common_example():
 
     # Record a few traces
     trace = StateMonitor(P, 'v', record=[1, 10, 100])
-    run(1 * second, report='text')
+    run(1 * second)
     md_str = device.md_text
     assert _markdown_lint(md_str)
+    device.reinit()
 
 
 def test_from_papers_example():
@@ -166,7 +167,7 @@ def test_from_papers_example():
     Test Izhikevich_2007 example
     `brian2.readthedocs.io/en/stable/examples/frompapers.Izhikevich_2007.html`
     """
-    set_device('markdown')
+    set_device('markdown', build_on_run=False)
     # Parameters
     simulation_duration = 6 * second
     # Neurons
@@ -257,6 +258,7 @@ def test_from_papers_example():
     # Dopamine modulated STDP
     synapse_stdp.mode = 1
     run(simulation_duration/2)
+    device.build()
     md_str = device.md_text
     assert _markdown_lint(md_str)
     device.reinit()
@@ -266,7 +268,7 @@ def test_custom_expander():
     """
     Test custom expander class
     """
-    class Custom(Std_mdexpander):
+    class Custom(MdExpander):
 
         def expand_NeuronGroup(self, grp_dict):
             idt = self.expand_identifiers(grp_dict['identifiers'])
@@ -278,7 +280,8 @@ def test_custom_expander():
         def expand_identifiers(self, identifiers):
             return 'Identifiers are not shown'
 
-    set_device('markdown', brian_verbose=True, expand_class=Custom)
+    custom_expander = Custom(brian_verbose=True)
+    set_device('markdown', expand_class=custom_expander)
     # check custom expand_class
     v_rest = -79 * mV
     rate = 10 * Hz
@@ -288,7 +291,6 @@ def test_custom_expander():
     run(0.1*ms)
     text = device.md_text
     assert _markdown_lint(text)
-    print(text)
     # brian_verbose check
     assert 'NeuronGroup' in text
     assert 'StateMonitor' in text
@@ -305,33 +307,30 @@ def test_user_options():
     Test user options and error raising
     """
     link = '<img src="https://render.githubusercontent.com/render/math?math='
-    set_device('markdown', github_md=True)
+    my_expander = MdExpander(github_md=True, author='Brian', add_meta=True)
+    set_device('markdown', expand_class=my_expander)
     grp = NeuronGroup(1, 'w :1')
     run(0*ms)
     string = device.md_text
-    assert _markdown_lint(string)
-    assert '$' not in string
-    assert link in string
-    device.reinit_and_delete()
-
-    set_device('markdown', filename=10)
-    with pytest.raises(Exception):
-        run(0*ms)
-    device.reinit_and_delete()
-
-    set_device('markdown', expand_class=NeuronGroup)
-    with pytest.raises(NotImplementedError):
-        run(0*ms)
-    device.reinit_and_delete()
-
-    set_device('markdown', author='Brian', add_meta=True)
-    run(0*ms)
     regex = '_Filename: .*\
              \nAuthor: .*\
              \nDate and localtime: .*\
              \nBrian version: .*'
-    print(device.md_text)
-    assert re.match(regex, device.md_text)
+
+    assert re.match(regex, string)
+    assert _markdown_lint(string)
+    assert '$' not in string
+    assert link in string
+    device.reinit()
+
+    set_device('markdown', filename=10)
+    with pytest.raises(Exception):
+        run(0*ms)
+    device.reinit()
+
+    set_device('markdown', expand_class=NeuronGroup)
+    with pytest.raises(NotImplementedError):
+        run(0*ms)
     device.reinit()
 
 
