@@ -187,9 +187,9 @@ class MdExpander():
         # to remove ',' from last item
         return rend_str[:-2]
 
-    def prepare_array(self, arr, threshold=10):
+    def prepare_array(self, arr, threshold=10, precision=2, separator=', '):
         """
-        Prepare arrays to have size within threshold
+        Prepare arrays using `numpy.array2string`
 
         Parameters
         ----------
@@ -199,16 +199,16 @@ class MdExpander():
 
         threshold : int, optional
             Threshold value to print all members
+        
+        precision : int, optional
+            Floating point precision
+        
+        separator : str, optional
+            Separator string
         """
-        md_str = ''
         arr = np.array(arr)
-        if arr.shape[0] > threshold:
-            md_str += (str(arr[0]) + ', ' + str(arr[1]) + ', ' + str(arr[2]) +
-                       ', ' + ' . . . ' + str(arr[-3]) + ', ' + str(arr[-2]) +
-                       ', ' + str(arr[-1]))
-        else:
-            md_str += ', '.join(str(i) for i in arr)
-
+        md_str = np.array2string(arr, precision=precision,
+                                 threshold=threshold, separator=separator)
         return md_str
 
     def render_expression(self, expression, differential=False):
