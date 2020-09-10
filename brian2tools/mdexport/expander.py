@@ -86,7 +86,7 @@ class MdExpander():
                              brian_version)) + endl + horizontal_rule() + endl
 
         self.meta_data = meta_data
-
+        self.user_file = user_file
         self.add_meta = add_meta
         self.github_md = github_md
 
@@ -196,7 +196,7 @@ class MdExpander():
 
         arr : `numpy.ndarray`
             Numpy array to prepare
-        
+
         threshold : int, optional
             Threshold value to print all members
         """
@@ -415,7 +415,7 @@ class MdExpander():
 
         run_dict : dict
             run dictionary
-        
+
         run_indx : int
             Index of run
 
@@ -531,13 +531,13 @@ class MdExpander():
         event_str += ('after ' +
                     self.render_expression(event_details['threshold']['code']))
         if 'reset' in event_details:
-            event_str += (', ' + 
+            event_str += (', ' +
                         self.prepare_math_statements(
                                         event_details['reset']['code'],
                                         separate=True)
                          )
         if 'refractory' in event_details:
-            event_str += ', with refractory ' 
+            event_str += ', with refractory '
             event_str += self.render_expression(event_details['refractory'])
 
         return event_str + endll
@@ -565,7 +565,7 @@ class MdExpander():
         equation : dict
             Details of the equation
         """
-        rend_eqn = ''   
+        rend_eqn = ''
         if equation['type'] == 'differential equation':
             rend_eqn += self.render_expression(var, differential=True)
         elif equation['type'] == 'subexpression':
@@ -604,7 +604,7 @@ class MdExpander():
         init_str = ''
         init_str += ('Variable ' +
                      self.render_expression(initializer['variable']) +
-                     ' of ' +  initializer['source'] + ' initialized with ' +
+                     ' of ' + initializer['source'] + ' initialized with ' +
                      self.render_expression(initializer['value'])
                     )
         # not a good checking

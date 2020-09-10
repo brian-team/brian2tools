@@ -57,7 +57,7 @@ class MdExporter(BaseExporter):
 
         # change the flag
         self.has_been_run = True
-        
+
         # check expand_class
         if expand_class:
             if not issubclass(type(expand_class), MdExpander):
@@ -80,10 +80,8 @@ class MdExporter(BaseExporter):
             self.filename = filename
         # auto-select filename
         elif isinstance(filename, str):
-            # get source file name, datetime and Brian version
-            frame = inspect.stack()[1]
-            user_file = inspect.getmodule(frame[0]).__file__
-            self.filename = user_file[:-3]  # to remove '.py'
+            # get source file name
+            self.filename = self.expand_class.user_file[:-3]
         else:
             self.filename = None
 
