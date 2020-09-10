@@ -295,7 +295,7 @@ def test_custom_expander():
     assert 'NeuronGroup' in text
     assert 'StateMonitor' in text
     assert 'Activity recorder' not in text
-    assert 'Initializer' in text
+    assert 'Initializing' in text
     assert 'Identifiers are not shown' in text
     assert 'I monitor ' in text
     assert 'This is my custom neurongroup: neurongroup' in text

@@ -91,7 +91,7 @@ class MdExpander():
         self.github_md = github_md
 
     def check_plural(self, iterable, singular_word=None,
-                     allow_constants=True):
+                     allow_constants=True, is_int=False):
         """
         Function to attach plural form of the word
         by examining the following iterable
@@ -107,6 +107,11 @@ class MdExpander():
         allow_constants : bool, optional
             Whether to assume non iterable as singular, if set as `True`,
             the `iterable` argument must be an iterable
+        
+        is_int : int, optional
+            Check whether number `1` is passed, if > 1 return plural,
+            by default set as `False`.
+            Note: `allow_constants` should be `True`
         """
         count = 0
         # dict where adding 's' at the end won't work
@@ -128,7 +133,9 @@ class MdExpander():
         # check allow constants
         elif not allow_constants:
             raise IndexError("Suppose to be iterable object \
-                            but instance got {}".format(type(iterable)))
+                              but instance got {}".format(type(iterable)))
+        elif is_int and iterable > 1:
+            return 's'
         return ''
 
     def prepare_math_statements(self, statements, differential=False,
@@ -256,81 +263,93 @@ class MdExpander():
             # h: "general user" naming / 'hb': "Brian" user naming
             func_map = {'neurongroup': {'f': self.expand_NeuronGroup,
                                         'hb': 'NeuronGroup',
-                                        'h': 'Neuron group'},
+                                        'h': 'Neuron group', 'order': 1},
                        'poissongroup': {'f': self.expand_PoissonGroup,
                                         'hb': 'PoissonGroup',
-                                        'h': 'Poisson spike source'},
+                                        'h': 'Poisson spike source',
+                                        'order': 1},
                        'spikegeneratorgroup':
                                     {'f': self.expand_SpikeGeneratorGroup,
                                      'hb': 'SpikeGeneratorGroup',
-                                     'h': 'Spike generating source'},
+                                     'h': 'Spike generating source',
+                                     'order': 1},
                        'statemonitor': {'f': self.expand_StateMonitor,
                                         'hb': 'StateMonitor',
-                                        'h': 'Activity recorder'},
+                                        'h': 'Activity recorder', 'order': 3},
                        'spikemonitor': {'f': self.expand_SpikeMonitor,
                                         'hb': 'SpikeMonitor',
-                                        'h': 'Spiking activity recorder'},
+                                        'h': 'Spiking activity recorder',
+                                        'order': 3},
                        'eventmonitor': {'f': self.expand_EventMonitor,
                                         'hb': 'EventMonitor',
-                                        'h': 'Event activity recorder'},
+                                        'h': 'Event activity recorder',
+                                        'order': 3},
                        'populationratemonitor':
                                     {'f': self.expand_PopulationRateMonitor,
                                      'hb': 'PopulationRateMonitor',
-                                     'h': 'Population rate recorder'},
+                                     'h': 'Population rate recorder',
+                                     'order': 3},
                        'synapses': {'f': self.expand_Synapses,
                                     'hb': 'Synapse',
-                                    'h': 'Synapse'},
+                                    'h': 'Synapse', 'order': 2},
                        'poissoninput': {'f': self.expand_PoissonInput,
                                          'hb': 'PoissonInput',
-                                         'h': 'Poisson input'}}
-            # loop through the components
-            for (obj_key, obj_list) in run_dict['components'].items():
-                # check the object component is in map
-                if obj_key in func_map.keys():
-                    # loop through the members in list
-                    # check Brian based verbose is required
-                    if self.brian_verbose:
-                        obj_h = func_map[obj_key]['hb']
-                    else:
-                        obj_h = func_map[obj_key]['h']
-                    run_string += (bold(obj_h +
-                                   self.check_plural(obj_list) + ' defined:') +
-                                   endl)
-                    # point out components
-                    for obj_mem in obj_list:
-                        run_string += '- ' + func_map[obj_key]['f'](obj_mem)
-                run_string += endl
-            # differentiate connectors and initializers from
-            # `initializers_connectors`
-            initializer = []
-            connector = []
-            # check if they are available, if so expand them
+                                         'h': 'Poisson input', 'order': 0}}
+            # loop over each order and expand the item
+            # (same complexity as sorting the dict)
+            order_list = [0, 1, 2, 3]
+            for current_order in order_list:
+                # loop through the components
+                for (obj_key, obj_list) in run_dict['components'].items():
+                    # whether object component is in map and correct order
+                    if (obj_key in func_map.keys() and
+                        func_map[obj_key]['order'] == current_order):
+                        # loop through the members in list
+                        # check Brian based verbose is required
+                        if self.brian_verbose:
+                            obj_h = func_map[obj_key]['hb']
+                        else:
+                            obj_h = func_map[obj_key]['h']
+                        run_string += (bold(obj_h +
+                                       self.check_plural(obj_list) +
+                                       ' defined:') + endl)
+                        # point out components
+                        for obj_mem in obj_list:
+                            run_string += ('- ' +
+                                           func_map[obj_key]['f'](obj_mem))
+                    run_string += endl
+
+            # differentiate connectors and initializers
+            any_init = False
+            any_connect = 0
+
             if 'initializers_connectors' in run_dict:
-                # loop through the members in list
+                # loop through the members only to check the items
                 for init_cont in run_dict['initializers_connectors']:
                     if init_cont['type'] is 'initializer':
-                        initializer.append(init_cont)
+                        any_init = True
                     else:
-                        connector.append(init_cont)
-            if initializer:
-                if self.brian_verbose:
-                    run_string += bold('Initializer' +
-                                    self.check_plural(initializer) +
-                                    ' defined:') + endl
-                else:
-                    run_string += bold('Initializing values at \
-                                        starting:') + endl
-                # loop through the initializers
-                for initit in initializer:
-                    run_string += '- ' + self.expand_initializer(initit)
-            if connector:
+                        any_connect += 1
+            # check at least any one is present
+            if any_init or any_connect:
+                if any_init:
+                    run_string += bold('Initializing at start:')
+                if any_connect:
+                    if any_init:
+                        run_string += 'and '
+                    run_string += bold('Synaptic connection' +
+                                self.check_plural(any_connect, is_int=True) +
+                                ' defined:')
                 run_string += endl
-                run_string += bold('Synaptic Connection' +
-                                   self.check_plural(connector) +
-                                   ' defined:') + endl
-                # loop through the connectors
-                for connect in connector:
-                    run_string += '- ' + self.expand_connector(connect)
+
+                for init_cont in run_dict['initializers_connectors']:
+                    # expand accordingly
+                    if init_cont['type'] is 'initializer':
+                        run_string += ('- ' +
+                                       self.expand_initializer(init_cont))
+                    else:
+                        run_string += '- ' + self.expand_connector(init_cont)
+
             # check inactive objects
             if 'inactive' in run_dict:
                 run_string += endl
