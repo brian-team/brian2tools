@@ -187,6 +187,30 @@ class MdExpander():
         # to remove ',' from last item
         return rend_str[:-2]
 
+    def prepare_array(self, arr, threshold=10):
+        """
+        Prepare arrays to have size within threshold
+
+        Parameters
+        ----------
+
+        arr : `numpy.ndarray`
+            Numpy array to prepare
+        
+        threshold : int, optional
+            Threshold value to print all members
+        """
+        md_str = ''
+        arr = np.array(arr)
+        if arr.shape[0] > threshold:
+            md_str += (str(arr[0]) + ', ' + str(arr[1]) + ', ' + str(arr[2]) +
+                       ', ' + ' . . . ' + str(arr[-3]) + ', ' + str(arr[-2]) +
+                       ', ' + str(arr[-1]))
+        else:
+            md_str += ', '.join(str(i) for i in arr)
+
+        return md_str
+
     def render_expression(self, expression, differential=False):
         """
         Function to render mathematical expression using
@@ -267,37 +291,37 @@ class MdExpander():
                        'poissongroup': {'f': self.expand_PoissonGroup,
                                         'hb': 'PoissonGroup',
                                         'h': 'Poisson spike source',
-                                        'order': 1},
+                                        'order': 2},
                        'spikegeneratorgroup':
                                     {'f': self.expand_SpikeGeneratorGroup,
                                      'hb': 'SpikeGeneratorGroup',
                                      'h': 'Spike generating source',
-                                     'order': 1},
+                                     'order': 2},
                        'statemonitor': {'f': self.expand_StateMonitor,
                                         'hb': 'StateMonitor',
-                                        'h': 'Activity recorder', 'order': 3},
+                                        'h': 'Activity recorder', 'order': 4},
                        'spikemonitor': {'f': self.expand_SpikeMonitor,
                                         'hb': 'SpikeMonitor',
                                         'h': 'Spiking activity recorder',
-                                        'order': 3},
+                                        'order': 4},
                        'eventmonitor': {'f': self.expand_EventMonitor,
                                         'hb': 'EventMonitor',
                                         'h': 'Event activity recorder',
-                                        'order': 3},
+                                        'order': 4},
                        'populationratemonitor':
                                     {'f': self.expand_PopulationRateMonitor,
                                      'hb': 'PopulationRateMonitor',
                                      'h': 'Population rate recorder',
-                                     'order': 3},
+                                     'order': 4},
                        'synapses': {'f': self.expand_Synapses,
                                     'hb': 'Synapse',
-                                    'h': 'Synapse', 'order': 2},
+                                    'h': 'Synapse', 'order': 3},
                        'poissoninput': {'f': self.expand_PoissonInput,
                                          'hb': 'PoissonInput',
                                          'h': 'Poisson input', 'order': 0}}
             # loop over each order and expand the item
             # (same complexity as sorting the dict)
-            order_list = [0, 1, 2, 3]
+            order_list = [0, 1, 2, 3, 4]
             for current_order in order_list:
                 # loop through the components
                 for (obj_key, obj_list) in run_dict['components'].items():
@@ -333,10 +357,10 @@ class MdExpander():
             # check at least any one is present
             if any_init or any_connect:
                 if any_init:
-                    run_string += bold('Initializing at start:')
+                    run_string += bold('Initializing at start')
                 if any_connect:
                     if any_init:
-                        run_string += 'and '
+                        run_string += ' and '
                     run_string += bold('Synaptic connection' +
                                 self.check_plural(any_connect, is_int=True) +
                                 ' defined:')
@@ -553,8 +577,7 @@ class MdExpander():
         rend_eqn += (", where unit of " + self.render_expression(var) +
                         " is " + str(equation['unit']))
         if 'flags' in equation:
-            rend_eqn += (' and ' +
-                         ', '.join(str(f) for f in equation['flags']) +
+            rend_eqn += (' and ' + self.prepare_array(equation['flags']) +
                          ' as flag' + self.check_plural(equation['flags']) +
                          ' associated')
         return tab + rend_eqn + endll
@@ -629,7 +652,7 @@ class MdExpander():
                         self.check_plural(connector['i'], 'index') + ': ')
             if not isinstance(connector['i'], str):
                 if hasattr(connector['i'], '__iter__'):
-                    con_str += ', '.join(str(ind) for ind in connector['i'])
+                    con_str += self.prepare_array(connector['i'])
                 else:
                     con_str += str(connector['i'])
             else:
@@ -639,9 +662,7 @@ class MdExpander():
                             self.check_plural(connector['j'], 'index') + ': ')
                 if not isinstance(connector['j'], str):
                     if hasattr(connector['j'], '__iter__'):
-                        con_str += ', '.join(
-                                        str(ind) for ind in connector['j']
-                                            )
+                        con_str += self.prepare_array(connector['j'])
                     else:
                         con_str += str(connector['j'])
                 else:
@@ -655,9 +676,7 @@ class MdExpander():
                 con_str += (' to target group ' +
                         self.check_plural(connector['j'], 'index') + ': ')
                 if hasattr(connector['j'], '__iter__'):
-                    con_str += ', '.join(
-                                    str(ind) for ind in connector['j']
-                                        )
+                    con_str += self.prepare_array(connector['j'])
                 else:
                     con_str += str(connector['j'])
             else:
@@ -718,9 +737,9 @@ class MdExpander():
         md_str += (tab + 'Name ' + bold(spkgen['name']) +
                 ', with population size ' + bold(spkgen['N']) +
                 ', has neuron' + self.check_plural(spkgen['indices']) + ': ' +
-                ', '.join(str(i) for i in spkgen['indices']) +
+                self.prepare_array(spkgen['indices']) +
                 ' that spike at times ' +
-                ', '.join(str(t) for t in spkgen['times']) +
+                self.prepare_array(spkgen['times']) +
                 ', with period ' + str(spkgen['period']) +
                 '.' + endll)
         if 'run_regularly' in spkgen:

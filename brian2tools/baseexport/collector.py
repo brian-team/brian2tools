@@ -399,9 +399,10 @@ def collect_EventMonitor(event_mon):
     event_mon_dict['variables'] = list(event_mon.record_variables)
 
     # collect record indices and time
-    # change to list if one member is minotor to have uniformity as
+    # change to list if one member to monitor, to have uniformity as
     # for statemonitor
-    if hasattr(event_mon.record, '__iter__'):
+    if (hasattr(event_mon.record, '__iter__') or
+        isinstance(event_mon.record, bool)):
         event_mon_dict['record'] = event_mon.record
     else:
         event_mon_dict['record'] = np.array([event_mon.record])
