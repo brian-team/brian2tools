@@ -187,7 +187,7 @@ class MdExpander():
         # to remove ',' from last item
         return rend_str[:-2]
 
-    def prepare_array(self, arr, threshold=10, precision=2, separator=', '):
+    def prepare_array(self, arr, threshold=10, precision=2):
         """
         Prepare arrays using `numpy.array2string`
 
@@ -202,13 +202,16 @@ class MdExpander():
         
         precision : int, optional
             Floating point precision
-        
-        separator : str, optional
-            Separator string
+
         """
-        arr = np.array(arr)
-        md_str = np.array2string(arr, precision=precision,
-                                 threshold=threshold, separator=separator)
+        if not isinstance(arr, Quantity):
+            arr = np.array(arr)
+        old_threshold = np.get_printoptions()['threshold']
+        old_precision = np.get_printoptions()['precision']
+        np.set_printoptions(threshold=threshold, precision=precision)
+        md_str = str(arr)
+        # reset to old value
+        np.set_printoptions(threshold=old_threshold,precision=old_precision)
         return md_str
 
     def render_expression(self, expression, differential=False):
@@ -336,7 +339,7 @@ class MdExpander():
                             obj_h = func_map[obj_key]['h']
                         run_string += (bold(obj_h +
                                        self.check_plural(obj_list) +
-                                       ' defined:') + endl)
+                                       ' :') + endl)
                         # point out components
                         for obj_mem in obj_list:
                             run_string += ('- ' +
@@ -363,7 +366,7 @@ class MdExpander():
                         run_string += ' and '
                     run_string += bold('Synaptic connection' +
                                 self.check_plural(any_connect, is_int=True) +
-                                ' defined:')
+                                ' :')
                 run_string += endl
 
                 for init_cont in run_dict['initializers_connectors']:
@@ -636,7 +639,7 @@ class MdExpander():
 
     def expand_connector(self, connector):
         """
-        Expand connector from connector dictionary
+        Expand synaptic connector from connector dictionary
 
         Parameters
         ----------
@@ -656,7 +659,8 @@ class MdExpander():
                 else:
                     con_str += str(connector['i'])
             else:
-                con_str += ' with generator syntax ' + connector['i']
+                con_str += (' with generator syntax ' +
+                            inline_code(connector['i']))
             if 'j' in connector:
                 con_str += (' to target group ' +
                             self.check_plural(connector['j'], 'index') + ': ')
@@ -666,7 +670,8 @@ class MdExpander():
                     else:
                         con_str += str(connector['j'])
                 else:
-                    con_str += ' with generator syntax ' + connector['j']
+                    con_str += (' with generator syntax ' +
+                                 inline_code(connector['j']))
             else:
                 con_str += ' to all target group members'
 
@@ -681,7 +686,7 @@ class MdExpander():
                     con_str += str(connector['j'])
             else:
                 con_str += (' to target group with generator syntax ' +
-                            connector['j'])
+                             inline_code(connector['j']))
 
         elif 'condition' in connector:
             con_str += (' with condition ' +

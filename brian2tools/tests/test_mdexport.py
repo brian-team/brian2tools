@@ -19,7 +19,7 @@ def _markdown_lint(md_str):
     """
     stack = []
     # symbols to consider
-    symbols = ['*', '$', '|', '{', '}', '(', ')']
+    symbols = ['*', '$', '|', '{', '}', '(', ')', '`']
 
     for char in md_str:
         # check syntax symbols
