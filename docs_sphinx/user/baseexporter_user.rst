@@ -18,9 +18,9 @@ However, user can easily access the standard dictionary as mentioned in the
 
 Working example
 ---------------
-
-As a working example, let us take a simple unconnected Integrate & Fire neuron
-model with refractoriness and initializations,
+Once the `device.build()` is called, the standard dictionary can be accessed by
+`device.runs` variable. As a working example, let us take a simple unconnected 
+Integrate & Fire neuron model with refractoriness and initializations,
 
 .. code:: python
 
