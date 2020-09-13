@@ -171,6 +171,7 @@ class MdExpander():
                     '-=' in statement):
                     # join lhs and rhs
                     lhs, rhs = re.split('-=|\+=|=', statement)
+
                     if '+=' in statement:
                         rend_str += (self.render_expression(lhs) +
                                      '+=' + self.render_expression(rhs))
@@ -180,10 +181,11 @@ class MdExpander():
                     else:
                         rend_str += (self.render_expression(lhs) +
                                      equals +  self.render_expression(rhs))
+                    rend_str += ', '
             # if need not separate
             else:
                 rend_str += self.render_expression(statement, differential)
-            rend_str += ', '
+
         # to remove ',' from last item
         return rend_str[:-2]
 
