@@ -53,57 +53,75 @@ output markdown text
 
 The non-rendered output would look like,
 
-.. code::
-
-    # Network details
-    The Network consists of **1** simulation run
-    _______________________________________________________________________________
-
-    Duration of simulation is **2. s**
-
-    **Neuron group defined:**
-    - Name **neurongroup**, with population size **1**.
-
-        **Dynamics:**
-
-        $\frac{d}{d t} vt$=$\frac{10.mV - vt}{15.ms}$, where unit of $vt$ is V
-
-        $\frac{d}{d t} v$=$- \frac{v}{10.ms}$, where unit of $v$ is V
-
-        exact method is used for integration
-
-        **Events:**
-
-        Event **spike**, after $v \gt vt$, , $v$&#8592;$0$, $vt$+=$3.mV$, 
+.. raw:: html
 
 
-    **Poisson spike source defined:**
-    - 	Name **poissongroup**, with population size **1** and rate as $0.5 kHz$.
+    <h1 id="networkdetails">Network details</h1>
 
+    <p>The Network consist of <strong>1</strong> simulation                     run</p>
 
-    **Activity recorders defined:**
-    -   Monitors variable: $vt$ of neurongroup for all members
-    -   Monitors variable: $v$ of neurongroup for all members
-    **Spiking activity recorder defined:**
-    - 	Monitors variables: $i$,$t$,$v$ of neurongroup, for member: True when event **spike** is triggered.
+    <hr />
 
+    <h3 id="run1details">Run 1 details</h3>
 
-    **Synapse defined:**
-    - 	From poissongroup to neurongroup
+    <p>Duration of simulation is <strong>2. s</strong></p>
 
-        **Pathways:**
+    <p><strong>Neuron group :</strong></p>
 
-        On **pre** of event spike statements: $v$+=$3.mV$ executed
+    <ul>
+    <li><p>Name <strong>neurongroup</strong>, with                 population size <strong>1</strong>.</p>
 
+    <p><strong>Dynamics:</strong></p>
 
-    **Initializing values at starting:**
-    - Variable $vt$ of neurongroup initialized with $10. mV$ to all members
+    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} v">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{v}{10.ms}">, where unit of <img src="https://render.githubusercontent.com/render/math?math=v"> is V</p>
 
-    - Variable $rates$ of poissongroup initialized with $0.5 kHz$ to all members
+    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} vt">=<img src="https://render.githubusercontent.com/render/math?math=\frac{10.mV - vt}{15.ms}">, where unit of <img src="https://render.githubusercontent.com/render/math?math=vt"> is V</p>
 
+    <p>exact method is used for integration</p>
 
-    **Synaptic Connection defined:**
-    - Connection from poissongroup to neurongroup
+    <p><strong>Events:</strong></p>
+
+    <p>Event <strong>spike</strong>, after <img src="https://render.githubusercontent.com/render/math?math=v \gt vt">, , <img src="https://render.githubusercontent.com/render/math?math=v">&#8592;<img src="https://render.githubusercontent.com/render/math?math=0">, <img src="https://render.githubusercontent.com/render/math?math=vt">+=<img src="https://render.githubusercontent.com/render/math?math=3.mV">, </p></li>
+    </ul>
+
+    <p><strong>Poisson spike source :</strong></p>
+
+    <ul>
+    <li>Name <strong>poissongroup</strong>, with                 population size <strong>1</strong> and rate as <img src="https://render.githubusercontent.com/render/math?math=0.5 kHz">.</li>
+    </ul>
+
+    <p><strong>Synapse :</strong></p>
+
+    <ul>
+    <li><p>From poissongroup to neurongroup</p>
+
+    <p><strong>Pathways:</strong></p>
+
+    <p>On <strong>pre</strong> of event spike statements: <img src="https://render.githubusercontent.com/render/math?math=v">+=<img src="https://render.githubusercontent.com/render/math?math=3.mV"> executed</p></li>
+    </ul>
+
+    <p><strong>Activity recorders :</strong></p>
+
+    <ul>
+    <li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=v"> of neurongroup for all members-  Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup for all members</li>
+    </ul>
+
+    <p><strong>Spiking activity recorder :</strong></p>
+
+    <ul>
+    <li>Monitors variables: <img src="https://render.githubusercontent.com/render/math?math=v">,<img src="https://render.githubusercontent.com/render/math?math=t">,<img src="https://render.githubusercontent.com/render/math?math=i"> of neurongroup for all members when event <strong>spike</strong> is triggered.</li>
+    </ul>
+
+    <p><strong>Initializing at start</strong> and <strong>Synaptic connection :</strong></p>
+
+    <ul>
+    <li><p>Variable <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup initialized with <img src="https://render.githubusercontent.com/render/math?math=10. mV"> to all members</p></li>
+
+    <li><p>Variable <img src="https://render.githubusercontent.com/render/math?math=rates"> of poissongroup initialized with <img src="https://render.githubusercontent.com/render/math?math=0.5 kHz"> to all members</p></li>
+
+    <li><p>Connection from poissongroup to neurongroup</p></li>
+    </ul>
+
 
 Similar to other device modes, to inform Brian to run in the exporter mode, 
 the user should make the minimal changes like importing the required package
