@@ -2,30 +2,29 @@ Markdown exporter
 =================
 
 This is the developer documentation for `~brian2tools.mdexport` package, that
-provides information about understanding `baseexport`'s standard dictionary
-representation, standard markdown expander class `MdExpander` and writing custom
-expand functions.
+provides information about understanding `baseexport`'s standard dictionary,
+standard markdown expander `MdExpander` and writing custom expand functions.
 
 .. contents::
     Overview
     :local:
 
-Standard Dictionary representation
-----------------------------------
+Standard dictionary
+-------------------
 
 The package `baseexport` collects all the required Brian model information and
 arranges them in an intuitive way, that can potentially be used for various
-exporters. Therefore, understanding the representation will be helpful for
+exporters and use cases. Therefore, understanding the representation will be helpful for
 further manipulation.
 
 Basically, the dictionary contains list of `run` dictionaries with each containing
 information about the particular run simulation.
 
 .. code:: python
-
+<list of run dictionaries>
     [
         . . . .
-        {
+        {   <run dictionary>
             duration: <Quantity>,
             components: {
                             . . .
@@ -36,7 +35,7 @@ information about the particular run simulation.
         . . . .
     ]
 
-Typically, a `run` dictionary, have four fields namely,
+Typically, a `run` dictionary have four fields namely,
 
 - `duration`: run simulation time length
 - `components`: dictionary of network components like `NeuronGroup`, `Synapses`, etc.
@@ -377,14 +376,14 @@ Writing custom expand class
 
 With the understanding of standard dictionary representation and default markdown expand class,
 writing custom expand class becomes very straightforward. As a working example, the custom expand
-class to write differential equations in a table format would look like,
+class to write equations in a table format would look like,
 
 .. code:: python
 
     from brian2tools.mdexport.expander import MdExpander
     from markdown_strings import table  # import table from markdown_strings
-    # custom expander class to do custom modifications for model equations
 
+    # custom expander class to do custom modifications for model equations
     class Dynamics_table(MdExpander):
 
         def expand_equation(self, var, equation):
