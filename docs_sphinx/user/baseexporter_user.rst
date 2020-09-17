@@ -2,14 +2,14 @@ Base exporter
 =============
 
 This is the user documentation of the `~brian2tools.baseexport` package, that
-provides functionality to represent Brian 2 models in a standard dictionary
+provides functionality to represent Brian2 models in a standard dictionary
 format. The standard dictionary has a simple and easy to access hierarchy of model
 information, that can be used for various model description exporters and custom
 descriptions.
 
-The `~brian2tools.baseexport` package is not meant to be used directly but to
-provide general platform to use other model description exporters on top of it.
-However, user can easily access the standard dictionary as mentioned in the 
+The `~brian2tools.baseexport` package is not meant to use directly but to
+provide general framework to use other model description exporters on top of it.
+However, the standard dictionary can be easily accessed as mentioned in the 
 `Working example` section.
 
 .. contents::
@@ -19,8 +19,9 @@ However, user can easily access the standard dictionary as mentioned in the
 Working example
 ---------------
 Once the `device.build()` is called, the standard dictionary can be accessed by
-`device.runs` variable. As a working example, let us take a simple unconnected 
-Integrate & Fire neuron model with refractoriness and initializations,
+`device.runs` variable. As a working example, let us take a 
+(`simple unconnected Integrate & Fire neuronal model <https://brian2.readthedocs.io/en/stable/examples/IF_curve_LIF.html>`_)
+with refractoriness and initializations,
 
 .. code:: python
 
@@ -111,11 +112,11 @@ The output standard dictionary would look similar to,
                                 'variable': 'v_rest'}]}]
 
 To the user side, the changes required to use the exporter are very minimal
-(very similar to accessing other Brian 2 device modes). In the standard ``brian2`` code,
+(very similar to accessing other Brian2 device modes). In the standard Brian code,
 adding ``baseexport`` import statement and setting device ``exporter`` with proper 
-`build_options` will be sufficient to use the exporter. ``device.runs`` can be used
-to access the dictionary and to print the dictionary in `stdout`, `debug` mode shall
-be used. The changes needed to run in `debug` mode for the above example is,
+`build_options` will be sufficient to use the exporter. To print the dictionary in `stdout`,
+`debug` option shall also be used, apart from using ``device.runs`` variable.
+The changes required to run in `debug` mode for the above example are,
 
 .. code:: python
 
@@ -131,13 +132,14 @@ be used. The changes needed to run in `debug` mode for the above example is,
     device.build(debug=True)   # print standard dictionary
 
 Most of the standard dictionary items have the same object type as in Brian2. For instance,
-`identifiers` and `dt` fields have values of type `Quantity` and wherein `N` (population size)
+`identifiers` and `dt` fields have values of type `Quantity` but `N` (population size)
 is of type `int`.
 
 Limitations
 -----------
 
-The Base export currently supports almost all Brian 2 features except,
+The Base export currently supports almost all Brian2 features except,
 
 - Multicompartmental neurons (``SpatialNeuronGroup``)
 - ``store``/``restore`` mechanism
+- Multiple `Network`s

@@ -17,14 +17,15 @@ arranges them in an intuitive way, that can potentially be used for various
 exporters and use cases. Therefore, understanding the representation will be helpful for
 further manipulation.
 
-Basically, the dictionary contains list of `run` dictionaries with each containing
+The dictionary contains a list of `run` dictionaries with each containing
 information about the particular run simulation.
 
 .. code:: python
-<list of run dictionaries>
+
+    # list of run dictionaries
     [
         . . . .
-        {   <run dictionary>
+        {   # run dictionary
             duration: <Quantity>,
             components: {
                             . . .
@@ -35,19 +36,15 @@ information about the particular run simulation.
         . . . .
     ]
 
-Typically, a `run` dictionary have four fields namely,
+Typically, a `run` dictionary has four fields,
 
-- `duration`: run simulation time length
+- `duration`: simulation length
 - `components`: dictionary of network components like `NeuronGroup`, `Synapses`, etc.
 - `initializers_connectors`: list of initializers and synaptic connections
 - `inactive`: list of components that were inactive for the particular run
 
-The values in the dictionary are mostly maintained to be the same as that in Brian 2,
-for example, the `duration` will have the `Quantity` type.
-
 All the Brian `Network` components that are under `components` field, have
-fields for Brian components like, `NeuronGroup`, `Synapses`, etc and would look
-like,
+components like, `NeuronGroup`, `Synapses`, etc and would look like,
 
 .. code:: python
 
@@ -135,9 +132,9 @@ also looks similar to it, however some of the `Synapses` specific fields are,
 
 .. code:: python
 
-    neurongroup: [
+    synapses: [
         {
-            'name': <name of the group>,
+            'name': <name of the synapses object>,
             'equations': <model equations> {
                 '<variable name>':{ 'unit': <unit>,
                                     'type': <equation type>
@@ -179,7 +176,7 @@ also looks similar to it, however some of the `Synapses` specific fields are,
     ]
 
 Also, the `identifiers` takes into account of `TimedArray` and custom user functions.
-The `initializers_connectors` field contains list of initializers and synaptic connectors,
+The `initializers_connectors` field contains a list of initializers and synaptic connections,
 and their structure would look like,
 
 .. code:: python
@@ -203,7 +200,7 @@ and their structure would look like,
         . . .
     ]
 
-As a working example, to get the standard dictionary with model description when using
+As a working example, to get the standard dictionary of model description when using
 `STDP <https://brian2.readthedocs.io/en/stable/examples/synapses.STDP.html>`_ example,
 
 .. code:: python
@@ -317,35 +314,35 @@ As a working example, to get the standard dictionary with model description when
                                 'variable': 'w'}]}]
 
 
-Standard expand class `MdExpander`
-----------------------------------
+MdExpander
+----------
 
-To use the dictionary representation of model description for markdown strings, by
+To use the dictionary representation for creating markdown strings, by
 default `MdExpander` class is used. The class contains expand functions for different
 Brian components, such that the user can easily override the particular function without
 affecting others. Also, different options can be given during the instantiation of the object
-and passed to the `set_device()` or `device.build()`.
+and pass to the `set_device()` or `device.build()`.
 
 As a simple example, to use GitHub based markdown rendering for mathematical statements,
-and use Brian specific words,
+and use Brian specific jargons,
 
 .. code:: python
 
-    from brian2tools.mdexport.expander import MdExpander
+    from brian2tools import MdExpander  # import the standard expander
     # custom expander
     custom = MdExpander(github_md=True, brian_verbose=True)
-    set_device('markdown', expand_class=custom_options)  # pass the custom expander object
+    set_device('markdown', expander=custom_options)  # pass the custom expander
 
 Similarly, `author` and `add_meta` options can also be customized during object instantiation, to
-add author name and whether to add meta data in the header of the markdown output.
+add author name and to add meta data in the header of the markdown output.
 
-Typically, expand function of the component would look like,
+Typically, expand function of the component would follow the structure similar to,
 
 .. code:: python
 
     def expand_object(self, object_dict):
         # use object_dict information to write md_string
-        md_string = . . . . 
+        md_string = . . . object_dict['field_A']
         return md_string
 
 However, enumerating components like `identifiers`, `pathways` have two functions in which the first
@@ -367,8 +364,8 @@ one simply loops the list and the second one expands the member. For example, wi
         . . . # use identifier dict to write markdown strings
         return markdown_str
 
-All the individual expand functions are tied in `create_md_string()` function that calls and collects
-all the returned markdown strings and pass it to `device.md_text`
+All the individual expand functions are tied to `create_md_string()` function that calls and collects
+all the returned markdown strings to pass it to `device.md_text`
 
 
 Writing custom expand class
@@ -376,11 +373,11 @@ Writing custom expand class
 
 With the understanding of standard dictionary representation and default markdown expand class,
 writing custom expand class becomes very straightforward. As a working example, the custom expand
-class to write equations in a table format would look like,
+class to write equations in a table like format,
 
 .. code:: python
 
-    from brian2tools.mdexport.expander import MdExpander
+    from brian2tools import MdExpander
     from markdown_strings import table  # import table from markdown_strings
 
     # custom expander class to do custom modifications for model equations
@@ -420,7 +417,7 @@ class to write equations in a table format would look like,
             return table([shorter, longer])
 
     custom = Dynamics_table()
-    set_device('markdown', expand_class=custom)  # pass the custom expander object
+    set_device('markdown', expander=custom)  # pass the custom expander object
 
 when using the above custom class with `COBAHH <https://brian2.readthedocs.io/en/stable/examples/COBAHH.html>`_ example, the equation part would
 look like,

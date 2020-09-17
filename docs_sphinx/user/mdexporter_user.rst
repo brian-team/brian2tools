@@ -2,10 +2,10 @@ Markdown exporter
 =================
 
 This is the user documentation of `~brian2tools.mdexport` package, that
-provides functionality to describe Brian 2 models in Markdown. The Markdown
-description contains human-readable information of Brian components defined
-in the `Network`. In background, the exporter uses `~brian2tools.baseexport`
-to collect information from the run time and expand them to markdown strings.
+provides functionality to describe Brian2 models in Markdown. The markdown
+description provides human-readable information of Brian components defined.
+In background, the exporter uses `~brian2tools.baseexport` to collect information
+from the run time and expand them to markdown strings.
 
 .. contents::
     Overview
@@ -14,8 +14,9 @@ to collect information from the run time and expand them to markdown strings.
 Working example
 ---------------
 
-As a quick start to use the exporter, let us take a simple model with adaptive
-threshold (increases with each spike) and write the markdown output in a file
+As a quick start to use the package, let us take a simple model with
+(`adaptive threshold that increases with each spike <https://brian2.readthedocs.io/en/stable/examples/adaptive_threshold.html>`_)
+and write the markdown output in a file
 
 .. code:: python
 
@@ -46,7 +47,7 @@ threshold (increases with each spike) and write the markdown output in a file
     Mvt = StateMonitor(IF, 'vt', record=True)
     # Record the value of v when the threshold is crossed
     M_crossings = SpikeMonitor(IF, variables='v')
-    run(2*second, report='text')
+    run(2*second)
 
 The file `model_description.md` would look like,
 
@@ -101,7 +102,8 @@ The file `model_description.md` would look like,
     <p><strong>Activity recorder :</strong></p>
 
     <ul>
-    <li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup for all members-     Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=v"> of neurongroup for all members</li>
+    <li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup for all members</li>
+    <li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=v"> of neurongroup for all members</li>
     </ul>
 
     <p><strong>Spiking activity recorder :</strong></p>
@@ -122,10 +124,11 @@ The file `model_description.md` would look like,
     </div>
 
 Similar to other device modes, to inform Brian to run in the exporter mode, 
-the user should make the minimal changes of importing the required package
-and mentioning device `markdown` in `set_device()`.
+the minimal changes required are importing the package
+and mentioning device `markdown` in `set_device()`. The markdown output can be
+accessed from `device.md_text`.
 
-The above example can be run in `debug` mode to print the output in stdout. In that case,
+The above example can also be run in `debug` mode to print the output in stdout. In that case,
 the changes to the above example are,
 
 
@@ -135,59 +138,36 @@ the changes to the above example are,
     import brian2tools.mdexport
     # set device 'markdown'
     set_device('markdown', build_on_run=False)  # allow for manual build
+    . . .
 
-    eqs = '''
-    dv/dt = -v/(10*ms) : volt
-    dvt/dt = (10*mV-vt)/(15*ms) : volt
-    '''
+    run(2*second)
+    device.build(debug=True)  # to print the output in stdout
 
-    reset = '''
-    v = 0*mV
-    vt += 3*mV
-    '''
-
-    IF = NeuronGroup(1, model=eqs, reset=reset, threshold='v>vt',
-                    method='exact')
-    IF.vt = 10*mV
-    PG = PoissonGroup(1, 500 * Hz)
-
-    C = Synapses(PG, IF, on_pre='v += 3*mV')
-    C.connect()
-
-    Mv = StateMonitor(IF, 'v', record=True)
-    Mvt = StateMonitor(IF, 'vt', record=True)
-    # Record the value of v when the threshold is crossed
-    M_crossings = SpikeMonitor(IF, variables='v')
-    run(2*second, report='text')
-
-    device.build()  # to print the output in stdout
-
-Also, the markdown output can be accessed from `device.md_text`.
 
 Exporter specific build options
 -------------------------------
 
 Various options (apart from that of `RuntimeDevice`) shall be passed to 
-`set_device()` or in `device.build()`. Exporter specific ``build options are,
+`set_device()` or in `device.build()`. Exporter specific ``build options`` are,
 
-``expand_class``
-    Expander class, that contains expander functions to get information from
+``expander``
+    Expander is the object of the call that contains expander functions to get information from
     `baseexport` and use them to write markdown text. By default, `MdExpander`
     is used. The default argument values can be changed and expand functions can be
     overridden (see `developer documentation` for more details and how to write custom
     expander functions).
 
-    A small example to use custom value for `github_md` of `expand_class` that
+    A small example to enable `github_md` in `expander` that
     specifies, whether rendered output should be non-Mathjax based
     (as in compilers like GitHub)
 
-    .. code::
-        . . . .
-        from brian2tools.mdexport.expander import MdExpander
-        # change default value
-        custom_options = MdExpander(github_md=True)
-        set_device('markdown', expand_class=custom_options)  # pass the custom expander object
-        . . . .
+.. code::
+
+    from brian2tools.mdexport.expander import MdExpander
+    # change default value
+    custom_options = MdExpander(github_md=True)
+    set_device('markdown', expander=custom_options)  # pass the custom expander object
+    . . . .
 
 ``filename``
     Filename to write output markdown text. To use the same filename  of the user
