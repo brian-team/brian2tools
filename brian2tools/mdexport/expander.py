@@ -491,7 +491,7 @@ class MdExpander():
         # if not one member
         if source['start'] != source['stop']:
             return ('subgroup (' + str(source['start']) + ' to ' +
-                    str(source['stop']) + ') of' + source['group'])
+                    str(source['stop']) + ') of ' + source['group'])
         # if only single member
         return ('subgroup (member: ' + str(source['start']) + ') of '+
                 source['group'])

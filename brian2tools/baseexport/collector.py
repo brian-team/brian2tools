@@ -311,7 +311,7 @@ def collect_SpikeSource(source):
         SpikeSource object
     """
     if isinstance(source, Subgroup):
-        return {'start': source.start, 'stop': source.stop,
+        return {'start': source.start, 'stop': source.stop - 1,
                 'group': source.source.name}
     return source.name
 

@@ -360,11 +360,11 @@ def test_Subgroup():
     mon_dict = collect_StateMonitor(mon)
     assert mon_dict['source']['group'] == group.name
     assert mon_dict['source']['start'] == 0
-    assert mon_dict['source']['stop'] == 7
+    assert mon_dict['source']['stop'] == 6
     syn_dict = collect_Synapses(syn, get_local_namespace(0))
     assert syn_dict['source']['group'] == group.name
     assert syn_dict['target']['start'] == 0
-    assert syn_dict['source']['stop'] == 5
+    assert syn_dict['source']['stop'] == 4
 
 
 def test_statemonitor():
