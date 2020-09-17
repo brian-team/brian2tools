@@ -61,8 +61,6 @@ The file `model_description.md` would look like,
 
     <hr />
 
-    <h3 id="run1details">Run 1 details</h3>
-
     <p>Duration of simulation is <strong>2. s</strong></p>
 
     <p><strong>Neuron group :</strong></p>
@@ -99,7 +97,7 @@ The file `model_description.md` would look like,
     <p>On <strong>pre</strong> of event spike statements: <img src="https://render.githubusercontent.com/render/math?math=v">+=<img src="https://render.githubusercontent.com/render/math?math=3.mV"> executed</p></li>
     </ul>
 
-    <p><strong>Activity recorder :</strong></p>
+    <p><strong>Activity recorders :</strong></p>
 
     <ul>
     <li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup for all members</li>
