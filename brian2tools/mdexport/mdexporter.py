@@ -12,7 +12,7 @@ class MdExporter(BaseExporter):
     to export model descriptions.
     """
 
-    def build(self, direct_call=True, debug=False, expand_class=None,
+    def build(self, direct_call=True, debug=False, expander=None,
               filename=None):
         """
         Build the exporter
@@ -25,7 +25,7 @@ class MdExporter(BaseExporter):
         debug : bool, optional
             To run in debug mode, that will print the output markdown text
 
-        expand_class : `MdExpander` or its instance
+        expander : `MdExpander` or its instance
             Class that has collections of functions to expand baseexport
             dictionary format in markdown
 
@@ -58,19 +58,19 @@ class MdExporter(BaseExporter):
         # change the flag
         self.has_been_run = True
 
-        # check expand_class
-        if expand_class:
-            if not issubclass(type(expand_class), MdExpander):
+        # check expander
+        if expander:
+            if not issubclass(type(expander), MdExpander):
                 raise NotImplementedError('The expand class must be a \
                                            sub-class of `MdExpander` \
                                            to override expand functions')
-            self.expand_class = expand_class
+            self.expander = expander
         else:
             # default standard md expander
-            self.expand_class = MdExpander()
+            self.expander = MdExpander()
 
-        # start creating markdown descriptions using expand_class
-        self.md_text = self.expand_class.create_md_string(self.runs)
+        # start creating markdown descriptions using expander
+        self.md_text = self.expander.create_md_string(self.runs)
 
         # check output filename
         if filename:
@@ -81,7 +81,7 @@ class MdExporter(BaseExporter):
         # auto-select filename
         elif isinstance(filename, str):
             # get source file name
-            self.filename = self.expand_class.user_file[:-3]
+            self.filename = self.expander.user_file[:-3]
         else:
             self.filename = None
 

@@ -7,8 +7,7 @@ from brian2 import (NeuronGroup, StateMonitor, Network, set_device,
                     Equations, array)
 from brian2 import (ms, nS, mV, Hz, volt, second, umetre, msiemens, cm,
                     ufarad, siemens)
-from brian2tools import mdexport
-from brian2tools.mdexport.expander import MdExpander
+from brian2tools import mdexport, MdExpander
 import pytest
 import re
 
@@ -281,8 +280,8 @@ def test_custom_expander():
             return 'Identifiers are not shown'
 
     custom_expander = Custom(brian_verbose=True)
-    set_device('markdown', expand_class=custom_expander)
-    # check custom expand_class
+    set_device('markdown', expander=custom_expander)
+    # check custom expander
     v_rest = -79 * mV
     rate = 10 * Hz
     grp = NeuronGroup(10, 'v = v_rest:volt')
@@ -308,7 +307,7 @@ def test_user_options():
     """
     link = '<img src="https://render.githubusercontent.com/render/math?math='
     my_expander = MdExpander(github_md=True, author='Brian', add_meta=True)
-    set_device('markdown', expand_class=my_expander)
+    set_device('markdown', expander=my_expander)
     grp = NeuronGroup(1, 'w :1')
     run(0*ms)
     string = device.md_text
@@ -328,7 +327,7 @@ def test_user_options():
         run(0*ms)
     device.reinit()
 
-    set_device('markdown', expand_class=NeuronGroup)
+    set_device('markdown', expander=NeuronGroup)
     with pytest.raises(NotImplementedError):
         run(0*ms)
     device.reinit()

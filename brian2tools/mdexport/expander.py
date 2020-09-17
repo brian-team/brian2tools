@@ -476,6 +476,26 @@ class MdExpander():
 
         return md_str
 
+    def expand_SpikeSource(self, source):
+        """
+        Check whether subgroup dict and expand accordingly
+        
+        Parameters
+        ----------
+
+        source : str, dict
+            Source group name or subgroup dictionary
+        """
+        if isinstance(source, str):
+            return source
+        # if not one member
+        if source['start'] != source['stop']:
+            return ('subgroup (' + str(source['start']) + ' to ' +
+                    str(source['stop']) + ') of' + source['group'])
+        # if only single member
+        return ('subgroup (member: ' + str(source['start']) + ') of '+
+                source['group'])
+
     def expand_identifier(self, ident_key, ident_value):
         """
         Expand identifer (key-value form)
@@ -609,7 +629,8 @@ class MdExpander():
         init_str = ''
         init_str += ('Variable ' +
                      self.render_expression(initializer['variable']) +
-                     ' of ' + initializer['source'] + ' initialized with ' +
+                     ' of ' + self.expand_SpikeSource(initializer['source']) +
+                     ' initialized with ' +
                      self.render_expression(initializer['value'])
                     )
         # not a good checking
@@ -650,8 +671,9 @@ class MdExpander():
             Dictionary representation of connector
         """
         con_str = ''
-        con_str += ('Connection from ' + connector['source'] +
-                    ' to ' + connector['target'])
+        con_str += ('Connection from ' +
+                    self.expand_SpikeSource(connector['source']) +
+                    ' to ' + self.expand_SpikeSource(connector['target']))
         if 'i' in connector:
             con_str += ('. From source group ' +
                         self.check_plural(connector['i'], 'index') + ': ')
@@ -772,7 +794,7 @@ class MdExpander():
                 ','.join(
                 [self.render_expression(var) for var in statemon['variables']]
                         ) +
-                ' of ' + statemon['source'])
+                ' of ' + self.expand_SpikeSource(statemon['source']))
         if isinstance(statemon['record'], bool):
             if statemon['record']:
                 md_str += ' for all members'
@@ -816,7 +838,7 @@ class MdExpander():
                 ','.join(
                 [self.render_expression(var) for var in eventmon['variables']]
                     ) +
-                ' of ' + eventmon['source'])
+                ' of ' + self.expand_SpikeSource(eventmon['source']))
         if isinstance(eventmon['record'], bool):
             if eventmon['record']:
                 md_str += ' for all members'
@@ -843,8 +865,9 @@ class MdExpander():
             PopulationRateMonitor's baseexport dictionary
         """
         md_str = ''
-        md_str += (tab + 'Monitors the population of ' + popratemon['source'] +
-                '.' + endll)
+        md_str += (tab + 'Monitors the population of ' +
+                   self.expand_SpikeSource(popratemon['source']) +
+                   '.' + endll)
         return md_str
 
     def expand_pathway(self, pathway):
@@ -888,10 +911,10 @@ class MdExpander():
         sum_variabe : dict
             SummedVariable's baseexport dictionary
         """
-        md_str = (tab + 'Updates target group ' + sum_variable['target'] +
+        md_str = (tab + 'Updates target group ' +
+                  self.expand_SpikeSource(sum_variable['target']) +
                   ' with statement: ' +
-                  self.render_expression(sum_variable['code']) +
-                  endll)
+                  self.render_expression(sum_variable['code']) + endll)
 
         return md_str
 
@@ -915,9 +938,10 @@ class MdExpander():
             Dictionary representation of `Synapses` object
         """
         md_str = ''
-        md_str += (tab + 'From ' + synapse['source'] +
-                ' to ' + synapse['target'] + endll
-                )
+        md_str += (tab + 'From ' +
+                   self.expand_SpikeSource(synapse['source']) +
+                   ' to ' + self.expand_SpikeSource(synapse['target']) + endll
+                  )
         # expand model equations
         if 'equations' in synapse:
             md_str += tab + bold('Dynamics:') + endll
