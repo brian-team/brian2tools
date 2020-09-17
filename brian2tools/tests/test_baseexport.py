@@ -324,7 +324,7 @@ def test_poissoninput():
     assert poi_dict['target_var'] == 'v'
     assert poi_dict['when'] == poi.when
     assert poi_dict['order'] == poi.order
-    assert poi_dict['clock'] == poi.clock.dt
+    assert poi_dict['dt'] == poi.clock.dt
     assert poi_dict['identifiers']['v_th'] == v_th
     # test 2
     grp2 = NeuronGroup(10, 'dv_1_2_3/dt = (v_th - v_1_2_3)/(10*ms) :volt',
@@ -564,7 +564,7 @@ def test_Synapses():
     assert syn_dict['name'] == S.name
 
     pathways = syn_dict['pathways'][0]
-    assert pathways['clock'] == S._pathways[0].clock.dt
+    assert pathways['dt'] == S._pathways[0].clock.dt
     assert pathways['prepost'] == 'pre'
     assert pathways['source'] == P.name
     assert pathways['target'] == Q.name

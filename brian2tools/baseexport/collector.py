@@ -527,7 +527,7 @@ def collect_Synapses(synapses, run_namespace):
                     'source': collect_SpikeSource(obj.source),
                     'target': collect_SpikeSource(obj.target),
                     'name': obj.name,
-                    'clock': obj.clock.dt, 'order': obj.order,
+                    'dt': obj.clock.dt, 'order': obj.order,
                     'when': obj.when
                    }
             # check delay is defined
@@ -576,7 +576,7 @@ def collect_PoissonInput(poinp, run_namespace):
     poinp_dict['N'] = poinp.N
     poinp_dict['when'] = poinp.when
     poinp_dict['order'] = poinp.order
-    poinp_dict['clock'] = poinp.clock.dt
+    poinp_dict['dt'] = poinp.clock.dt
     poinp_dict['weight'] = poinp._weight
     poinp_dict['target_var'] = poinp._target_var
     # collect identifiers, resolve and prune

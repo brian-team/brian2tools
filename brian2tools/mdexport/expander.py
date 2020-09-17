@@ -283,10 +283,10 @@ class MdExpander():
             run_dict = net_dict[run_indx]
             # expand run header
             if len(net_dict) > 1:
-                run_string = self.expand_run_header(run_dict, run_indx,
-                                                    single_run=False)
-            else:
                 run_string = self.expand_run_header(run_dict, run_indx)
+            else:
+                run_string = self.expand_run_header(run_dict, run_indx,
+                                                    single_run=True)
 
             # map expand functions for particular components
             # h: "general user" naming / 'hb': "Brian" user naming
@@ -806,9 +806,8 @@ class MdExpander():
                 md_str += (', for member' +
                            self.check_plural(statemon['record']) +
                            ': ' +
-                           ','.join([str(ind) for ind in statemon['record']]) +
-                           '.' + endll)
-        return md_str
+                           ','.join([str(ind) for ind in statemon['record']]))
+        return md_str + endll
 
     def expand_SpikeMonitor(self, spikemon):
         """
@@ -851,8 +850,8 @@ class MdExpander():
                     ': ' +
                     ','.join([str(ind) for ind in eventmon['record']]))
         md_str += (' when event ' + bold(eventmon['event']) +
-                    ' is triggered.' + endll)
-        return md_str
+                    ' is triggered')
+        return md_str + endll
 
     def expand_PopulationRateMonitor(self, popratemon):
         """
