@@ -239,7 +239,7 @@ class BaseExporter(RuntimeDevice):
         ident_set = get_identifiers(code)
         ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
         ident_dict = _prepare_identifiers(ident_dict)
-        init_dict = {'source': variableview.group.name,
+        init_dict = {'source': collect_SpikeSource(variableview.group),
                      'variable': variableview.name,
                      'index': cond, 'value': code, 'type': 'initializer'}
         # if identifiers are defined, then add the field
@@ -258,7 +258,7 @@ class BaseExporter(RuntimeDevice):
         ident_set = get_identifiers(code)
         ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
         ident_dict = _prepare_identifiers(ident_dict)
-        init_dict = {'source': variableview.group.name,
+        init_dict = {'source': collect_SpikeSource(variableview.group),
                      'variable': variableview.name,
                      'value': code, 'type': 'initializer'}
         if ident_dict:
@@ -292,7 +292,7 @@ class BaseExporter(RuntimeDevice):
         # happens when dimensionless is passed like int/float
         if not isinstance(value, Quantity):
             value = Quantity(value)
-        init_dict = {'source': variableview.group.name,
+        init_dict = {'source': collect_SpikeSource(variableview.group),
                      'variable': variableview.name,
                      'value': value, 'type': 'initializer'}
         # check type is slice and True
@@ -351,8 +351,9 @@ class BaseExporter(RuntimeDevice):
                 connect.update({'j': j})
         connect.update({'probability': p, 'n_connections': n,
                         'synapses': synapses.name,
-                        'source': synapses.source.name,
-                        'target': synapses.target.name, 'type': 'connect'
+                        'source': collect_SpikeSource(synapses.source),
+                        'target': collect_SpikeSource(synapses.target),
+                        'type': 'connect'
                         })
         # get resolved and clean identifiers
         strings_with_identifers.append(str(p))

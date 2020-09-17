@@ -340,6 +340,33 @@ def test_poissoninput():
         poi_dict['identifiers']
 
 
+def test_Subgroup():
+    """
+    Test Subgroup
+    """
+    eqn = '''
+    dv/dt = (1 - v) / tau :1
+    '''
+    tau = 10 * ms
+    group = NeuronGroup(10, eqn, threshold='v>10', reset='v=0',
+                        method='euler')
+    sub_a = group[0:5]
+    sub_b = group[0:10]
+    syn = Synapses(sub_a, sub_b)
+    syn.connect(p=0.8)
+    mon = StateMonitor(group[0:7], 'v', record=1)
+    sub_a.v = 1
+    sub_b.v = -1
+    mon_dict = collect_StateMonitor(mon)
+    assert mon_dict['source']['group'] == group.name
+    assert mon_dict['source']['start'] == 0
+    assert mon_dict['source']['stop'] == 7
+    syn_dict = collect_Synapses(syn, get_local_namespace(0))
+    assert syn_dict['source']['group'] == group.name
+    assert syn_dict['target']['start'] == 0
+    assert syn_dict['source']['stop'] == 5
+
+
 def test_statemonitor():
     """
     Test collect_StateMonitor dictionary representation
@@ -860,6 +887,7 @@ if __name__ == '__main__':
     test_spikegenerator()
     test_poissongroup()
     test_poissoninput()
+    test_Subgroup()
     test_statemonitor()
     test_spikemonitor()
     test_PopulationRateMonitor()
