@@ -9,11 +9,10 @@ from brian2.equations.equations import PARAMETER
 from brian2.utils.stringtools import get_identifiers
 from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
-from brian2.groups.subgroup import Subgroup
 from brian2.synapses.synapses import SummedVariableUpdater, SynapticPathway
 from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
 from brian2.units.fundamentalunits import Quantity
-from brian2 import second
+from brian2 import second, Subgroup
 import numpy as np
 from .helper import _prepare_identifiers
 
