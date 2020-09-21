@@ -4,12 +4,16 @@ from BrianObjects and represent them in a standard
 dictionary format. The parts of the file shall be reused
 with standard format exporter.
 """
+from brian2.codegen.translation import analyse_identifiers
 from brian2.equations.equations import PARAMETER
 from brian2.utils.stringtools import get_identifiers
 from brian2.groups.neurongroup import StateUpdater
 from brian2.groups.group import CodeRunner
 from brian2.synapses.synapses import SummedVariableUpdater, SynapticPathway
 from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
+from brian2.units.fundamentalunits import Quantity
+from brian2 import second, Subgroup
+import numpy as np
 from .helper import _prepare_identifiers
 
 
@@ -207,7 +211,7 @@ def collect_SpikeGenerator(spike_gen, run_namespace):
     spikegen_dict['indices'] = spike_gen._neuron_index[:]
 
     # get spike times for defined neurons
-    spikegen_dict['times'] = spike_gen.spike_time[:]
+    spikegen_dict['times'] = Quantity(spike_gen._spike_time[:], second)
 
     # get spike period (default period is 0*second will be stored if not
     # mentioned by the user)
@@ -297,6 +301,21 @@ def collect_PoissonGroup(poisson_grp, run_namespace):
     return poisson_grp_dict
 
 
+def collect_SpikeSource(source):
+    """
+    Check SpikeSource and collect details
+
+    Parameters
+    ----------
+    source : `brian2.core.spikesource.SpikeSource`
+        SpikeSource object
+    """
+    if isinstance(source, Subgroup):
+        return {'start': source.start, 'stop': source.stop - 1,
+                'group': source.source.name}
+    return source.name
+
+
 def collect_StateMonitor(state_mon):
     """
     Collect details of `brian2.monitors.statemonitor.StateMonitor`
@@ -318,8 +337,8 @@ def collect_StateMonitor(state_mon):
     # get name
     state_mon_dict['name'] = state_mon.name
 
-    # get source object name
-    state_mon_dict['source'] = state_mon.source.name
+    # if subgroup extend it
+    state_mon_dict['source'] = collect_SpikeSource(state_mon.source)
 
     # get recorded variables
     state_mon_dict['variables'] = state_mon.record_variables
@@ -389,14 +408,20 @@ def collect_EventMonitor(event_mon):
     # collect event name
     event_mon_dict['event'] = event_mon.event
 
-    # collect source object name
-    event_mon_dict['source'] = event_mon.source.name
+    # get source object name
+    event_mon_dict['source'] = collect_SpikeSource(event_mon.source)
 
     # collect record variables, (done same as for SpikeMonitor)
     event_mon_dict['variables'] = list(event_mon.record_variables)
 
     # collect record indices and time
-    event_mon_dict['record'] = event_mon.record
+    # change to list if one member to monitor, to have uniformity as
+    # for statemonitor
+    if (hasattr(event_mon.record, '__iter__') or
+        isinstance(event_mon.record, bool)):
+        event_mon_dict['record'] = event_mon.record
+    else:
+        event_mon_dict['record'] = np.array([event_mon.record])
 
     # collect time-step
     event_mon_dict['dt'] = event_mon.clock.dt
@@ -430,7 +455,7 @@ def collect_PopulationRateMonitor(poprate_mon):
     poprate_mon_dict['name'] = poprate_mon.name
 
     # collect source object
-    poprate_mon_dict['source'] = poprate_mon.source.name
+    poprate_mon_dict['source'] = collect_SpikeSource(poprate_mon.source)
 
     # collect time-step
     poprate_mon_dict['dt'] = poprate_mon.clock.dt
@@ -466,8 +491,8 @@ def collect_Synapses(synapses, run_namespace):
     synapse_dict['name'] = synapses.name
 
     # get source and target groups
-    synapse_dict['source'] = synapses.source.name
-    synapse_dict['target'] = synapses.target.name
+    synapse_dict['source'] = collect_SpikeSource(synapses.source)
+    synapse_dict['target'] = collect_SpikeSource(synapses.target)
 
     # get governing equations
     synapse_equations = collect_Equations(synapses.equations)
@@ -489,7 +514,8 @@ def collect_Synapses(synapses, run_namespace):
     for obj in synapses.contained_objects:
         # check summed variables
         if isinstance(obj, SummedVariableUpdater):
-            summed_var = {'code': obj.abstract_code, 'target': obj.target.name,
+            summed_var = {'code': obj.expression,
+                          'target': collect_SpikeSource(obj.target),
                           'name': obj.name, 'dt': obj.clock.dt,
                           'when': obj.when, 'order': obj.order
                          }
@@ -497,9 +523,11 @@ def collect_Synapses(synapses, run_namespace):
         # check synapse pathways
         if isinstance(obj, SynapticPathway):
             path = {'prepost': obj.prepost, 'event': obj.event,
-                    'code': obj.code, 'source': obj.source.name,
-                    'target': obj.target.name, 'name': obj.name,
-                    'clock': obj.clock.dt, 'order': obj.order,
+                    'code': obj.code,
+                    'source': collect_SpikeSource(obj.source),
+                    'target': collect_SpikeSource(obj.target),
+                    'name': obj.name,
+                    'dt': obj.clock.dt, 'order': obj.order,
                     'when': obj.when
                    }
             # check delay is defined
@@ -507,7 +535,8 @@ def collect_Synapses(synapses, run_namespace):
                path.update({'delay': obj.delay[:]})
             pathways.append(path)
             # check any identifiers specific to pathway expression
-            identifiers = identifiers | get_identifiers(obj.code)
+            _, _, unknown = analyse_identifiers(obj.code, obj.variables)
+            identifiers = identifiers | unknown
 
     # check any summed variables are used
     if summed_variables:
@@ -547,7 +576,7 @@ def collect_PoissonInput(poinp, run_namespace):
     poinp_dict['N'] = poinp.N
     poinp_dict['when'] = poinp.when
     poinp_dict['order'] = poinp.order
-    poinp_dict['clock'] = poinp.clock.dt
+    poinp_dict['dt'] = poinp.clock.dt
     poinp_dict['weight'] = poinp._weight
     poinp_dict['target_var'] = poinp._target_var
     # collect identifiers, resolve and prune

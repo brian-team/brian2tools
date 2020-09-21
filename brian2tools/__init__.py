@@ -8,6 +8,7 @@ from .plotting import *
 from .nmlexport import *
 from .tests import run as test
 from .baseexport import *
+from .mdexport import *
 
 from pkg_resources import get_distribution, DistributionNotFound
 try:

@@ -227,7 +227,7 @@ def test_spikegenerator():
     # example 1
     size = 1
     index = [0]
-    time = [10] * ms
+    time = [0.01] * second
 
     spike_gen = SpikeGeneratorGroup(size, index, time)
     spike_gen_dict = collect_SpikeGenerator(spike_gen, get_local_namespace(0))
@@ -236,8 +236,8 @@ def test_spikegenerator():
     assert spike_gen_dict['indices'] == [0]
     assert spike_gen_dict['indices'].dtype == int
 
-    assert spike_gen_dict['times'] == time
-    assert spike_gen_dict['times'].has_same_dimensions(10 * ms)
+    assert float(spike_gen_dict['times']) == float(time)
+    assert spike_gen_dict['times'][:].dimensions == second
     assert spike_gen_dict['times'].dtype == float
 
     # example 2
@@ -324,7 +324,7 @@ def test_poissoninput():
     assert poi_dict['target_var'] == 'v'
     assert poi_dict['when'] == poi.when
     assert poi_dict['order'] == poi.order
-    assert poi_dict['clock'] == poi.clock.dt
+    assert poi_dict['dt'] == poi.clock.dt
     assert poi_dict['identifiers']['v_th'] == v_th
     # test 2
     grp2 = NeuronGroup(10, 'dv_1_2_3/dt = (v_th - v_1_2_3)/(10*ms) :volt',
@@ -338,6 +338,33 @@ def test_poissoninput():
     assert poi_dict['target_var'] == 'v_1_2_3'
     with pytest.raises(KeyError):
         poi_dict['identifiers']
+
+
+def test_Subgroup():
+    """
+    Test Subgroup
+    """
+    eqn = '''
+    dv/dt = (1 - v) / tau :1
+    '''
+    tau = 10 * ms
+    group = NeuronGroup(10, eqn, threshold='v>10', reset='v=0',
+                        method='euler')
+    sub_a = group[0:5]
+    sub_b = group[0:10]
+    syn = Synapses(sub_a, sub_b)
+    syn.connect(p=0.8)
+    mon = StateMonitor(group[0:7], 'v', record=1)
+    sub_a.v = 1
+    sub_b.v = -1
+    mon_dict = collect_StateMonitor(mon)
+    assert mon_dict['source']['group'] == group.name
+    assert mon_dict['source']['start'] == 0
+    assert mon_dict['source']['stop'] == 6
+    syn_dict = collect_Synapses(syn, get_local_namespace(0))
+    assert syn_dict['source']['group'] == group.name
+    assert syn_dict['target']['start'] == 0
+    assert syn_dict['source']['stop'] == 4
 
 
 def test_statemonitor():
@@ -420,10 +447,10 @@ def test_spikemonitor():
 
     # example 3
     spk = SpikeGeneratorGroup(10, [2, 6, 8], [5 * ms, 10 * ms, 15 * ms])
-    spkmon = SpikeMonitor(spk, record=True)
+    spkmon = SpikeMonitor(spk, ['t', 'i'], record=0)
     smon_dict = collect_SpikeMonitor(spkmon)
 
-    assert smon_dict['record']
+    assert smon_dict['record'] == np.array([0])
     assert 't' in smon_dict['variables']
     assert smon_dict['source'] == spk.name
     assert smon_dict['when'] == 'thresholds'
@@ -537,7 +564,7 @@ def test_Synapses():
     assert syn_dict['name'] == S.name
 
     pathways = syn_dict['pathways'][0]
-    assert pathways['clock'] == S._pathways[0].clock.dt
+    assert pathways['dt'] == S._pathways[0].clock.dt
     assert pathways['prepost'] == 'pre'
     assert pathways['source'] == P.name
     assert pathways['target'] == Q.name
@@ -759,7 +786,7 @@ def test_synapse_init():
     S.g['i>10'] = 10
     S.g[-1] = -1
     S.g[10000] = 'rand() + w + w'
-    mon = StateMonitor(S, 'g', record=[0,1])
+    mon = StateMonitor(S, 'g', record=[0, 1])
     run(1*ms)
     # not allowable
     with pytest.raises(NotImplementedError):
@@ -860,6 +887,7 @@ if __name__ == '__main__':
     test_spikegenerator()
     test_poissongroup()
     test_poissoninput()
+    test_Subgroup()
     test_statemonitor()
     test_spikemonitor()
     test_PopulationRateMonitor()
