@@ -4,7 +4,7 @@ from brian2.groups import NeuronGroup
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
 from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
                     EventMonitor, PopulationRateMonitor, Synapses,
-                    Quantity)
+                    Quantity, PoissonInput)
 from brian2.utils.logger import get_logger
 from brian2.utils.stringtools import get_identifiers
 from .helper import _prepare_identifiers
@@ -55,7 +55,8 @@ class BaseExporter(RuntimeDevice):
         self.build_options = None
         self.supported_objs = (NeuronGroup, SpikeGeneratorGroup,
                                PoissonGroup, StateMonitor, SpikeMonitor,
-                               EventMonitor, PopulationRateMonitor, Synapses)
+                               EventMonitor, PopulationRateMonitor, Synapses,
+                               PoissonInput)
         self.runs = []
         self.initializers_connectors = []
         self.array_cache = {}
@@ -85,7 +86,7 @@ class BaseExporter(RuntimeDevice):
         arr = np.asarray(arr)
         if arr.size == 0:
             return  # nothing to do
-        if isinstance(var, DynamicArrayVariable):
+        if isinstance(var, DynamicArrayVariable) and not var.scalar:
             # We can never be sure about the size of a dynamic array, so
             # we can't do correct broadcasting. Therefore, we do not cache
             # them at all for now.
@@ -238,7 +239,7 @@ class BaseExporter(RuntimeDevice):
         ident_set = get_identifiers(code)
         ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
         ident_dict = _prepare_identifiers(ident_dict)
-        init_dict = {'source': variableview.group.name,
+        init_dict = {'source': collect_SpikeSource(variableview.group),
                      'variable': variableview.name,
                      'index': cond, 'value': code, 'type': 'initializer'}
         # if identifiers are defined, then add the field
@@ -257,7 +258,7 @@ class BaseExporter(RuntimeDevice):
         ident_set = get_identifiers(code)
         ident_dict = variableview.group.resolve_all(ident_set, run_namespace)
         ident_dict = _prepare_identifiers(ident_dict)
-        init_dict = {'source': variableview.group.name,
+        init_dict = {'source': collect_SpikeSource(variableview.group),
                      'variable': variableview.name,
                      'value': code, 'type': 'initializer'}
         if ident_dict:
@@ -291,7 +292,7 @@ class BaseExporter(RuntimeDevice):
         # happens when dimensionless is passed like int/float
         if not isinstance(value, Quantity):
             value = Quantity(value)
-        init_dict = {'source': variableview.group.name,
+        init_dict = {'source': collect_SpikeSource(variableview.group),
                      'variable': variableview.name,
                      'value': value, 'type': 'initializer'}
         # check type is slice and True
@@ -340,7 +341,7 @@ class BaseExporter(RuntimeDevice):
         connect = {}
         # string statements that shall have identifers
         strings_with_identifers = []
-        if condition:
+        if condition and isinstance(condition, str):
             connect.update({'condition': condition})
             strings_with_identifers.append(condition)
         elif i is not None or j is not None:
@@ -350,8 +351,9 @@ class BaseExporter(RuntimeDevice):
                 connect.update({'j': j})
         connect.update({'probability': p, 'n_connections': n,
                         'synapses': synapses.name,
-                        'source': synapses.source.name,
-                        'target': synapses.target.name, 'type': 'connect'
+                        'source': collect_SpikeSource(synapses.source),
+                        'target': collect_SpikeSource(synapses.target),
+                        'type': 'connect'
                         })
         # get resolved and clean identifiers
         strings_with_identifers.append(str(p))

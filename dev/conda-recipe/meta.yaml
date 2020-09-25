@@ -12,13 +12,15 @@ requirements:
     - matplotlib >=1.3.1
     - pylems >=0.4.9
     - libneuroml
-
+    - markdown_strings
 test:
   # Python imports
   imports:
     - brian2tools
     - brian2tools.plotting
     - brian2tools.nmlexport
+    - brian2tools.baseexport
+    - brian2tools.mdexport
 
   commands:
     - MPLBACKEND=Agg py.test --pyargs brian2tools
