@@ -420,8 +420,11 @@ def run_apidoc(_):
         import sphinx.ext.apidoc as apidoc
     except ImportError:
         import sphinx.apidoc as apidoc
-    brian2tools_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'brian2tools'))
-    apidoc.main(argv=['-f', '-e', '-M', '-o', './reference',
+    brian2tools_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                   '..', 'brian2tools'))
+    docs_sphinx_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+    apidoc.main(argv=['-f', '-e', '-M',
+                      '-o', os.path.join(docs_sphinx_dir, 'reference'),
                       brian2tools_dir, os.path.join(brian2tools_dir, 'tests')])
 
 def setup(app):
