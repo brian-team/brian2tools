@@ -375,7 +375,7 @@ Writing custom expand class
 ---------------------------
 
 With the understanding of standard dictionary representation and default markdown expand class (`~brian2tools.mdexport.expander.MdExpander`),
-writing custom expand class becomes very straightforward. As a working example, the custom expand
+writing custom expand class becomes very straightforward. As a working example, the custom expander
 class to write equations in a table like format,
 
 .. code:: python
