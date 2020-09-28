@@ -1,0 +1,526 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>brian2tools.nmlexport.supporting module &mdash; brian2tools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="brian2tools.nmlimport package" href="brian2tools.nmlimport.html" />
+    <link rel="prev" title="brian2tools.nmlexport.lemsrendering module" href="brian2tools.nmlexport.lemsrendering.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> brian2tools
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">User’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Developer’s guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="brian2tools.html">brian2tools package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="brian2tools.baseexport.html">brian2tools.baseexport package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="brian2tools.mdexport.html">brian2tools.mdexport package</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="brian2tools.nmlexport.html">brian2tools.nmlexport package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="brian2tools.nmlexport.cgmhelper.html">brian2tools.nmlexport.cgmhelper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="brian2tools.nmlexport.lemsexport.html">brian2tools.nmlexport.lemsexport module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="brian2tools.nmlexport.lemsrendering.html">brian2tools.nmlexport.lemsrendering module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">brian2tools.nmlexport.supporting module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="brian2tools.nmlimport.html">brian2tools.nmlimport package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="brian2tools.plotting.html">brian2tools.plotting package</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">brian2tools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="brian2tools.html">brian2tools package</a> &raquo;</li>
+        
+          <li><a href="brian2tools.nmlexport.html">brian2tools.nmlexport package</a> &raquo;</li>
+        
+      <li>brian2tools.nmlexport.supporting module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/reference/brian2tools.nmlexport.supporting.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-brian2tools.nmlexport.supporting">
+<span id="brian2tools-nmlexport-supporting-module"></span><h1>brian2tools.nmlexport.supporting module<a class="headerlink" href="#module-brian2tools.nmlexport.supporting" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLPoissonGenerator">
+<em class="property">class </em><code class="sig-prename descclassname">brian2tools.nmlexport.supporting.</code><code class="sig-name descname">NeuroMLPoissonGenerator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">poissid</span></em>, <em class="sig-param"><span class="n">average_rate</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLPoissonGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLPoissonGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Makes XML of spikeGeneratorPoisson for NeuroML2/LEMS simulation.</p>
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLPoissonGenerator.build">
+<code class="sig-name descname">build</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLPoissonGenerator.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLPoissonGenerator.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds NeuroML DOM structure of spikeGeneratorPoisson and returns it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>generator</strong> – DOM representation of generator.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xml.minidom.dom</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimpleNetwork">
+<em class="property">class </em><code class="sig-prename descclassname">brian2tools.nmlexport.supporting.</code><code class="sig-name descname">NeuroMLSimpleNetwork</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">id_</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimpleNetwork"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimpleNetwork" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>NeuroMLSimpleNetwork class representing network tag in NeuroML
+syntax as a XML DOM representation.</p>
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimpleNetwork.add_component">
+<code class="sig-name descname">add_component</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">id_</span></em>, <em class="sig-param"><span class="n">type_</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">attributes</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimpleNetwork.add_component"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimpleNetwork.add_component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a component to a network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>id</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – component id</p></li>
+<li><p><strong>type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – type of component</p></li>
+<li><p><strong>attributes</strong> (<em>..</em><em>, </em><em>optional</em>) – more attributes</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimpleNetwork.build">
+<code class="sig-name descname">build</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimpleNetwork.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimpleNetwork.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds NeuroML DOM structure of network. It returns DOM
+object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>network</strong> – DOM representation of network.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xml.minidom.dom</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation">
+<em class="property">class </em><code class="sig-prename descclassname">brian2tools.nmlexport.supporting.</code><code class="sig-name descname">NeuroMLSimulation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">simid</span></em>, <em class="sig-param"><span class="n">target</span></em>, <em class="sig-param"><span class="n">length</span><span class="o">=</span><span class="default_value">'1s'</span></em>, <em class="sig-param"><span class="n">step</span><span class="o">=</span><span class="default_value">'0.1ms'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>NeuroMLSimulation class representing Simulation tag in NeuroML
+syntax as a XML DOM representation.</p>
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.add_display">
+<code class="sig-name descname">add_display</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dispid</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">time_scale</span><span class="o">=</span><span class="default_value">'1ms'</span></em>, <em class="sig-param"><span class="n">xmin</span><span class="o">=</span><span class="default_value">'0'</span></em>, <em class="sig-param"><span class="n">xmax</span><span class="o">=</span><span class="default_value">'1000'</span></em>, <em class="sig-param"><span class="n">ymin</span><span class="o">=</span><span class="default_value">'0'</span></em>, <em class="sig-param"><span class="n">ymax</span><span class="o">=</span><span class="default_value">'11'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.add_display"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.add_display" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a Display element to Simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dispid</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – display id</p></li>
+<li><p><strong>title</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – title printed on display window</p></li>
+<li><p><strong>time_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – time scale of a plot</p></li>
+<li><p><strong>xmin</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – limits of plot</p></li>
+<li><p><strong>xmax</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – limits of plot</p></li>
+<li><p><strong>ymin</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – limits of plot</p></li>
+<li><p><strong>ymax</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – limits of plot</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.add_eventoutputfile">
+<code class="sig-name descname">add_eventoutputfile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">outfileid</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">'recordings.spikes'</span></em>, <em class="sig-param"><span class="n">format_</span><span class="o">=</span><span class="default_value">'TIME_ID'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.add_eventoutputfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.add_eventoutputfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an EventOutputFile element to a recently added Display.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outfileid</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – EventOutputFile id</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – name of an output file</p></li>
+<li><p><strong>format</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – format of data storage, default TIME_ID</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.add_eventselection">
+<code class="sig-name descname">add_eventselection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">esid</span></em>, <em class="sig-param"><span class="n">select</span></em>, <em class="sig-param"><span class="n">event_port</span><span class="o">=</span><span class="default_value">'spike'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.add_eventselection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.add_eventselection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an EventSelection element to a recently added EventOutputFile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>esid</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – EventSelection id</p></li>
+<li><p><strong>select</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – index of selected neuron</p></li>
+<li><p><strong>event_port</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – event port name, default ‘spike’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.add_line">
+<code class="sig-name descname">add_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">linid</span></em>, <em class="sig-param"><span class="n">quantity</span></em>, <em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">'1mV'</span></em>, <em class="sig-param"><span class="n">time_scale</span><span class="o">=</span><span class="default_value">'1ms'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.add_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.add_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a Line element to a recently added Display.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>linid</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – line id</p></li>
+<li><p><strong>quantity</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – measure to plot</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – scale of a function</p></li>
+<li><p><strong>time_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – time scale of a line</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.add_outputcolumn">
+<code class="sig-name descname">add_outputcolumn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ocid</span></em>, <em class="sig-param"><span class="n">quantity</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.add_outputcolumn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.add_outputcolumn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an OutputColumn element to a recently added OutputFile tag.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ocid</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – OutputColumn id</p></li>
+<li><p><strong>quantity</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – measure to store in a column</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.add_outputfile">
+<code class="sig-name descname">add_outputfile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">outfileid</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">'recordings.dat'</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.add_outputfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.add_outputfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an OutputFile to Simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outfileid</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – OutputFile id</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – name of an output file</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.build">
+<code class="sig-name descname">build</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds NeuroML DOM structure of Simulation. It returns DOM
+object or it can be accessed by <em>object.simulation</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>simulation</strong> – DOM representation of simulation.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xml.minidom.dom</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.create_simulation">
+<code class="sig-name descname">create_simulation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">simid</span></em>, <em class="sig-param"><span class="n">target</span></em>, <em class="sig-param"><span class="n">length</span></em>, <em class="sig-param"><span class="n">step</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.create_simulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.create_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a Simulation element to DOM structure at init.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>simid</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – simulation id.</p></li>
+<li><p><strong>target</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – target NeuroML object: component or network</p></li>
+<li><p><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – length of simulation, default 1 sec</p></li>
+<li><p><strong>step</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – step of integration, default 0.1 ms</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLSimulation.update_simulation_attribute">
+<code class="sig-name descname">update_simulation_attribute</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">attr_name</span></em>, <em class="sig-param"><span class="n">attr_value</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLSimulation.update_simulation_attribute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLSimulation.update_simulation_attribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates simulation attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attr_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – attribute name</p></li>
+<li><p><strong>attr_value</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – attribute value</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLTarget">
+<em class="property">class </em><code class="sig-prename descclassname">brian2tools.nmlexport.supporting.</code><code class="sig-name descname">NeuroMLTarget</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">component</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLTarget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLTarget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Makes XML of target of NeuroML2/LEMS simulation.</p>
+<dl class="py method">
+<dt id="brian2tools.nmlexport.supporting.NeuroMLTarget.build">
+<code class="sig-name descname">build</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#NeuroMLTarget.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.NeuroMLTarget.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds NeuroML DOM structure of target and returns it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>target</strong> – DOM representation of target.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>xml.minidom.dom</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="brian2tools.nmlexport.supporting.brian_unit_to_lems">
+<code class="sig-prename descclassname">brian2tools.nmlexport.supporting.</code><code class="sig-name descname">brian_unit_to_lems</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">valunit</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#brian_unit_to_lems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.brian_unit_to_lems" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns string representation of LEMS unit where * is between
+value and unit e.g. “20. mV” -&gt; “20.*mV”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>valunit</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code> or <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code></a>) – text or brian2.Quantity representation of a value with unit</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>valstr</strong> – string representation of LEMS unit</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="brian2tools.nmlexport.supporting.from_string">
+<code class="sig-prename descclassname">brian2tools.nmlexport.supporting.</code><code class="sig-name descname">from_string</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rep</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#from_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.from_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code> object from text representation of a value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>rep</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code></a>) – text representation of a value with unit</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>q</strong> – Brian Quantity object</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="brian2tools.nmlexport.supporting.read_nml_dims">
+<code class="sig-prename descclassname">brian2tools.nmlexport.supporting.</code><code class="sig-name descname">read_nml_dims</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nmlcdpath</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#read_nml_dims"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.read_nml_dims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read from <code class="xref py py-obj docutils literal notranslate"><span class="pre">NeuroMLCoreDimensions.xml</span></code> all supported by LEMS
+dimensions and store it as a Python dict with name as a key
+and Brian2 unit as value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nmlcdpath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code></a>, optional) – Path to ‘NeuroMLCoreDimensions.xml’</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>lems_dimenssions</strong> – Dictionary with LEMS dimensions.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="brian2tools.nmlexport.supporting.read_nml_units">
+<code class="sig-prename descclassname">brian2tools.nmlexport.supporting.</code><code class="sig-name descname">read_nml_units</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nmlcdpath</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/nmlexport/supporting.html#read_nml_units"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.nmlexport.supporting.read_nml_units" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read from ‘NeuroMLCoreDimensions.xml’ all supported by LEMS
+units.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nmlcdpath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code></a>, optional) – Path to ‘NeuroMLCoreDimensions.xml’</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>lems_units</strong> – List with LEMS units.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="brian2tools.nmlimport.html" class="btn btn-neutral float-right" title="brian2tools.nmlimport package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="brian2tools.nmlexport.lemsrendering.html" class="btn btn-neutral float-left" title="brian2tools.nmlexport.lemsrendering module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Brian authors
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

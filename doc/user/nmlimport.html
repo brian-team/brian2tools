@@ -1,0 +1,404 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>NeuroML importer &mdash; brian2tools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Base exporter" href="baseexporter_user.html" />
+    <link rel="prev" title="NeuroML exporter" href="exporter_user.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> brian2tools
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release notes</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User’s guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">Plotting tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="exporter_user.html">NeuroML exporter</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">NeuroML importer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="baseexporter_user.html">Base exporter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mdexporter_user.html">Markdown exporter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Developer’s guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/brian2tools.html">brian2tools package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">brian2tools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">User’s guide</a> &raquo;</li>
+        
+      <li>NeuroML importer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/user/nmlimport.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="neuroml-importer">
+<h1>NeuroML importer<a class="headerlink" href="#neuroml-importer" title="Permalink to this headline">¶</a></h1>
+<p>This is a short overview of the <a class="reference internal" href="../reference/brian2tools.nmlimport.html#module-brian2tools.nmlimport" title="brian2tools.nmlimport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nmlimport</span></code></a> package, providing
+functionality to import Brian’s morphology from a .nml file.</p>
+<p>NeuroML is a XML-based description that provides a common data format
+for defining and exchanging descriptions of neuronal cell and network models
+(<a class="reference external" href="https://neuroml.org/">NML project website</a>).</p>
+<div class="contents local topic" id="overview">
+<p class="topic-title">Overview</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#working-example" id="id2">Working example</a></p></li>
+<li><p><a class="reference internal" href="#handling-segmentgroup" id="id3">Handling SegmentGroup</a></p></li>
+<li><p><a class="reference internal" href="#handling-sections-not-connected-at-the-distal-end" id="id4">Handling sections not connected at the distal end</a></p></li>
+</ul>
+</div>
+<div class="section" id="working-example">
+<h2><a class="toc-backref" href="#id2">Working example</a><a class="headerlink" href="#working-example" title="Permalink to this headline">¶</a></h2>
+<p>As a demonstration, we will use the nmlimport library to generate morphology and
+extract other related information from the <code class="docutils literal notranslate"><span class="pre">pyr_4_sym.cell.nml</span></code> nml file. You
+can download it from <a class="reference external" href="https://github.com/OpenSourceBrain/ACnet2/blob/master/neuroConstruct/generatedNeuroML2/pyr_4_sym.cell.nml">here</a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">brian2tools.nmlimport.nml</span> <span class="kn">import</span> <span class="n">NMLMorphology</span>
+<span class="n">nml_object</span> <span class="o">=</span> <span class="n">NMLMorphology</span><span class="p">(</span><span class="s1">&#39;pyr_4_sym.cell.nml&#39;</span><span class="p">,</span> <span class="n">name_heuristic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This call provides us the <code class="docutils literal notranslate"><span class="pre">nml_object</span></code> that contains all the information
+extracted from <code class="docutils literal notranslate"><span class="pre">.nml</span></code> file. When <code class="docutils literal notranslate"><span class="pre">name_heuristic</span></code> param is set to True
+morphology sections will be determined based on the segment names. In
+this case Section name will be created by combining names of the inner
+segments of the section. When set to False, all linearly connected
+segments combines to form a section and naming convention
+<code class="docutils literal notranslate"><span class="pre">sec{unique_integer}</span></code> is followed.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple">
+<li><p>To obtain morphology object.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">morphology</span> <span class="o">=</span> <span class="n">nml_object</span><span class="o">.</span><span class="n">morphology_obj</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>With this Morphology object, you can use all of Brian’s functions to get information about the cell:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">morphology</span><span class="o">.</span><span class="n">topology</span><span class="p">())</span>
+<span class="go">-|  [root]</span>
+<span class="go">   `-|  .apical0</span>
+<span class="go">      `---|  .apical0.apical2_3_4</span>
+<span class="go">      `-|  .apical0.apical1</span>
+<span class="go">   `-|  .basal0</span>
+<span class="go">      `-|  .basal0.basal1</span>
+<span class="go">      `-|  .basal0.basal2</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">morphology</span><span class="o">.</span><span class="n">area</span><span class="p">)</span>
+<span class="go">[ 1228.36272755] um^2</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">morphology</span><span class="o">.</span><span class="n">coordinates</span><span class="p">)</span>
+<span class="go">[[  0.   0.   0.]</span>
+<span class="go">[  0.  17.   0.]] um</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">morphology</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+<span class="go">[ 17.] um</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">morphology</span><span class="o">.</span><span class="n">distance</span><span class="p">)</span>
+<span class="go">[ 8.5] um</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<ul class="simple">
+<li><p>Plot morphology using brian2tool’s plot_morphology function.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">brian2tools.plotting.morphology</span> <span class="kn">import</span> <span class="n">plot_morphology</span>
+<span class="n">plot_morphology</span><span class="p">(</span><span class="n">morphology</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure align-default" id="id1">
+<a class="reference internal image-reference" href="../_images/pyramidal_morphology.png"><img alt="Pyramidal cell's morphology plot." src="../_images/pyramidal_morphology.png" style="width: 512.0px; height: 384.0px;" /></a>
+<p class="caption"><span class="caption-text">Pyramidal cell’s Morphology plot.</span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+<div class="section" id="handling-segmentgroup">
+<h2><a class="toc-backref" href="#id3">Handling SegmentGroup</a><a class="headerlink" href="#handling-segmentgroup" title="Permalink to this headline">¶</a></h2>
+<p>SegmentGroup is a method to group multiple segments under single entity.
+This can later be used to apply operations on all segments of a SegmentGroup.
+To get the resolved group ids of an nml <code class="docutils literal notranslate"><span class="pre">SegmentGroup</span></code>. This returns a
+dictionary that maps <code class="docutils literal notranslate"><span class="pre">SegmentGroup</span></code> ids to its member segment id’s.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">nml_object</span><span class="o">.</span><span class="n">resolved_grp_ids</span><span class="p">)</span>
+<span class="go">{&#39;soma&#39;: [0], &#39;apical0&#39;: [1], &#39;apical2&#39;: [2], &#39;apical3&#39;: [3], &#39;apical4&#39;:</span>
+<span class="go">[4], &#39;apical1&#39;: [5], &#39;basal0&#39;: [6], &#39;basal1&#39;: [7], &#39;basal2&#39;: [8], &#39;all&#39;:</span>
+<span class="go">[0, 1, 2, 3, 4, 5, 6, 7, 8], &#39;soma_group&#39;: [0], &#39;dendrite_group&#39;:</span>
+<span class="go">[1, 2, 3, 4, 5, 6, 7, 8], &#39;apical_dends&#39;: [1, 2, 3, 4, 5],</span>
+<span class="go">&#39;middle_apical_dendrite&#39;: [3], &#39;thalamic_input&#39;: [5], &#39;basal_dends&#39;:</span>
+<span class="go">[8, 6, 7], &#39;basal_gaba_input&#39;: [6], &#39;background_input&#39;: [7]}</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>The file <code class="docutils literal notranslate"><span class="pre">pyr_4_sym.cell.nml</span></code> will look something like this:</p>
+<div class="highlight-xml notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="nt">&lt;cell</span> <span class="na">id=</span><span class="s">&quot;pyr_4_sym&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;morphology</span> <span class="na">id=</span><span class="s">&quot;morphology_pyr_4_sym&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;segment</span> <span class="na">id=</span><span class="s">&quot;0&quot;</span> <span class="na">name=</span><span class="s">&quot;soma&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;proximal</span> <span class="na">x=</span><span class="s">&quot;0.0&quot;</span> <span class="na">y=</span><span class="s">&quot;0.0&quot;</span> <span class="na">z=</span><span class="s">&quot;0.0&quot;</span> <span class="na">diameter=</span><span class="s">&quot;23.0&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;distal</span> <span class="na">x=</span><span class="s">&quot;0.0&quot;</span> <span class="na">y=</span><span class="s">&quot;17.0&quot;</span> <span class="na">z=</span><span class="s">&quot;0.0&quot;</span> <span class="na">diameter=</span><span class="s">&quot;23.0&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/segment&gt;</span>
+        ..........
+        ..........
+        ..........
+
+        <span class="nt">&lt;segment</span> <span class="na">id=</span><span class="s">&quot;6&quot;</span> <span class="na">name=</span><span class="s">&quot;basal0&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;parent</span> <span class="na">segment=</span><span class="s">&quot;0&quot;</span> <span class="na">fractionAlong=</span><span class="s">&quot;0.0&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;proximal</span> <span class="na">x=</span><span class="s">&quot;0.0&quot;</span> <span class="na">y=</span><span class="s">&quot;17.0&quot;</span> <span class="na">z=</span><span class="s">&quot;0.0&quot;</span> <span class="na">diameter=</span><span class="s">&quot;4.0&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;distal</span> <span class="na">x=</span><span class="s">&quot;0.0&quot;</span> <span class="na">y=</span><span class="s">&quot;-50.0&quot;</span> <span class="na">z=</span><span class="s">&quot;0.0&quot;</span> <span class="na">diameter=</span><span class="s">&quot;4.0&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/segment&gt;</span>
+        ..........
+        ..........
+        ..........
+
+        <span class="nt">&lt;segmentGroup</span> <span class="na">id=</span><span class="s">&quot;apical_dends&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;include</span> <span class="na">segmentGroup=</span><span class="s">&quot;apical0&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;include</span> <span class="na">segmentGroup=</span><span class="s">&quot;apical2&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;include</span> <span class="na">segmentGroup=</span><span class="s">&quot;apical3&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;include</span> <span class="na">segmentGroup=</span><span class="s">&quot;apical4&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;include</span> <span class="na">segmentGroup=</span><span class="s">&quot;apical1&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/segmentGroup&gt;</span>
+
+        <span class="nt">&lt;segmentGroup</span> <span class="na">id=</span><span class="s">&quot;middle_apical_dendrite&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;include</span> <span class="na">segmentGroup=</span><span class="s">&quot;apical3&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/segmentGroup&gt;</span>
+        ........
+        ........
+        ........
+    <span class="nt">&lt;/morphology&gt;</span>
+<span class="nt">&lt;/cell&gt;</span>
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="handling-sections-not-connected-at-the-distal-end">
+<h2><a class="toc-backref" href="#id4">Handling sections not connected at the distal end</a><a class="headerlink" href="#handling-sections-not-connected-at-the-distal-end" title="Permalink to this headline">¶</a></h2>
+<p>If you look at the <code class="docutils literal notranslate"><span class="pre">line</span> <span class="pre">12</span></code> in above .nml file, you can see
+<code class="docutils literal notranslate"><span class="pre">fractionAlong=0.0</span></code>. fractionAlong value defines the point at which the
+given segment is connected with its parent segment. So a fractionAlong value
+of 1 means the segment is connected to bottom (distal) of its parent segment, 0
+means it is connected to the top (proximal) of its parent segment. Similarly a
+value of 0.5 would mean the segment is connected to the middle point of its parent
+segment. Currently <code class="docutils literal notranslate"><span class="pre">nmlimport</span></code> library supports <code class="docutils literal notranslate"><span class="pre">fractionAlong</span></code> value to be
+0 or 1 only, as there is no predefined way to connect a segment at
+some inbetween point of its parent segment in <code class="docutils literal notranslate"><span class="pre">Brian</span></code>.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="baseexporter_user.html" class="btn btn-neutral float-right" title="Base exporter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="exporter_user.html" class="btn btn-neutral float-left" title="NeuroML exporter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Brian authors
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,326 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>brian2tools.plotting.data module &mdash; brian2tools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="brian2tools.plotting.morphology module" href="brian2tools.plotting.morphology.html" />
+    <link rel="prev" title="brian2tools.plotting.base module" href="brian2tools.plotting.base.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> brian2tools
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">User’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Developer’s guide</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="brian2tools.html">brian2tools package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="brian2tools.baseexport.html">brian2tools.baseexport package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="brian2tools.mdexport.html">brian2tools.mdexport package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="brian2tools.nmlexport.html">brian2tools.nmlexport package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="brian2tools.nmlimport.html">brian2tools.nmlimport package</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="brian2tools.plotting.html">brian2tools.plotting package</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="brian2tools.plotting.base.html">brian2tools.plotting.base module</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">brian2tools.plotting.data module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="brian2tools.plotting.morphology.html">brian2tools.plotting.morphology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="brian2tools.plotting.synapses.html">brian2tools.plotting.synapses module</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">brian2tools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="brian2tools.html">brian2tools package</a> &raquo;</li>
+        
+          <li><a href="brian2tools.plotting.html">brian2tools.plotting package</a> &raquo;</li>
+        
+      <li>brian2tools.plotting.data module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/reference/brian2tools.plotting.data.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-brian2tools.plotting.data">
+<span id="brian2tools-plotting-data-module"></span><h1>brian2tools.plotting.data module<a class="headerlink" href="#module-brian2tools.plotting.data" title="Permalink to this headline">¶</a></h1>
+<p>Module to plot simulation data (raster plots, etc.)</p>
+<dl class="py function">
+<dt id="brian2tools.plotting.data.plot_raster">
+<code class="sig-prename descclassname">brian2tools.plotting.data.</code><code class="sig-name descname">plot_raster</code><span class="sig-paren">(</span><em class="sig-param">spike_indices</em>, <em class="sig-param">spike_times</em>, <em class="sig-param">time_unit=&lt;Mock name='mock.ms' id='140315455033104'&gt;</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/plotting/data.html#plot_raster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.plotting.data.plot_raster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a “raster plot”, a plot of neuron indices over spike times. The default
+marker used for plotting is <code class="docutils literal notranslate"><span class="pre">'.'</span></code>, it can be overriden with the <code class="docutils literal notranslate"><span class="pre">marker</span></code>
+keyword argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>spike_indices</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.19)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndarray</span></code></a>) – The indices of spiking neurons, corresponding to the times given in
+<code class="docutils literal notranslate"><span class="pre">spike_times</span></code>.</p></li>
+<li><p><strong>spike_times</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Quantity.html#brian2.units.fundamentalunits.Quantity" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code></a>) – A sequence of spike times.</p></li>
+<li><p><strong>time_unit</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Unit.html#brian2.units.fundamentalunits.Unit" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unit</span></code></a>, optional) – The unit to use for the time axis. Defaults to <code class="docutils literal notranslate"><span class="pre">ms</span></code>, but longer
+simulations could use <code class="docutils literal notranslate"><span class="pre">second</span></code>, for example.</p></li>
+<li><p><strong>axes</strong> (<a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a>, optional) – The <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> instance used for plotting. Defaults to
+<code class="docutils literal notranslate"><span class="pre">None</span></code> which means that a new <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> will be
+created for the plot.</p></li>
+<li><p><strong>kwds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a><em>, </em><em>optional</em>) – Any additional keywords command will be handed over to matplotlib’s
+<a class="reference external" href="https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a> command. This can be used to set plot
+properties such as the <code class="docutils literal notranslate"><span class="pre">color</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>axes</strong> – The <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> instance that was used for plotting. This
+object allows to modify the plot further, e.g. by setting the plotted
+range, the axis labels, the plot title, etc.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="brian2tools.plotting.data.plot_rate">
+<code class="sig-prename descclassname">brian2tools.plotting.data.</code><code class="sig-name descname">plot_rate</code><span class="sig-paren">(</span><em class="sig-param">times</em>, <em class="sig-param">rate</em>, <em class="sig-param">time_unit=&lt;Mock name='mock.ms' id='140315455033104'&gt;</em>, <em class="sig-param">rate_unit=&lt;Mock name='mock.Hz' id='140315453981968'&gt;</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/plotting/data.html#plot_rate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.plotting.data.plot_rate" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>times</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Quantity.html#brian2.units.fundamentalunits.Quantity" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code></a>) – The time points at which the <code class="docutils literal notranslate"><span class="pre">rate</span></code> is measured.</p></li>
+<li><p><strong>rate</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Quantity.html#brian2.units.fundamentalunits.Quantity" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code></a>) – The population rate for each time point in <code class="docutils literal notranslate"><span class="pre">times</span></code></p></li>
+<li><p><strong>time_unit</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Unit.html#brian2.units.fundamentalunits.Unit" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unit</span></code></a>, optional) – The unit to use for the time axis. Defaults to <code class="docutils literal notranslate"><span class="pre">ms</span></code>, but longer
+simulations could use <code class="docutils literal notranslate"><span class="pre">second</span></code>, for example.</p></li>
+<li><p><strong>time_unit</strong> – The unit to use for the rate axis. Defaults to <code class="docutils literal notranslate"><span class="pre">Hz</span></code>.</p></li>
+<li><p><strong>axes</strong> (<a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a>, optional) – The <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> instance used for plotting. Defaults to
+<code class="docutils literal notranslate"><span class="pre">None</span></code> which means that a new <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> will be
+created for the plot.</p></li>
+<li><p><strong>kwds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a><em>, </em><em>optional</em>) – Any additional keywords command will be handed over to matplotlib’s
+<a class="reference external" href="https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a> command. This can be used to set plot
+properties such as the <code class="docutils literal notranslate"><span class="pre">color</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>axes</strong> – The <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> instance that was used for plotting. This
+object allows to modify the plot further, e.g. by setting the plotted
+range, the axis labels, the plot title, etc.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="brian2tools.plotting.data.plot_state">
+<code class="sig-prename descclassname">brian2tools.plotting.data.</code><code class="sig-name descname">plot_state</code><span class="sig-paren">(</span><em class="sig-param">times</em>, <em class="sig-param">values</em>, <em class="sig-param">time_unit=&lt;Mock name='mock.ms' id='140315455033104'&gt;</em>, <em class="sig-param">var_unit=None</em>, <em class="sig-param">var_name=None</em>, <em class="sig-param">axes=None</em>, <em class="sig-param">**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/brian2tools/plotting/data.html#plot_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#brian2tools.plotting.data.plot_state" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>times</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Quantity.html#brian2.units.fundamentalunits.Quantity" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code></a>) – The array of times for the data points given in <code class="docutils literal notranslate"><span class="pre">values</span></code>.</p></li>
+<li><p><strong>values</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Quantity.html#brian2.units.fundamentalunits.Quantity" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quantity</span></code></a>, <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.19)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndarray</span></code></a>) – The values to plot, either a 1D array with the same length as <code class="docutils literal notranslate"><span class="pre">times</span></code>,
+or a 2D array with <code class="docutils literal notranslate"><span class="pre">len(times)</span></code> rows.</p></li>
+<li><p><strong>time_unit</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Unit.html#brian2.units.fundamentalunits.Unit" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unit</span></code></a>, optional) – The unit to use for the time axis. Defaults to <code class="docutils literal notranslate"><span class="pre">ms</span></code>, but longer
+simulations could use <code class="docutils literal notranslate"><span class="pre">second</span></code>, for example.</p></li>
+<li><p><strong>var_unit</strong> (<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.units.fundamentalunits.Unit.html#brian2.units.fundamentalunits.Unit" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unit</span></code></a>, optional) – The unit to use to plot the <code class="docutils literal notranslate"><span class="pre">values</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">mV</span></code> for a membrane
+potential). If none is given (the default), an attempt is made to
+find a good scale automatically based on the <code class="docutils literal notranslate"><span class="pre">values</span></code>.</p></li>
+<li><p><strong>var_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – The name of the variable that is plotted. Used for the axis label.</p></li>
+<li><p><strong>axes</strong> (<a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a>, optional) – The <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> instance used for plotting. Defaults to
+<code class="docutils literal notranslate"><span class="pre">None</span></code> which means that a new <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> will be
+created for the plot.</p></li>
+<li><p><strong>kwds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a><em>, </em><em>optional</em>) – Any additional keywords command will be handed over to matplotlib’s
+<a class="reference external" href="https://matplotlib.org/api/_as_gen/matplotlib.axes.Axes.plot.html#matplotlib.axes.Axes.plot" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a> command. This can be used to set plot
+properties such as the <code class="docutils literal notranslate"><span class="pre">color</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>axes</strong> – The <a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a> instance that was used for plotting. This
+object allows to modify the plot further, e.g. by setting the plotted
+range, the axis labels, the plot title, etc.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://matplotlib.org/api/axes_api.html#matplotlib.axes.Axes" title="(in Matplotlib v3.3.2)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Axes</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="brian2tools.plotting.morphology.html" class="btn btn-neutral float-right" title="brian2tools.plotting.morphology module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="brian2tools.plotting.base.html" class="btn btn-neutral float-left" title="brian2tools.plotting.base module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Brian authors
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

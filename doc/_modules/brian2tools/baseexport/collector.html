@@ -1,0 +1,786 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>brian2tools.baseexport.collector &mdash; brian2tools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> brian2tools
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../release_notes.html">Release notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/index.html">User’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/index.html">Developer’s guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/brian2tools.html">brian2tools package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">brian2tools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>brian2tools.baseexport.collector</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for brian2tools.baseexport.collector</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The file contains simple functions to collect information</span>
+<span class="sd">from BrianObjects and represent them in a standard</span>
+<span class="sd">dictionary format. The parts of the file shall be reused</span>
+<span class="sd">with standard format exporter.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">brian2.codegen.translation</span> <span class="kn">import</span> <span class="n">analyse_identifiers</span>
+<span class="kn">from</span> <span class="nn">brian2.equations.equations</span> <span class="kn">import</span> <span class="n">PARAMETER</span>
+<span class="kn">from</span> <span class="nn">brian2.utils.stringtools</span> <span class="kn">import</span> <span class="n">get_identifiers</span>
+<span class="kn">from</span> <span class="nn">brian2.groups.neurongroup</span> <span class="kn">import</span> <span class="n">StateUpdater</span>
+<span class="kn">from</span> <span class="nn">brian2.groups.group</span> <span class="kn">import</span> <span class="n">CodeRunner</span>
+<span class="kn">from</span> <span class="nn">brian2.synapses.synapses</span> <span class="kn">import</span> <span class="n">SummedVariableUpdater</span><span class="p">,</span> <span class="n">SynapticPathway</span>
+<span class="kn">from</span> <span class="nn">brian2.synapses.synapses</span> <span class="kn">import</span> <span class="n">StateUpdater</span> <span class="k">as</span> <span class="n">synapse_stateupdater</span>
+<span class="kn">from</span> <span class="nn">brian2.units.fundamentalunits</span> <span class="kn">import</span> <span class="n">Quantity</span>
+<span class="kn">from</span> <span class="nn">brian2</span> <span class="kn">import</span> <span class="n">second</span><span class="p">,</span> <span class="n">Subgroup</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.helper</span> <span class="kn">import</span> <span class="n">_prepare_identifiers</span>
+
+
+<div class="viewcode-block" id="collect_NeuronGroup"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_NeuronGroup">[docs]</a><span class="k">def</span> <span class="nf">collect_NeuronGroup</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect information from `brian2.groups.neurongroup.NeuronGroup`</span>
+<span class="sd">    and return them in a dictionary format</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    group : brian2.groups.neurongroup.NeuronGroup</span>
+<span class="sd">        NeuronGroup object</span>
+
+<span class="sd">    run_namespace : dict</span>
+<span class="sd">        Namespace dictionary</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    neuron_dict : dict</span>
+<span class="sd">        Dictionary with extracted information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">neuron_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># identifiers belonging to the NeuronGroup</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="c1"># get name</span>
+    <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="c1"># get size</span>
+    <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">_N</span>
+
+    <span class="c1"># get user defined stateupdation method</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">method_choice</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;user_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">method_choice</span>
+    <span class="c1"># if not specified by user</span>
+    <span class="c1"># TODO collect from run time</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;user_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># get equations</span>
+    <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;equations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collect_Equations</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">user_equations</span><span class="p">)</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="n">identifiers</span> <span class="o">|</span> <span class="n">group</span><span class="o">.</span><span class="n">user_equations</span><span class="o">.</span><span class="n">identifiers</span>
+
+    <span class="c1"># check spike event is defined</span>
+    <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
+        <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;events&#39;</span><span class="p">],</span> <span class="n">event_identifiers</span> <span class="o">=</span> <span class="n">collect_Events</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">identifiers</span> <span class="o">=</span> <span class="n">identifiers</span> <span class="o">|</span> <span class="n">event_identifiers</span>
+
+    <span class="c1"># check any `run_regularly` / CodeRunner objects associated</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">contained_objects</span><span class="p">:</span>
+        <span class="c1"># Note: Thresholder, StateUpdater, Resetter are all derived from</span>
+        <span class="c1"># CodeRunner, so to identify `run_regularly` object we use type()</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="n">CodeRunner</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;run_regularly&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">neuron_dict</span><span class="p">:</span>
+                <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;run_regularly&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;run_regularly&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                                            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                            <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">abstract_code</span><span class="p">,</span>
+                                            <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                            <span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">when</span><span class="p">,</span>
+                                            <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">order</span>
+                                            <span class="p">})</span>
+            <span class="n">identifiers</span> <span class="o">=</span> <span class="n">identifiers</span> <span class="o">|</span> <span class="n">get_identifiers</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">abstract_code</span><span class="p">)</span>
+
+        <span class="c1"># check StateUpdater when/order and assign to group level</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">StateUpdater</span><span class="p">):</span>
+            <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;when&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">when</span>
+            <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">order</span>
+    
+    <span class="c1"># resolve group-specific identifiers</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">resolve_all</span><span class="p">(</span><span class="n">identifiers</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">)</span>
+    <span class="c1"># with the identifiers connected to group, prune away unwanted</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="n">_prepare_identifiers</span><span class="p">(</span><span class="n">identifiers</span><span class="p">)</span>
+    <span class="c1"># check the dictionary is not empty</span>
+    <span class="k">if</span> <span class="n">identifiers</span><span class="p">:</span>
+        <span class="n">neuron_dict</span><span class="p">[</span><span class="s1">&#39;identifiers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">identifiers</span>
+
+    <span class="k">return</span> <span class="n">neuron_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_Equations"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_Equations">[docs]</a><span class="k">def</span> <span class="nf">collect_Equations</span><span class="p">(</span><span class="n">equations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect model equations of the NeuronGroup</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    equations : brian2.equations.equations.Equations</span>
+<span class="sd">        model equations object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    eqn_dict : dict</span>
+<span class="sd">        Dictionary with extracted information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">eqn_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="n">equations</span><span class="o">.</span><span class="n">diff_eq_names</span> <span class="o">|</span> <span class="n">equations</span><span class="o">.</span><span class="n">subexpr_names</span> <span class="o">|</span>
+                 <span class="n">equations</span><span class="o">.</span><span class="n">parameter_names</span><span class="p">):</span>
+
+        <span class="n">eqs</span> <span class="o">=</span> <span class="n">equations</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+        <span class="n">eqn_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;unit&#39;</span><span class="p">:</span> <span class="n">eqs</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+                          <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">eqs</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+                          <span class="s1">&#39;var_type&#39;</span><span class="p">:</span> <span class="n">eqs</span><span class="o">.</span><span class="n">var_type</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">eqs</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="n">PARAMETER</span><span class="p">:</span>
+            <span class="n">eqn_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;expr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eqs</span><span class="o">.</span><span class="n">expr</span><span class="o">.</span><span class="n">code</span>
+
+        <span class="k">if</span> <span class="n">eqs</span><span class="o">.</span><span class="n">flags</span><span class="p">:</span>
+            <span class="n">eqn_dict</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">eqs</span><span class="o">.</span><span class="n">flags</span>
+
+    <span class="k">return</span> <span class="n">eqn_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_Events"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_Events">[docs]</a><span class="k">def</span> <span class="nf">collect_Events</span><span class="p">(</span><span class="n">group</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect Events (spiking) of the NeuronGroup</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    group : brian2.groups.neurongroup.NeuronGroup</span>
+<span class="sd">        NeuronGroup object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    event_dict : dict</span>
+<span class="sd">        Dictionary with extracted information</span>
+
+<span class="sd">    event_identifiers : set</span>
+<span class="sd">        Set of identifiers related to events</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">event_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">event_identifiers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="c1"># loop over the thresholder to check `spike` or custom event</span>
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">thresholder</span><span class="p">:</span>
+        <span class="c1"># for simplicity create subdict variable for particular event</span>
+        <span class="n">event_dict</span><span class="p">[</span><span class="n">event</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">event_subdict</span> <span class="o">=</span> <span class="n">event_dict</span><span class="p">[</span><span class="n">event</span><span class="p">]</span>
+        <span class="c1"># add threshold</span>
+        <span class="n">event_subdict</span><span class="p">[</span><span class="s1">&#39;threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="n">event</span><span class="p">],</span>
+                                      <span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">thresholder</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">when</span><span class="p">,</span>
+                                      <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">thresholder</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">order</span><span class="p">,</span>
+                                      <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">thresholder</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span><span class="p">}</span>
+        <span class="n">event_identifiers</span> <span class="o">|=</span> <span class="n">get_identifiers</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="n">event</span><span class="p">])</span>
+
+        <span class="c1"># check reset is defined</span>
+        <span class="k">if</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">event_codes</span><span class="p">:</span>
+            <span class="n">event_subdict</span><span class="p">[</span><span class="s1">&#39;reset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">event_codes</span><span class="p">[</span><span class="n">event</span><span class="p">],</span>
+                                      <span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">resetter</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">when</span><span class="p">,</span>
+                                      <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">resetter</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">order</span><span class="p">,</span>
+                                      <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="n">group</span><span class="o">.</span><span class="n">resetter</span><span class="p">[</span><span class="n">event</span><span class="p">]</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span><span class="p">}</span>
+            <span class="n">event_identifiers</span> <span class="o">|=</span> <span class="n">get_identifiers</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">event_codes</span><span class="p">[</span><span class="n">event</span><span class="p">])</span>
+
+    <span class="c1"># check refractory is defined (only for spike event)</span>
+    <span class="k">if</span> <span class="n">event</span> <span class="o">==</span> <span class="s1">&#39;spike&#39;</span> <span class="ow">and</span> <span class="n">group</span><span class="o">.</span><span class="n">_refractory</span><span class="p">:</span>
+        <span class="n">event_subdict</span><span class="p">[</span><span class="s1">&#39;refractory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">_refractory</span>
+
+    <span class="k">return</span> <span class="n">event_dict</span><span class="p">,</span> <span class="n">event_identifiers</span></div>
+
+
+<div class="viewcode-block" id="collect_SpikeGenerator"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_SpikeGenerator">[docs]</a><span class="k">def</span> <span class="nf">collect_SpikeGenerator</span><span class="p">(</span><span class="n">spike_gen</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract information from</span>
+<span class="sd">    &#39;brian2.input.spikegeneratorgroup.SpikeGeneratorGroup&#39;and</span>
+<span class="sd">    represent them in a dictionary format</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spike_gen : brian2.input.spikegeneratorgroup.SpikeGeneratorGroup</span>
+<span class="sd">            SpikeGenerator object</span>
+
+<span class="sd">    run_namespace : dict</span>
+<span class="sd">            Namespace dictionary</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    spikegen_dict : dict</span>
+<span class="sd">                Dictionary with extracted information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">spikegen_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="c1"># get name</span>
+    <span class="n">spikegen_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spike_gen</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="c1"># get size</span>
+    <span class="n">spikegen_dict</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spike_gen</span><span class="o">.</span><span class="n">N</span>
+
+    <span class="c1"># get indices of spiking neurons</span>
+    <span class="n">spikegen_dict</span><span class="p">[</span><span class="s1">&#39;indices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spike_gen</span><span class="o">.</span><span class="n">_neuron_index</span><span class="p">[:]</span>
+
+    <span class="c1"># get spike times for defined neurons</span>
+    <span class="n">spikegen_dict</span><span class="p">[</span><span class="s1">&#39;times&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Quantity</span><span class="p">(</span><span class="n">spike_gen</span><span class="o">.</span><span class="n">_spike_time</span><span class="p">[:],</span> <span class="n">second</span><span class="p">)</span>
+
+    <span class="c1"># get spike period (default period is 0*second will be stored if not</span>
+    <span class="c1"># mentioned by the user)</span>
+    <span class="n">spikegen_dict</span><span class="p">[</span><span class="s1">&#39;period&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">spike_gen</span><span class="o">.</span><span class="n">period</span><span class="p">[:]</span>
+
+    <span class="c1"># `run_regularly` / CodeRunner objects of spike_gen</span>
+    <span class="c1"># although not a very popular option</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">spike_gen</span><span class="o">.</span><span class="n">contained_objects</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="n">CodeRunner</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;run_regularly&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">spikegen_dict</span><span class="p">:</span>
+                <span class="n">spikegen_dict</span><span class="p">[</span><span class="s1">&#39;run_regularly&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">spikegen_dict</span><span class="p">[</span><span class="s1">&#39;run_regularly&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                                            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                            <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">abstract_code</span><span class="p">,</span>
+                                            <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                            <span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">when</span><span class="p">,</span>
+                                            <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">order</span>
+                                            <span class="p">})</span>
+            <span class="n">identifiers</span> <span class="o">=</span> <span class="n">identifiers</span> <span class="o">|</span> <span class="n">get_identifiers</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">abstract_code</span><span class="p">)</span>
+    <span class="c1"># resolve group-specific identifiers</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="n">spike_gen</span><span class="o">.</span><span class="n">resolve_all</span><span class="p">(</span><span class="n">identifiers</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">)</span>
+    <span class="c1"># with the identifiers connected to group, prune away unwanted</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="n">_prepare_identifiers</span><span class="p">(</span><span class="n">identifiers</span><span class="p">)</span>
+    <span class="c1"># check the dictionary is not empty</span>
+    <span class="k">if</span> <span class="n">identifiers</span><span class="p">:</span>
+        <span class="n">spikegen_dict</span><span class="p">[</span><span class="s1">&#39;identifiers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">identifiers</span>
+
+    <span class="k">return</span> <span class="n">spikegen_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_PoissonGroup"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_PoissonGroup">[docs]</a><span class="k">def</span> <span class="nf">collect_PoissonGroup</span><span class="p">(</span><span class="n">poisson_grp</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract information from &#39;brian2.input.poissongroup.PoissonGroup&#39;</span>
+<span class="sd">    and represent them in a dictionary format</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    poisson_grp : brian2.input.poissongroup.PoissonGroup</span>
+<span class="sd">            PoissonGroup object</span>
+
+<span class="sd">    run_namespace : dict</span>
+<span class="sd">            Namespace dictionary</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    poisson_grp_dict : dict</span>
+<span class="sd">                Dictionary with extracted information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">poisson_grp_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">poisson_identifiers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="c1"># get name</span>
+    <span class="n">poisson_grp_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poisson_grp</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="c1"># get size</span>
+    <span class="n">poisson_grp_dict</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poisson_grp</span><span class="o">.</span><span class="n">_N</span>
+
+    <span class="c1"># get rates (can be Quantity or str)</span>
+    <span class="n">poisson_grp_dict</span><span class="p">[</span><span class="s1">&#39;rates&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poisson_grp</span><span class="o">.</span><span class="n">_rates</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">poisson_grp</span><span class="o">.</span><span class="n">_rates</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">poisson_identifiers</span> <span class="o">|=</span> <span class="p">(</span><span class="n">get_identifiers</span><span class="p">(</span><span class="n">poisson_grp</span><span class="o">.</span><span class="n">_rates</span><span class="p">))</span>
+
+    <span class="c1"># `run_regularly` / CodeRunner objects of poisson_grp</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">poisson_grp</span><span class="o">.</span><span class="n">contained_objects</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">==</span> <span class="n">CodeRunner</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;run_regularly&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">poisson_grp_dict</span><span class="p">:</span>
+                <span class="n">poisson_grp_dict</span><span class="p">[</span><span class="s1">&#39;run_regularly&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">poisson_grp_dict</span><span class="p">[</span><span class="s1">&#39;run_regularly&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                                            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                            <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">abstract_code</span><span class="p">,</span>
+                                            <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                                            <span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">when</span><span class="p">,</span>
+                                            <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">order</span>
+                                            <span class="p">})</span>
+            <span class="n">poisson_identifiers</span> <span class="o">=</span> <span class="p">(</span><span class="n">poisson_identifiers</span> <span class="o">|</span>
+                                   <span class="n">get_identifiers</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">abstract_code</span><span class="p">))</span>
+    <span class="c1"># resolve group-specific identifiers</span>
+    <span class="n">poisson_identifiers</span> <span class="o">=</span> <span class="n">poisson_grp</span><span class="o">.</span><span class="n">resolve_all</span><span class="p">(</span><span class="n">poisson_identifiers</span><span class="p">,</span>
+                                                  <span class="n">run_namespace</span><span class="p">)</span>
+    <span class="c1"># with the identifiers connected to group, prune away unwanted</span>
+    <span class="n">poisson_identifiers</span> <span class="o">=</span> <span class="n">_prepare_identifiers</span><span class="p">(</span><span class="n">poisson_identifiers</span><span class="p">)</span>
+    <span class="c1"># check the dictionary is not empty</span>
+    <span class="k">if</span> <span class="n">poisson_identifiers</span><span class="p">:</span>
+        <span class="n">poisson_grp_dict</span><span class="p">[</span><span class="s1">&#39;identifiers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poisson_identifiers</span>
+
+    <span class="k">return</span> <span class="n">poisson_grp_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_SpikeSource"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_SpikeSource">[docs]</a><span class="k">def</span> <span class="nf">collect_SpikeSource</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check SpikeSource and collect details</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source : `brian2.core.spikesource.SpikeSource`</span>
+<span class="sd">        SpikeSource object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">Subgroup</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;start&#39;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="s1">&#39;stop&#39;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s1">&#39;group&#39;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">source</span><span class="o">.</span><span class="n">name</span></div>
+
+
+<div class="viewcode-block" id="collect_StateMonitor"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_StateMonitor">[docs]</a><span class="k">def</span> <span class="nf">collect_StateMonitor</span><span class="p">(</span><span class="n">state_mon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect details of `brian2.monitors.statemonitor.StateMonitor`</span>
+<span class="sd">    and return them in dictionary format</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    state_mon : brian2.monitors.statemonitor.StateMonitor</span>
+<span class="sd">            StateMonitor object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    state_mon_dict : dict</span>
+<span class="sd">            Dictionary representation of the collected details</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">state_mon_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># get name</span>
+    <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="c1"># if subgroup extend it</span>
+    <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collect_SpikeSource</span><span class="p">(</span><span class="n">state_mon</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+
+    <span class="c1"># get recorded variables</span>
+    <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">record_variables</span>
+
+    <span class="c1"># get record indices</span>
+    <span class="c1"># if all members of the source object are being recorded</span>
+    <span class="c1"># set &#39;record_indices&#39; = True, else save indices</span>
+    <span class="k">if</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">record_all</span><span class="p">:</span>
+        <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;record&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">record_all</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;record&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">record</span>
+
+    <span class="c1"># get no. of record indices</span>
+    <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;n_indices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">n_indices</span>
+
+    <span class="c1"># get clock dt of the StateMonitor</span>
+    <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span>
+
+    <span class="c1"># get when and order of the StateMonitor</span>
+    <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;when&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">when</span>
+    <span class="n">state_mon_dict</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_mon</span><span class="o">.</span><span class="n">order</span>
+
+    <span class="k">return</span> <span class="n">state_mon_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_SpikeMonitor"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_SpikeMonitor">[docs]</a><span class="k">def</span> <span class="nf">collect_SpikeMonitor</span><span class="p">(</span><span class="n">spike_mon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect details of `brian2.monitors.spikemonitor.SpikeMonitor`</span>
+<span class="sd">    and return them in dictionary format</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spike_mon : brian2.monitors.spikemonitor.SpikeMonitor</span>
+<span class="sd">            SpikeMonitor object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    spike_mon_dict : dict</span>
+<span class="sd">            Dictionary representation of the collected details</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pass to EventMonitor as they both are identical</span>
+    <span class="n">spike_mon_dict</span> <span class="o">=</span> <span class="n">collect_EventMonitor</span><span class="p">(</span><span class="n">spike_mon</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">spike_mon_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_EventMonitor"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_EventMonitor">[docs]</a><span class="k">def</span> <span class="nf">collect_EventMonitor</span><span class="p">(</span><span class="n">event_mon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect details of `EventMonitor` class</span>
+<span class="sd">    and return them in dictionary format</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    event_mon : brian2.EventMonitor</span>
+<span class="sd">            EventMonitor object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    event_mon_dict : dict</span>
+<span class="sd">            Dictionary representation of the collected details</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">event_mon_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># collect name</span>
+    <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_mon</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="c1"># collect event name</span>
+    <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;event&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_mon</span><span class="o">.</span><span class="n">event</span>
+
+    <span class="c1"># get source object name</span>
+    <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collect_SpikeSource</span><span class="p">(</span><span class="n">event_mon</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+
+    <span class="c1"># collect record variables, (done same as for SpikeMonitor)</span>
+    <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">event_mon</span><span class="o">.</span><span class="n">record_variables</span><span class="p">)</span>
+
+    <span class="c1"># collect record indices and time</span>
+    <span class="c1"># change to list if one member to monitor, to have uniformity as</span>
+    <span class="c1"># for statemonitor</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">event_mon</span><span class="o">.</span><span class="n">record</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">)</span> <span class="ow">or</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">event_mon</span><span class="o">.</span><span class="n">record</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
+        <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;record&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_mon</span><span class="o">.</span><span class="n">record</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;record&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">event_mon</span><span class="o">.</span><span class="n">record</span><span class="p">])</span>
+
+    <span class="c1"># collect time-step</span>
+    <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_mon</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span>
+
+    <span class="c1"># collect when and order</span>
+    <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;when&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_mon</span><span class="o">.</span><span class="n">when</span>
+    <span class="n">event_mon_dict</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_mon</span><span class="o">.</span><span class="n">order</span>
+
+    <span class="k">return</span> <span class="n">event_mon_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_PopulationRateMonitor"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_PopulationRateMonitor">[docs]</a><span class="k">def</span> <span class="nf">collect_PopulationRateMonitor</span><span class="p">(</span><span class="n">poprate_mon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represent required details of PopulationRateMonitor</span>
+<span class="sd">    in dictionary format</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    poprate_mon : brian2.monitors.ratemonitor.PopulationRateMonitor</span>
+<span class="sd">            PopulationRateMonitor class object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    poprate_mon_dict : dict</span>
+<span class="sd">            Dictionary format of the details collected</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">poprate_mon_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># collect name</span>
+    <span class="n">poprate_mon_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poprate_mon</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="c1"># collect source object</span>
+    <span class="n">poprate_mon_dict</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collect_SpikeSource</span><span class="p">(</span><span class="n">poprate_mon</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+
+    <span class="c1"># collect time-step</span>
+    <span class="n">poprate_mon_dict</span><span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poprate_mon</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span>
+
+    <span class="c1"># collect when/order</span>
+    <span class="n">poprate_mon_dict</span><span class="p">[</span><span class="s1">&#39;when&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poprate_mon</span><span class="o">.</span><span class="n">when</span>
+    <span class="n">poprate_mon_dict</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poprate_mon</span><span class="o">.</span><span class="n">order</span>
+
+    <span class="k">return</span> <span class="n">poprate_mon_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_Synapses"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_Synapses">[docs]</a><span class="k">def</span> <span class="nf">collect_Synapses</span><span class="p">(</span><span class="n">synapses</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect information from `brian2.synapses.synapses.Synapses`</span>
+<span class="sd">    and represent them in dictionary format</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    synapses : brian2.synapses.synapses.Synapses</span>
+<span class="sd">        Synapses object</span>
+
+<span class="sd">    run_namespace : dict</span>
+<span class="sd">        Namespace dictionary</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    synapse_dict : dict</span>
+<span class="sd">        Standard dictionary format with collected information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">synapse_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># get synapses object name</span>
+    <span class="n">synapse_dict</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">synapses</span><span class="o">.</span><span class="n">name</span>
+
+    <span class="c1"># get source and target groups</span>
+    <span class="n">synapse_dict</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collect_SpikeSource</span><span class="p">(</span><span class="n">synapses</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+    <span class="n">synapse_dict</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">collect_SpikeSource</span><span class="p">(</span><span class="n">synapses</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+
+    <span class="c1"># get governing equations</span>
+    <span class="n">synapse_equations</span> <span class="o">=</span> <span class="n">collect_Equations</span><span class="p">(</span><span class="n">synapses</span><span class="o">.</span><span class="n">equations</span><span class="p">)</span>
+    <span class="c1"># get identifiers from equations</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="n">identifiers</span> <span class="o">|</span> <span class="n">synapses</span><span class="o">.</span><span class="n">equations</span><span class="o">.</span><span class="n">identifiers</span>
+    <span class="k">if</span> <span class="n">synapses</span><span class="o">.</span><span class="n">event_driven</span><span class="p">:</span>
+        <span class="n">synapse_equations</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">collect_Equations</span><span class="p">(</span><span class="n">synapses</span><span class="o">.</span><span class="n">event_driven</span><span class="p">))</span>
+        <span class="n">identifiers</span> <span class="o">=</span> <span class="n">identifiers</span> <span class="o">|</span> <span class="n">synapses</span><span class="o">.</span><span class="n">event_driven</span><span class="o">.</span><span class="n">identifiers</span>
+    <span class="c1"># check equations is not empty</span>
+    <span class="k">if</span> <span class="n">synapse_equations</span><span class="p">:</span>
+        <span class="n">synapse_dict</span><span class="p">[</span><span class="s1">&#39;equations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">synapse_equations</span>
+    <span class="c1"># check state updaters</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">synapses</span><span class="o">.</span><span class="n">state_updater</span> <span class="ow">and</span>
+        <span class="nb">isinstance</span><span class="p">(</span><span class="n">synapses</span><span class="o">.</span><span class="n">state_updater</span><span class="o">.</span><span class="n">method_choice</span><span class="p">,</span> <span class="nb">str</span><span class="p">)):</span>
+        <span class="n">synapse_dict</span><span class="p">[</span><span class="s1">&#39;user_method&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">synapses</span><span class="o">.</span><span class="n">state_updater</span><span class="o">.</span><span class="n">method_choice</span>
+    <span class="c1"># loop over the contained objects</span>
+    <span class="n">summed_variables</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">pathways</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">synapses</span><span class="o">.</span><span class="n">contained_objects</span><span class="p">:</span>
+        <span class="c1"># check summed variables</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">SummedVariableUpdater</span><span class="p">):</span>
+            <span class="n">summed_var</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">expression</span><span class="p">,</span>
+                          <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="n">collect_SpikeSource</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">target</span><span class="p">),</span>
+                          <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span>
+                          <span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">when</span><span class="p">,</span> <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">order</span>
+                         <span class="p">}</span>
+            <span class="n">summed_variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">summed_var</span><span class="p">)</span>
+        <span class="c1"># check synapse pathways</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">SynapticPathway</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;prepost&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">prepost</span><span class="p">,</span> <span class="s1">&#39;event&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">event</span><span class="p">,</span>
+                    <span class="s1">&#39;code&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">code</span><span class="p">,</span>
+                    <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="n">collect_SpikeSource</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">source</span><span class="p">),</span>
+                    <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="n">collect_SpikeSource</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">target</span><span class="p">),</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span><span class="p">,</span> <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">order</span><span class="p">,</span>
+                    <span class="s1">&#39;when&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">when</span>
+                   <span class="p">}</span>
+            <span class="c1"># check delay is defined</span>
+            <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">scalar</span><span class="p">:</span>
+               <span class="n">path</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;delay&#39;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="n">delay</span><span class="p">[:]})</span>
+            <span class="n">pathways</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="c1"># check any identifiers specific to pathway expression</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">unknown</span> <span class="o">=</span> <span class="n">analyse_identifiers</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
+            <span class="n">identifiers</span> <span class="o">=</span> <span class="n">identifiers</span> <span class="o">|</span> <span class="n">unknown</span>
+
+    <span class="c1"># check any summed variables are used</span>
+    <span class="k">if</span> <span class="n">summed_variables</span><span class="p">:</span>
+        <span class="n">synapse_dict</span><span class="p">[</span><span class="s1">&#39;summed_variables&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summed_variables</span>
+    <span class="c1"># check any pathways are defined</span>
+    <span class="k">if</span> <span class="n">pathways</span><span class="p">:</span>
+        <span class="n">synapse_dict</span><span class="p">[</span><span class="s1">&#39;pathways&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pathways</span>
+    <span class="c1"># resolve identifiers and add to dict</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="n">synapses</span><span class="o">.</span><span class="n">resolve_all</span><span class="p">(</span><span class="n">identifiers</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">)</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="n">_prepare_identifiers</span><span class="p">(</span><span class="n">identifiers</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">identifiers</span><span class="p">:</span>
+        <span class="n">synapse_dict</span><span class="p">[</span><span class="s1">&#39;identifiers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">identifiers</span>
+
+    <span class="k">return</span> <span class="n">synapse_dict</span></div>
+
+
+<div class="viewcode-block" id="collect_PoissonInput"><a class="viewcode-back" href="../../../reference/brian2tools.baseexport.collector.html#brian2tools.baseexport.collector.collect_PoissonInput">[docs]</a><span class="k">def</span> <span class="nf">collect_PoissonInput</span><span class="p">(</span><span class="n">poinp</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Collect details of `PoissonInput` and represent them in dictionary</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    poinp : brian2.input.poissoninput.PoissonInput</span>
+<span class="sd">            PoissonInput object</span>
+
+<span class="sd">    run_namespace : dict</span>
+<span class="sd">            Namespace dictionary</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    poinp_dict : dict</span>
+<span class="sd">            Dictionary representation of the collected details</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">poinp_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;target&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;rate&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">rate</span>
+    <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">N</span>
+    <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;when&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">when</span>
+    <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">order</span>
+    <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span>
+    <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">_weight</span>
+    <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;target_var&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">_target_var</span>
+    <span class="c1"># collect identifiers, resolve and prune</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">identifiers</span> <span class="o">=</span> <span class="n">get_identifiers</span><span class="p">(</span><span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">])</span>
+        <span class="n">identifiers</span> <span class="o">=</span> <span class="n">poinp</span><span class="o">.</span><span class="n">_group</span><span class="o">.</span><span class="n">resolve_all</span><span class="p">(</span><span class="n">identifiers</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">)</span>
+        <span class="n">identifiers</span> <span class="o">=</span> <span class="n">_prepare_identifiers</span><span class="p">(</span><span class="n">identifiers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">identifiers</span><span class="p">:</span>
+            <span class="n">poinp_dict</span><span class="p">[</span><span class="s1">&#39;identifiers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">identifiers</span>
+
+    <span class="k">return</span> <span class="n">poinp_dict</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Brian authors
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

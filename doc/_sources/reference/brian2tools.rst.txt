@@ -1,0 +1,19 @@
+brian2tools package
+===================
+
+.. automodule:: brian2tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   brian2tools.baseexport
+   brian2tools.mdexport
+   brian2tools.nmlexport
+   brian2tools.nmlimport
+   brian2tools.plotting

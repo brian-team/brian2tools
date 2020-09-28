@@ -1,0 +1,955 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>brian2tools.nmlexport.lemsexport &mdash; brian2tools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> brian2tools
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../release_notes.html">Release notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/index.html">User’s guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../developer/index.html">Developer’s guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../reference/brian2tools.html">brian2tools package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">brian2tools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>brian2tools.nmlexport.lemsexport</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for brian2tools.nmlexport.lemsexport</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+
+<span class="kn">from</span> <span class="nn">brian2.groups.neurongroup</span> <span class="kn">import</span> <span class="n">Thresholder</span><span class="p">,</span> <span class="n">Resetter</span><span class="p">,</span> <span class="n">StateUpdater</span>
+<span class="kn">from</span> <span class="nn">brian2.synapses.synapses</span> <span class="kn">import</span> <span class="n">Synapses</span>
+<span class="kn">from</span> <span class="nn">brian2.monitors.statemonitor</span> <span class="kn">import</span> <span class="n">StateMonitor</span>
+<span class="kn">from</span> <span class="nn">brian2.input.poissoninput</span> <span class="kn">import</span> <span class="n">PoissonInput</span>
+<span class="kn">from</span> <span class="nn">brian2.core.network</span> <span class="kn">import</span> <span class="n">Network</span>
+<span class="kn">from</span> <span class="nn">brian2.core.magic</span> <span class="kn">import</span> <span class="n">collect</span>
+<span class="kn">from</span> <span class="nn">brian2.devices.device</span> <span class="kn">import</span> <span class="n">RuntimeDevice</span>
+
+<span class="kn">from</span> <span class="nn">brian2.units.fundamentalunits</span> <span class="kn">import</span> <span class="n">is_dimensionless</span>
+<span class="kn">from</span> <span class="nn">brian2.units</span> <span class="kn">import</span> <span class="n">mmetre</span><span class="p">,</span> <span class="n">ms</span>
+
+
+<span class="kn">import</span> <span class="nn">lems.api</span> <span class="k">as</span> <span class="nn">lems</span>
+
+<span class="kn">from</span> <span class="nn">.lemsrendering</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.supporting</span> <span class="kn">import</span> <span class="p">(</span><span class="n">read_nml_units</span><span class="p">,</span> <span class="n">read_nml_dims</span><span class="p">,</span> <span class="n">brian_unit_to_lems</span><span class="p">,</span>
+                         <span class="n">name_to_unit</span><span class="p">,</span> <span class="n">NeuroMLSimulation</span><span class="p">,</span> <span class="n">NeuroMLSimpleNetwork</span><span class="p">,</span>
+                         <span class="n">NeuroMLTarget</span><span class="p">,</span> <span class="n">NeuroMLPoissonGenerator</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.cgmhelper</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">SPIKE</span>             <span class="o">=</span> <span class="s2">&quot;spike&quot;</span>
+<span class="n">LAST_SPIKE</span>        <span class="o">=</span> <span class="s2">&quot;lastspike&quot;</span>
+<span class="n">NOT_REFRACTORY</span>    <span class="o">=</span> <span class="s2">&quot;not_refractory&quot;</span>
+<span class="n">INTEGRATING</span>       <span class="o">=</span> <span class="s2">&quot;integrating&quot;</span>
+<span class="n">REFRACTORY</span>        <span class="o">=</span> <span class="s2">&quot;refractory&quot;</span>
+<span class="n">UNLESS_REFRACTORY</span> <span class="o">=</span> <span class="s2">&quot;unless refractory&quot;</span>
+<span class="n">INDEX</span>             <span class="o">=</span> <span class="s2">&quot;index&quot;</span>    <span class="c1"># iterator in LEMS</span>
+<span class="n">BASE_CELL</span>         <span class="o">=</span> <span class="s2">&quot;baseCell&quot;</span>
+<span class="n">BASE_POPULATION</span>   <span class="o">=</span> <span class="s2">&quot;basePopulation&quot;</span>
+
+<span class="n">nmlcdpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>  <span class="c1"># path to NeuroMLCoreDimensions.xml file</span>
+<span class="n">LEMS_CONSTANTS_XML</span> <span class="o">=</span> <span class="s2">&quot;LEMSUnitsConstants.xml&quot;</span>  <span class="c1"># path to units constants</span>
+<span class="n">LEMS_INPUTS</span> <span class="o">=</span> <span class="s2">&quot;Inputs.xml&quot;</span>
+<span class="n">nml_dims</span>  <span class="o">=</span> <span class="n">read_nml_dims</span><span class="p">(</span><span class="n">nmlcdpath</span><span class="o">=</span><span class="n">nmlcdpath</span><span class="p">)</span>
+<span class="n">nml_units</span> <span class="o">=</span> <span class="n">read_nml_units</span><span class="p">(</span><span class="n">nmlcdpath</span><span class="o">=</span><span class="n">nmlcdpath</span><span class="p">)</span>
+
+<span class="n">renderer</span> <span class="o">=</span> <span class="n">LEMSRenderer</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_find_precision</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="s2">&quot;Returns precision from a float number eg 0.003 -&gt; 0.001&quot;</span>
+    <span class="n">splitted</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">splitted</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">10</span><span class="o">**</span><span class="nb">len</span><span class="p">(</span><span class="n">splitted</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">splitted</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+
+<span class="k">def</span> <span class="nf">_determine_dimension</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    From *value* with Brian2 unit determines proper LEMS dimension.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">nml_dims</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">has_same_dimensions</span><span class="p">(</span><span class="n">nml_dims</span><span class="p">[</span><span class="n">dim</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">dim</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># dimensionless</span>
+            <span class="k">return</span> <span class="s2">&quot;none&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Dimension not recognized: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">dim</span><span class="p">)))</span>
+
+
+<span class="k">def</span> <span class="nf">_to_lems_unit</span><span class="p">(</span><span class="n">unit</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    From given unit (and only unit without value!) it returns LEMS unit</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">strunit</span> <span class="o">=</span> <span class="n">unit</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">strunit</span> <span class="o">=</span> <span class="n">unit</span><span class="o">.</span><span class="n">in_best_unit</span><span class="p">()</span>
+        <span class="n">strunit</span> <span class="o">=</span> <span class="n">strunit</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>               <span class="c1"># here we substract &#39;1. &#39;</span>
+    <span class="n">strunit</span> <span class="o">=</span> <span class="n">strunit</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;^&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>  <span class="c1"># in LEMS there is no ^</span>
+    <span class="k">return</span> <span class="n">strunit</span>
+
+
+<span class="k">def</span> <span class="nf">_equation_separator</span><span class="p">(</span><span class="n">equation</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Separates *equation* (str) to LHS and RHS.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">lhs</span><span class="p">,</span> <span class="n">rhs</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;&lt;=|&gt;=|==|=|&gt;|&lt;&#39;</span><span class="p">,</span> <span class="n">equation</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">lhs</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">rhs</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="make_lems_unit"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.make_lems_unit">[docs]</a><span class="k">def</span> <span class="nf">make_lems_unit</span><span class="p">(</span><span class="n">newunit</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns from *newunit* to a lems.Unit definition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">strunit</span> <span class="o">=</span> <span class="n">_to_lems_unit</span><span class="p">(</span><span class="n">newunit</span><span class="p">)</span>
+    <span class="n">power</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">((</span><span class="n">mmetre</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">base</span><span class="p">))</span>
+    <span class="n">dimension</span> <span class="o">=</span> <span class="n">_determine_dimension</span><span class="p">(</span><span class="n">newunit</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lems</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">strunit</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="n">strunit</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="n">dimension</span><span class="p">,</span> <span class="n">power</span><span class="o">=</span><span class="n">power</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NMLExporter"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter">[docs]</a><span class="k">class</span> <span class="nc">NMLExporter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Exporter from Brian2 code to NeuroML.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_population</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;neuronname&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;ct_populationname&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;populationname&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;networkname&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;targetname&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;simulname&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                                 <span class="s1">&#39;poiss_generator&#39;</span><span class="p">:</span> <span class="s2">&quot;poiss&quot;</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_determine_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramdict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterator giving `lems.Parameter` for every parameter from *paramdict*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">paramdict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_dimensionless</span><span class="p">(</span><span class="n">paramdict</span><span class="p">[</span><span class="n">var</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+                <span class="k">yield</span> <span class="n">lems</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dim</span> <span class="o">=</span> <span class="n">_determine_dimension</span><span class="p">(</span><span class="n">paramdict</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">dim</span>
+                <span class="k">yield</span> <span class="n">lems</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_determine_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramdict</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterator giving `lems.Property` for every parameter from *paramdict*.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">paramdict</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_dimensionless</span><span class="p">(</span><span class="n">paramdict</span><span class="p">[</span><span class="n">var</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span>
+                <span class="k">yield</span> <span class="n">lems</span><span class="o">.</span><span class="n">Property</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dim</span> <span class="o">=</span> <span class="n">_determine_dimension</span><span class="p">(</span><span class="n">paramdict</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">dim</span>
+                <span class="k">yield</span> <span class="n">lems</span><span class="o">.</span><span class="n">Property</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_unit_lems_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value_in_unit</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if *unit* is in NML supported units and if it is not</span>
+<span class="sd">        it adds a new definition to model. Eventually returns value</span>
+<span class="sd">        with unit in string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">is_dimensionless</span><span class="p">(</span><span class="n">value_in_unit</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value_in_unit</span><span class="p">)</span>
+        <span class="n">value</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">value_in_unit</span><span class="o">.</span><span class="n">in_best_unit</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">lemsunit</span> <span class="o">=</span> <span class="n">_to_lems_unit</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">lemsunit</span> <span class="ow">in</span> <span class="n">nml_units</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">lemsunit</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">make_lems_unit</span><span class="p">(</span><span class="n">name_to_unit</span><span class="p">[</span><span class="n">unit</span><span class="p">]))</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">lemsunit</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_event_builder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">event_codes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        From *events* and *event_codes* yields lems.OnCondition objects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ev</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
+            <span class="n">event_out</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">EventOut</span><span class="p">(</span><span class="n">ev</span><span class="p">)</span>  <span class="c1"># output (e.g. spike)</span>
+            <span class="n">oc</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">OnCondition</span><span class="p">(</span><span class="n">renderer</span><span class="o">.</span><span class="n">render_expr</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="n">ev</span><span class="p">]))</span>
+            <span class="n">oc</span><span class="o">.</span><span class="n">add_action</span><span class="p">(</span><span class="n">event_out</span><span class="p">)</span>
+            <span class="c1"># if event is not in model ports we should add it</span>
+            <span class="k">if</span> <span class="n">ev</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span><span class="o">.</span><span class="n">event_ports</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">EventPort</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">ev</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;out&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">ev</span> <span class="ow">in</span> <span class="n">event_codes</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ec</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;;|</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">event_codes</span><span class="p">[</span><span class="n">ev</span><span class="p">]):</span>
+                    <span class="n">event_eq</span> <span class="o">=</span> <span class="n">_equation_separator</span><span class="p">(</span><span class="n">ec</span><span class="p">)</span>
+                    <span class="n">oc</span><span class="o">.</span><span class="n">add_action</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">StateAssignment</span><span class="p">(</span><span class="n">event_eq</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">event_eq</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">spike_flag</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">ev</span> <span class="o">==</span> <span class="n">SPIKE</span><span class="p">:</span>
+                <span class="n">spike_flag</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="n">spike_flag</span><span class="p">,</span> <span class="n">oc</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NMLExporter.add_neurongroup"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.add_neurongroup">[docs]</a>    <span class="k">def</span> <span class="nf">add_neurongroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">idx_of_ng</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">initializers</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds NeuronGroup object *obj* to self._model.</span>
+
+<span class="sd">        If number of elements is 1 it adds component of that type, if</span>
+<span class="sd">        it&#39;s bigger, the network is created by calling:</span>
+<span class="sd">        `make_multiinstantiate`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : brian2.NeuronGroup</span>
+<span class="sd">            NeuronGroup object to parse</span>
+<span class="sd">        idx_of_ng : int</span>
+<span class="sd">            index of neurongroup</span>
+<span class="sd">        namespace : dict</span>
+<span class="sd">            dictionary with all neccassary variables definition</span>
+<span class="sd">        initializers : dict</span>
+<span class="sd">            initial values for all model variables</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;namespace&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">namespace</span><span class="p">:</span>
+            <span class="n">obj</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">namespace</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nr_of_neurons</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">N</span>  <span class="c1"># maybe not the most robust solution</span>
+        <span class="n">ct_name</span> <span class="o">=</span> <span class="s2">&quot;neuron</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">idx_of_ng</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;neuronname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ct_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">ComponentType</span><span class="p">(</span><span class="n">ct_name</span><span class="p">,</span> <span class="n">extends</span><span class="o">=</span><span class="n">BASE_CELL</span><span class="p">)</span>
+        <span class="c1"># adding parameters</span>
+        <span class="n">special_properties</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">special_properties</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_determine_properties</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">namespace</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="c1"># common things for every neuron definition</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">EventPort</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;spike&#39;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;out&#39;</span><span class="p">))</span>
+        <span class="c1"># dynamics of the network</span>
+        <span class="n">dynamics</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">Dynamics</span><span class="p">()</span>
+        <span class="n">ng_equations</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">user_equations</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">ng_equations</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ng_equations</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">DIFFERENTIAL_EQUATION</span><span class="p">:</span>
+                <span class="n">dim_</span> <span class="o">=</span> <span class="n">_determine_dimension</span><span class="p">(</span><span class="n">ng_equations</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+                <span class="n">sv_</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">StateVariable</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="n">dim_</span><span class="p">,</span> <span class="n">exposure</span><span class="o">=</span><span class="n">var</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">dim_</span>
+                <span class="n">dynamics</span><span class="o">.</span><span class="n">add_state_variable</span><span class="p">(</span><span class="n">sv_</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Exposure</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="n">dim_</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">ng_equations</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">PARAMETER</span><span class="p">,</span> <span class="n">SUBEXPRESSION</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="n">NOT_REFRACTORY</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">dim_</span> <span class="o">=</span> <span class="n">_determine_dimension</span><span class="p">(</span><span class="n">ng_equations</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">dim_</span>
+                <span class="c1"># all initializers contatining iterator need to be assigned</span>
+                <span class="c1"># as a property</span>
+                <span class="c1"># i is default iterator in Brian2</span>
+                <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">initializers</span> <span class="ow">and</span> <span class="s2">&quot;i&quot;</span> <span class="ow">in</span> <span class="n">get_identifiers</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">initializers</span><span class="p">[</span><span class="n">var</span><span class="p">])):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Property</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">dim_</span><span class="p">))</span>
+                    <span class="n">special_properties</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">initializers</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+                    <span class="k">continue</span>
+                <span class="n">sv_</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">StateVariable</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="n">dim_</span><span class="p">)</span>
+                <span class="n">dynamics</span><span class="o">.</span><span class="n">add_state_variable</span><span class="p">(</span><span class="n">sv_</span><span class="p">)</span>
+        <span class="c1"># what happens at initialization</span>
+        <span class="n">onstart</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">OnStart</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">equations</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="p">(</span><span class="n">NOT_REFRACTORY</span><span class="p">,</span> <span class="n">LAST_SPIKE</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">initializers</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">special_properties</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">init_value</span> <span class="o">=</span> <span class="n">initializers</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">init_value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">str</span><span class="p">:</span>
+                <span class="n">init_value</span> <span class="o">=</span> <span class="n">brian_unit_to_lems</span><span class="p">(</span><span class="n">init_value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">init_value</span> <span class="o">=</span> <span class="n">renderer</span><span class="o">.</span><span class="n">render_expr</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">init_value</span><span class="p">))</span>
+            <span class="n">onstart</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">StateAssignment</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">init_value</span><span class="p">))</span>
+        <span class="n">dynamics</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">onstart</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">_refractory</span><span class="p">:</span>
+            <span class="c1"># if refractoriness, we create separate regimes</span>
+            <span class="c1"># - for integrating</span>
+            <span class="n">integr_regime</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">Regime</span><span class="p">(</span><span class="n">INTEGRATING</span><span class="p">,</span> <span class="n">dynamics</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>  <span class="c1"># True -&gt; initial regime</span>
+            <span class="k">for</span> <span class="n">spike_flag</span><span class="p">,</span> <span class="n">oc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_builder</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">events</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">event_codes</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">spike_flag</span><span class="p">:</span>
+                    <span class="c1"># if spike occured we make transition to refractory regime</span>
+                    <span class="n">oc</span><span class="o">.</span><span class="n">add_action</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Transition</span><span class="p">(</span><span class="n">REFRACTORY</span><span class="p">))</span>
+                <span class="n">integr_regime</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span><span class="n">oc</span><span class="p">)</span>
+            <span class="c1"># - for refractory</span>
+            <span class="n">refrac_regime</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">Regime</span><span class="p">(</span><span class="n">REFRACTORY</span><span class="p">,</span> <span class="n">dynamics</span><span class="p">)</span>
+            <span class="c1"># we make lastspike variable and initialize it</span>
+            <span class="n">refrac_regime</span><span class="o">.</span><span class="n">add_state_variable</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">StateVariable</span><span class="p">(</span><span class="n">LAST_SPIKE</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">))</span>
+            <span class="n">oe</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">OnEntry</span><span class="p">()</span>
+            <span class="n">oe</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">StateAssignment</span><span class="p">(</span><span class="n">LAST_SPIKE</span><span class="p">,</span> <span class="s1">&#39;t&#39;</span><span class="p">))</span>
+            <span class="n">refrac_regime</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">oe</span><span class="p">)</span>
+            <span class="c1"># after time spiecified in _refractory we make transition</span>
+            <span class="c1"># to integrating regime</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_equation_separator</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">_refractory</span><span class="p">)):</span>
+                <span class="c1"># if there is no specific variable given, we assume</span>
+                <span class="c1"># that this is time condition</span>
+                <span class="n">ref_oc</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">OnCondition</span><span class="p">(</span><span class="s1">&#39;t .gt. ( </span><span class="si">{0}</span><span class="s1"> + </span><span class="si">{1}</span><span class="s1"> )&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">LAST_SPIKE</span><span class="p">,</span> <span class="n">brian_unit_to_lems</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">_refractory</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ref_oc</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">OnCondition</span><span class="p">(</span><span class="n">renderer</span><span class="o">.</span><span class="n">render_expr</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">_refractory</span><span class="p">))</span>
+            <span class="n">ref_trans</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">Transition</span><span class="p">(</span><span class="n">INTEGRATING</span><span class="p">)</span>
+            <span class="n">ref_oc</span><span class="o">.</span><span class="n">add_action</span><span class="p">(</span><span class="n">ref_trans</span><span class="p">)</span>
+            <span class="n">refrac_regime</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span><span class="n">ref_oc</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">user_equations</span><span class="o">.</span><span class="n">diff_eq_names</span><span class="p">:</span>
+                <span class="n">td</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">TimeDerivative</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">renderer</span><span class="o">.</span><span class="n">render_expr</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ng_equations</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">expr</span><span class="p">)))</span>
+                <span class="c1"># if unless refratory we add only do integration regime</span>
+                <span class="k">if</span> <span class="n">UNLESS_REFRACTORY</span> <span class="ow">in</span> <span class="n">ng_equations</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">flags</span><span class="p">:</span>
+                    <span class="n">integr_regime</span><span class="o">.</span><span class="n">add_time_derivative</span><span class="p">(</span><span class="n">td</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">integr_regime</span><span class="o">.</span><span class="n">add_time_derivative</span><span class="p">(</span><span class="n">td</span><span class="p">)</span>
+                <span class="n">refrac_regime</span><span class="o">.</span><span class="n">add_time_derivative</span><span class="p">(</span><span class="n">td</span><span class="p">)</span>
+            <span class="n">dynamics</span><span class="o">.</span><span class="n">add_regime</span><span class="p">(</span><span class="n">integr_regime</span><span class="p">)</span>
+            <span class="n">dynamics</span><span class="o">.</span><span class="n">add_regime</span><span class="p">(</span><span class="n">refrac_regime</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># here we add events directly to dynamics</span>
+            <span class="k">for</span> <span class="n">spike_flag</span><span class="p">,</span> <span class="n">oc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_event_builder</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">events</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">event_codes</span><span class="p">):</span>
+                <span class="n">dynamics</span><span class="o">.</span><span class="n">add_event_handler</span><span class="p">(</span><span class="n">oc</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">user_equations</span><span class="o">.</span><span class="n">diff_eq_names</span><span class="p">:</span>
+                <span class="n">td</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">TimeDerivative</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">renderer</span><span class="o">.</span><span class="n">render_expr</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ng_equations</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">expr</span><span class="p">)))</span>
+                <span class="n">dynamics</span><span class="o">.</span><span class="n">add_time_derivative</span><span class="p">(</span><span class="n">td</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span><span class="o">.</span><span class="n">dynamics</span> <span class="o">=</span> <span class="n">dynamics</span>
+        <span class="c1"># making componenttype is done so we add it to the model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">add_component_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_component_type</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">namespace</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;init&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>                <span class="c1"># kick out init</span>
+        <span class="c1"># adding component to the model</span>
+        <span class="n">paramdict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">namespace</span><span class="p">:</span>
+            <span class="n">paramdict</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unit_lems_validator</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">namespace</span><span class="p">[</span><span class="n">param</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">N</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="s2">&quot;n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">idx_of_ng</span><span class="p">),</span> <span class="n">ct_name</span><span class="p">,</span> <span class="o">**</span><span class="n">paramdict</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">make_multiinstantiate</span><span class="p">(</span><span class="n">special_properties</span><span class="p">,</span> <span class="n">ct_name</span><span class="p">,</span> <span class="n">paramdict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NMLExporter.make_multiinstantiate"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.make_multiinstantiate">[docs]</a>    <span class="k">def</span> <span class="nf">make_multiinstantiate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">special_properties</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds ComponentType with MultiInstantiate in order to make</span>
+<span class="sd">        a population of neurons.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        special_properties : dict</span>
+<span class="sd">            all variables to be defined in MultiInstantiate</span>
+<span class="sd">        name : str</span>
+<span class="sd">            MultiInstantiate component name</span>
+<span class="sd">        parameters : dict</span>
+<span class="sd">            all extra parameters needed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">PARAM_SUBSCRIPT</span> <span class="o">=</span> <span class="s2">&quot;_p&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;ct_populationname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span><span class="o">+</span><span class="s2">&quot;Multi&quot;</span>
+        <span class="n">multi_ct</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">ComponentType</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;ct_populationname&quot;</span><span class="p">],</span> <span class="n">extends</span><span class="o">=</span><span class="n">BASE_POPULATION</span><span class="p">)</span>
+        <span class="n">structure</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">Structure</span><span class="p">()</span>
+        <span class="n">multi_ins</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">MultiInstantiate</span><span class="p">(</span><span class="n">component_type</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                                          <span class="n">number</span><span class="o">=</span><span class="s2">&quot;N&quot;</span><span class="p">)</span>
+        <span class="n">param_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># number of neruons</span>
+        <span class="n">multi_ct</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">))</span>
+        <span class="c1"># other parameters</span>
+        <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="n">special_properties</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">special_properties</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">multi_ct</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">sp</span><span class="o">+</span><span class="n">PARAM_SUBSCRIPT</span><span class="p">,</span> <span class="n">dimension</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span><span class="p">[</span><span class="n">sp</span><span class="p">]))</span>
+                <span class="n">multi_ins</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Assign</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">sp</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">sp</span><span class="o">+</span><span class="n">PARAM_SUBSCRIPT</span><span class="p">))</span>
+                <span class="n">param_dict</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># multi_ct.add(lems.Parameter(name=sp, dimension=self._all_params_unit[sp]))</span>
+                <span class="c1"># check if there are some units in equations</span>
+                <span class="n">equation</span> <span class="o">=</span> <span class="n">special_properties</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span>
+                <span class="c1"># add spaces around brackets to prevent mismatching</span>
+                <span class="n">equation</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;\(&quot;</span><span class="p">,</span> <span class="s2">&quot; ( &quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">)</span>
+                <span class="n">equation</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;\)&quot;</span><span class="p">,</span> <span class="s2">&quot; ) &quot;</span><span class="p">,</span> <span class="n">equation</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">get_identifiers</span><span class="p">(</span><span class="n">equation</span><span class="p">):</span>
+                    <span class="c1"># iterator is a special case</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="s2">&quot;i&quot;</span><span class="p">:</span>
+                        <span class="n">regexp_noletter</span> <span class="o">=</span> <span class="s2">&quot;[^a-zA-Z0-9]&quot;</span>
+                        <span class="n">equation</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{re}</span><span class="s2">i</span><span class="si">{re}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">re</span><span class="o">=</span><span class="n">regexp_noletter</span><span class="p">),</span>
+                                                  <span class="s2">&quot; </span><span class="si">{}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">INDEX</span><span class="p">),</span> <span class="n">equation</span><span class="p">)</span>
+                    <span class="c1"># here it&#39;s assumed that we don&#39;t use Netwton in neuron models</span>
+                    <span class="k">elif</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">name_to_unit</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">!=</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span>
+                        <span class="n">const_i</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="s1">&#39;const&#39;</span>
+                        <span class="n">multi_ct</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Constant</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">const_i</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="n">const_i</span><span class="p">,</span>
+                                     <span class="n">dimension</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_all_params_unit</span><span class="p">[</span><span class="n">sp</span><span class="p">],</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="o">+</span><span class="n">i</span><span class="p">))</span>
+                        <span class="n">equation</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">const_i</span><span class="p">,</span> <span class="n">equation</span><span class="p">)</span>
+                <span class="n">multi_ins</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Assign</span><span class="p">(</span><span class="nb">property</span><span class="o">=</span><span class="n">sp</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">equation</span><span class="p">))</span>
+        <span class="n">structure</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">multi_ins</span><span class="p">)</span>
+        <span class="n">multi_ct</span><span class="o">.</span><span class="n">structure</span> <span class="o">=</span> <span class="n">structure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">multi_ct</span><span class="p">)</span>
+        <span class="n">param_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">k</span><span class="o">+</span><span class="s2">&quot;_p&quot;</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">param_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+        <span class="n">param_dict</span><span class="p">[</span><span class="s2">&quot;N&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nr_of_neurons</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;populationname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;ct_populationname&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;pop&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;networkname&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;ct_populationname&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;Net&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_population</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;networkname&quot;</span><span class="p">],</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;populationname&quot;</span><span class="p">],</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;ct_populationname&quot;</span><span class="p">],</span>
+                            <span class="o">**</span><span class="n">param_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NMLExporter.add_statemonitor"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.add_statemonitor">[docs]</a>    <span class="k">def</span> <span class="nf">add_statemonitor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;recording&quot;</span><span class="p">,</span> <span class="n">outputfile</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        From StateMonitor object extracts indices to recording in LEMS </span>
+<span class="sd">        simulation and makes a display and recording file.</span>
+<span class="sd">        </span>
+<span class="sd">        Make sure before calling that *simulation* object is created.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : brian2.StateMonitor</span>
+<span class="sd">            StateMonitor object</span>
+<span class="sd">        filename : str, optional</span>
+<span class="sd">            name of output file without extension, default &#39;recording&#39;</span>
+<span class="sd">        outputfile : dict, optional</span>
+<span class="sd">            flag sayinf whether to record output to file or only add</span>
+<span class="sd">            display, default False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filename</span> <span class="o">+=</span> <span class="s1">&#39;.dat&#39;</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">record</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span> <span class="n">indices</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nr_of_neurons</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">indices</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">needed_variables</span>
+        <span class="c1"># step of integration</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">in_unit</span><span class="p">(</span><span class="n">ms</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span><span class="o">.</span><span class="n">update_simulation_attribute</span><span class="p">(</span><span class="s1">&#39;step&#39;</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="c1"># adding display and outputcolumn for each recorded neuron</span>
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">variables</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span><span class="o">.</span><span class="n">add_display</span><span class="p">(</span><span class="s2">&quot;disp</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">))</span> <span class="c1"># max, min etc ???</span>
+            <span class="k">if</span> <span class="n">outputfile</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span><span class="o">.</span><span class="n">add_outputfile</span><span class="p">(</span><span class="s2">&quot;of</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+                <span class="c1"># scale, time_scale ???</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="s2">&quot;line</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                                          <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">[</span><span class="si">{}</span><span class="s2">]/v&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;populationname&quot;</span><span class="p">],</span> <span class="n">i</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">outputfile</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span><span class="o">.</span><span class="n">add_outputcolumn</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                                                      <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">[</span><span class="si">{}</span><span class="s2">]/v&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;populationname&quot;</span><span class="p">],</span> <span class="n">i</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="NMLExporter.add_spikemonitor"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.add_spikemonitor">[docs]</a>    <span class="k">def</span> <span class="nf">add_spikemonitor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;recording&quot;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        From SpikeMonitor object extracts indices to recording in LEMS</span>
+<span class="sd">        simulation.</span>
+
+<span class="sd">        Make sure before calling that *simulation* object is created.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : brian2.SpikeMonitor</span>
+<span class="sd">            SpikeMonitor object</span>
+<span class="sd">        filename : str, optional</span>
+<span class="sd">            name of output file without extension, default &#39;recording&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filename</span> <span class="o">+=</span> <span class="s1">&#39;.spikes&#39;</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">record</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span> <span class="n">indices</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nr_of_neurons</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">indices</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">needed_variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span><span class="o">.</span><span class="n">add_eventoutputfile</span><span class="p">(</span><span class="s2">&quot;eof&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># adding eventselection for each recorded neuron</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span><span class="o">.</span><span class="n">add_eventselection</span><span class="p">(</span><span class="s2">&quot;line</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                    <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">[</span><span class="si">{}</span><span class="s2">]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s2">&quot;populationname&quot;</span><span class="p">],</span> <span class="n">i</span><span class="p">),</span>
+                    <span class="n">event_port</span><span class="o">=</span><span class="s2">&quot;spike&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NMLExporter.add_synapses"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.add_synapses">[docs]</a>    <span class="k">def</span> <span class="nf">add_synapses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        TO DO - not ready to use</span>
+<span class="sd">        Adds synapses to the model.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : brian2.Synapse</span>
+<span class="sd">            Synapse object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">synapse_ct</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">ComponentType</span><span class="p">(</span><span class="s1">&#39;Synapse&#39;</span><span class="p">)</span>
+        <span class="n">dynamics_synapse</span> <span class="o">=</span> <span class="n">lems</span><span class="o">.</span><span class="n">Dynamics</span><span class="p">()</span>
+        <span class="n">synapse_ct</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dynamics_synapse</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NMLExporter.add_input"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.add_input">[docs]</a>    <span class="k">def</span> <span class="nf">add_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">counter</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extends DOM model (*self._dommodel*) of Network Input.</span>
+<span class="sd">        Currently only PoissonInput support.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obj : brian2.NeuronGroup</span>
+<span class="sd">            neuronal input object</span>
+<span class="sd">        counter : str or int, optional</span>
+<span class="sd">            number of object added to identifier</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span><span class="n">PoissonInput</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s1">&#39;poiss_generator&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">(</span><span class="n">counter</span><span class="p">))</span>
+            <span class="n">nml_poisson</span> <span class="o">=</span> <span class="n">NeuroMLPoissonGenerator</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">rate</span><span class="p">))</span>
+            <span class="n">nml_poisson</span> <span class="o">=</span> <span class="n">nml_poisson</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_extend_dommodel</span><span class="p">(</span><span class="n">nml_poisson</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Currently only PoissonInput supported.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NMLExporter.add_population"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.add_population">[docs]</a>    <span class="k">def</span> <span class="nf">add_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">net_id</span><span class="p">,</span> <span class="n">component_id</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets population of neurons to resulting file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        net_id : str</span>
+<span class="sd">            network id</span>
+<span class="sd">        component_id : str</span>
+<span class="sd">            component id</span>
+<span class="sd">        type_ : str</span>
+<span class="sd">            component type</span>
+<span class="sd">        args : ...</span>
+<span class="sd">            all extra keyword arguments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nmlnetwork</span> <span class="o">=</span> <span class="n">NeuroMLSimpleNetwork</span><span class="p">(</span><span class="n">net_id</span><span class="p">)</span>
+        <span class="n">nmlnetwork</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">component_id</span><span class="p">,</span> <span class="n">type_</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_population</span> <span class="o">=</span> <span class="n">nmlnetwork</span><span class="o">.</span><span class="n">build</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="NMLExporter.add_include"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.add_include">[docs]</a>    <span class="k">def</span> <span class="nf">add_include</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">includefile</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds file to include *includefile* to model.</span>
+<span class="sd">        *includefile* -- str</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        includefile : str</span>
+<span class="sd">            name of the file to include</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Include</span><span class="p">(</span><span class="n">includefile</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="NMLExporter.create_lems_model"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.create_lems_model">[docs]</a>    <span class="k">def</span> <span class="nf">create_lems_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">network</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="p">{},</span> <span class="n">initializers</span><span class="o">=</span><span class="p">{},</span>
+                                           <span class="n">constants_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">includes</span><span class="o">=</span><span class="p">[],</span>
+                                           <span class="n">recordingsname</span><span class="o">=</span><span class="s1">&#39;recording&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        From given *network* returns LEMS model object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        network : str, optional</span>
+<span class="sd">            all brian objects collected into netowrk or None. In the</span>
+<span class="sd">            second case brian2 objects are collected autmatically from</span>
+<span class="sd">            the above scope.</span>
+<span class="sd">        namespace : dict</span>
+<span class="sd">            namespace variables defining extra model parameters</span>
+<span class="sd">        initializers : dict</span>
+<span class="sd">            all values which need to be initialized before simulation</span>
+<span class="sd">            running</span>
+<span class="sd">        constants_file : str, optional</span>
+<span class="sd">            file with units as constants definitions, if None an</span>
+<span class="sd">            LEMS_CONSTANTS_XML is added automatically</span>
+<span class="sd">        includes : list of str</span>
+<span class="sd">            all additional XML files added in preamble</span>
+<span class="sd">        recordingsname : str, optional</span>
+<span class="sd">            output of LEMS simulation recordings, values with extension</span>
+<span class="sd">            .dat and spikes with .spikes, default &#39;recording&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">net</span> <span class="o">=</span> <span class="n">Network</span><span class="p">(</span><span class="n">collect</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">net</span> <span class="o">=</span> <span class="n">network</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">constants_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Include</span><span class="p">(</span><span class="n">LEMS_CONSTANTS_XML</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lems</span><span class="o">.</span><span class="n">Include</span><span class="p">(</span><span class="n">constants_file</span><span class="p">))</span>
+        <span class="n">includes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">includes</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">incl</span> <span class="ow">in</span> <span class="n">INCLUDES</span><span class="p">:</span>
+            <span class="n">includes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">incl</span><span class="p">)</span>
+        <span class="n">neuron_groups</span>  <span class="o">=</span> <span class="p">[</span><span class="n">o</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">objects</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="ow">is</span> <span class="n">NeuronGroup</span><span class="p">]</span>
+        <span class="n">state_monitors</span> <span class="o">=</span> <span class="p">[</span><span class="n">o</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">objects</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="ow">is</span> <span class="n">StateMonitor</span><span class="p">]</span>
+        <span class="n">spike_monitors</span> <span class="o">=</span> <span class="p">[</span><span class="n">o</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">objects</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="ow">is</span> <span class="n">SpikeMonitor</span><span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">objects</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="n">NeuronGroup</span><span class="p">,</span> <span class="n">StateMonitor</span><span class="p">,</span> <span class="n">SpikeMonitor</span><span class="p">,</span>
+                               <span class="n">Thresholder</span><span class="p">,</span> <span class="n">Resetter</span><span class="p">,</span> <span class="n">StateUpdater</span><span class="p">]:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="si">{}</span><span class="s2"> export functionality</span>
+<span class="s2">                               is not implemented yet.&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">))</span>
+        <span class="c1"># --- not fully implemented</span>
+        <span class="n">synapses</span>       <span class="o">=</span> <span class="p">[</span><span class="n">o</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">objects</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Synapses</span><span class="p">]</span>
+        <span class="n">netinputs</span>      <span class="o">=</span> <span class="p">[</span><span class="n">o</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">objects</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="ow">is</span> <span class="n">PoissonInput</span><span class="p">]</span>
+        <span class="c1"># ---</span>
+        <span class="c1">#if len(synapses) &gt; 0:</span>
+        <span class="c1">#    logger.warn(&quot;Synpases export functionality is not implemented yet.&quot;)</span>
+        <span class="c1">#if len(netinputs) &gt; 0:</span>
+        <span class="c1">#    logger.warn(&quot;Network Input export functionality is not implemented yet.&quot;)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">netinputs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">includes</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">LEMS_INPUTS</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">incl</span> <span class="ow">in</span> <span class="n">includes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_include</span><span class="p">(</span><span class="n">incl</span><span class="p">)</span>
+        <span class="c1"># First step is to add individual neuron deifinitions and initialize</span>
+        <span class="c1"># them by MultiInstantiate</span>
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">neuron_groups</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_neurongroup</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">initializers</span><span class="p">)</span>
+        <span class="c1"># DOM structure of the whole model is constructed below</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dommodel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">export_to_dom</span><span class="p">()</span>
+        <span class="c1"># input support - currently only Poisson Inputs</span>
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">netinputs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_input</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">counter</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+        <span class="c1"># A population should be created in *make_multiinstantiate*</span>
+        <span class="c1"># so we can add it to our DOM structure.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_population</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_extend_dommodel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_population</span><span class="p">)</span>
+        <span class="c1"># if some State or Spike Monitors occur we support them by</span>
+        <span class="c1"># Simulation tag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s1">&#39;simulname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sim1&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span> <span class="o">=</span> <span class="n">NeuroMLSimulation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s1">&#39;simulname&#39;</span><span class="p">],</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s1">&#39;networkname&#39;</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">state_monitors</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_statemonitor</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">recordingsname</span><span class="p">,</span> <span class="n">outputfile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">spike_monitors</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_spikemonitor</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">recordingsname</span><span class="p">)</span>
+        <span class="n">simulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulation</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extend_dommodel</span><span class="p">(</span><span class="n">simulation</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">NeuroMLTarget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_namespace</span><span class="p">[</span><span class="s1">&#39;simulname&#39;</span><span class="p">])</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extend_dommodel</span><span class="p">(</span><span class="n">target</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NMLExporter.export_to_file"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.NMLExporter.export_to_file">[docs]</a>    <span class="k">def</span> <span class="nf">export_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Exports model to file *filename*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dirname</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">+=</span> <span class="s2">&quot;.xml&quot;</span>
+        <span class="n">xmlstring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dommodel</span><span class="o">.</span><span class="n">toprettyxml</span><span class="p">(</span><span class="s2">&quot;  &quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">xmlstring</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_extend_dommodel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extends self._dommodel DOM structure with *child*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dommodel</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dommodel</span></div>
+
+
+<span class="c1">########################################################################</span>
+<span class="c1"># Code Generation Mechanism</span>
+<span class="c1">########################################################################</span>
+
+<span class="n">INCLUDES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Simulation.xml&quot;</span><span class="p">,</span> <span class="s2">&quot;NeuroML2CoreTypes.xml&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="DummyCodeObject"><a class="viewcode-back" href="../../../reference/brian2tools.nmlexport.lemsexport.html#brian2tools.nmlexport.lemsexport.DummyCodeObject">[docs]</a><span class="k">class</span> <span class="nc">DummyCodeObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<span class="k">class</span> <span class="nc">LEMSDevice</span><span class="p">(</span><span class="n">RuntimeDevice</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    The `Device` used for LEMS/NeuroML2 code generation.</span>
+
+<span class="sd">    Use ``set_device(&#39;neuroml2&#39;, filename=&#39;myfilename.xml&#39;)`` to transform a</span>
+<span class="sd">    Brian 2 script into a NeuroML2/LEMS description of the model.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LEMSDevice</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assignments</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_on_run</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_options</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_been_run</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">reinit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">build_on_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_on_run</span>
+        <span class="n">build_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LEMSDevice</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">reinit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_on_run</span> <span class="o">=</span> <span class="n">build_on_run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_options</span> <span class="o">=</span> <span class="n">build_options</span>
+
+    <span class="c1"># This device does not actually calculate/store any data, so the following</span>
+    <span class="c1"># are just dummy implementations</span>
+
+    <span class="k">def</span> <span class="nf">synaptic_pathway_before_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pathway</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">):</span>
+        <span class="k">pass</span>  <span class="c1"># No spike queue initialization necessary</span>
+
+    <span class="k">def</span> <span class="nf">network_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">network</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">_clocks</span> <span class="o">=</span> <span class="p">{</span><span class="n">obj</span><span class="o">.</span><span class="n">clock</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">objects</span><span class="p">}</span>
+        <span class="c1"># Get the local namespace</span>
+        <span class="k">if</span> <span class="n">namespace</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">namespace</span> <span class="o">=</span> <span class="n">get_local_namespace</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">before_run</span><span class="p">(</span><span class="n">namespace</span><span class="p">)</span>
+
+        <span class="c1"># Extract all the objects present in the network</span>
+        <span class="n">descriptions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">merged_namespace</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">monitors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">network</span><span class="o">.</span><span class="n">objects</span><span class="p">:</span>
+            <span class="n">one_description</span><span class="p">,</span> <span class="n">one_namespace</span> <span class="o">=</span> <span class="n">description</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">namespace</span><span class="p">)</span>
+            <span class="n">descriptions</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">one_description</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="n">StateMonitor</span><span class="p">,</span> <span class="n">SpikeMonitor</span><span class="p">]:</span>
+                <span class="n">monitors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">one_namespace</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">merged_namespace</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">merged_namespace</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;name &quot;</span><span class="si">%s</span><span class="s1">&quot; is used inconsistently&#39;</span><span class="p">)</span>
+                <span class="n">merged_namespace</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">network</span>
+        <span class="n">assignments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assignments</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assignments</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">descriptions</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">merged_namespace</span><span class="p">,</span> <span class="n">assignments</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_on_run</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_been_run</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The network has already been built and run &#39;</span>
+                                   <span class="s1">&#39;before. Use set_device with &#39;</span>
+                                   <span class="s1">&#39;build_on_run=False and an explicit &#39;</span>
+                                   <span class="s1">&#39;device.build call to use multiple run &#39;</span>
+                                   <span class="s1">&#39;statements with this device.&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">direct_call</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">build_options</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_been_run</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">variableview_set_with_expression_conditional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variableview</span><span class="p">,</span> <span class="n">cond</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span>
+                                                     <span class="n">run_namespace</span><span class="p">,</span> <span class="n">check_units</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;conditional&#39;</span><span class="p">,</span> <span class="n">variableview</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">variableview</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">cond</span><span class="p">,</span> <span class="n">code</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">variableview_set_with_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variableview</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">run_namespace</span><span class="p">,</span> <span class="n">check_units</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;item&#39;</span><span class="p">,</span> <span class="n">variableview</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">variableview</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">code</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">variableview_set_with_index_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variableview</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">check_units</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assignments</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;item&#39;</span><span class="p">,</span> <span class="n">variableview</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">variableview</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">direct_call</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lems_const_save</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Collecting initializers and namespace from self.runs and passing</span>
+<span class="sd">        it to the exporter.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str, optional</span>
+<span class="sd">            filename of exported xml model and recordings</span>
+<span class="sd">        direct_call : bool, optional</span>
+<span class="sd">            if call of the method was direct or not, default True</span>
+<span class="sd">        lems_const_save : bool, optional</span>
+<span class="sd">            whether to save or not LEMSUnitsConstants.xml alongside with</span>
+<span class="sd">            output model file, default True</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_on_run</span> <span class="ow">and</span> <span class="n">direct_call</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;You used set_device with build_on_run=True &#39;</span>
+                               <span class="s1">&#39;(the default option), which will automatically &#39;</span>
+                               <span class="s1">&#39;build the simulation at the first encountered &#39;</span>
+                               <span class="s1">&#39;run call - do not call device.build manually &#39;</span>
+                               <span class="s1">&#39;in this case.&#39;</span><span class="p">)</span>
+        <span class="n">initializers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">descriptions</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">namespace</span><span class="p">,</span> <span class="n">assignments</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">runs</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">assignments</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">assignment</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="n">initializers</span><span class="p">:</span>
+                    <span class="n">initializers</span><span class="p">[</span><span class="n">assignment</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">assignment</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dirname</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">runs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Currently only single run is supported.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">filename_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;recording_&#39;</span> <span class="o">+</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filename_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="s1">&#39;recording_&#39;</span> <span class="o">+</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">exporter</span> <span class="o">=</span> <span class="n">NMLExporter</span><span class="p">()</span>
+        <span class="n">exporter</span><span class="o">.</span><span class="n">create_lems_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">,</span>
+                                                 <span class="n">initializers</span><span class="o">=</span><span class="n">initializers</span><span class="p">,</span>
+                                                 <span class="n">recordingsname</span><span class="o">=</span><span class="n">filename_</span><span class="p">)</span>
+        <span class="n">exporter</span><span class="o">.</span><span class="n">export_to_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="c1"># currently NML2/LEMS model requires units stored as constants</span>
+        <span class="c1"># in a separate file</span>
+        <span class="k">if</span> <span class="n">lems_const_save</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nmlcdpath</span><span class="p">,</span> <span class="n">LEMS_CONSTANTS_XML</span><span class="p">),</span>
+                            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">LEMS_CONSTANTS_XML</span><span class="p">))</span>
+
+
+<span class="n">lems_device</span> <span class="o">=</span> <span class="n">LEMSDevice</span><span class="p">()</span>
+<span class="n">all_devices</span><span class="p">[</span><span class="s1">&#39;neuroml2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lems_device</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Brian authors
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

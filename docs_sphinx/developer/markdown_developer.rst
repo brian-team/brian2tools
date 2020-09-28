@@ -2,8 +2,8 @@ Markdown exporter
 =================
 
 This is the developer documentation for `~brian2tools.mdexport` package, that
-provides information about understanding `baseexport`'s standard dictionary,
-standard markdown expander `MdExpander` and writing custom expand functions.
+provides information about understanding `~brian2tools.baseexport`'s standard dictionary,
+standard markdown expander `~brian2tools.mdexport.expander.MdExpander` and writing custom expand functions.
 
 .. contents::
     Overview
@@ -12,12 +12,12 @@ standard markdown expander `MdExpander` and writing custom expand functions.
 Standard dictionary
 -------------------
 
-The package `baseexport` collects all the required Brian model information and
+The package `~brian2tools.baseexport` collects all the required Brian model information and
 arranges them in an intuitive way, that can potentially be used for various
 exporters and use cases. Therefore, understanding the representation will be helpful for
 further manipulation.
 
-The dictionary contains a list of `run` dictionaries with each containing
+The dictionary contains a list of ``run`` dictionaries with each containing
 information about the particular run simulation.
 
 .. code:: python
@@ -36,15 +36,16 @@ information about the particular run simulation.
         . . . .
     ]
 
-Typically, a `run` dictionary has four fields,
+Typically, a ``run`` dictionary has four fields,
 
-- `duration`: simulation length
-- `components`: dictionary of network components like `NeuronGroup`, `Synapses`, etc.
-- `initializers_connectors`: list of initializers and synaptic connections
-- `inactive`: list of components that were inactive for the particular run
+- ``duration``: simulation length
+- ``components``: dictionary of network components like `~brian2.groups.neurongroup.NeuronGroup`,
+  `~brian2.synapses.synapses.Synapses`, etc.
+- ``initializers_connectors``: list of initializers and synaptic connections
+- ``inactive``: list of components that were inactive for the particular run
 
-All the Brian `Network` components that are under `components` field, have
-components like, `NeuronGroup`, `Synapses`, etc and would look like,
+All the Brian `~brian2.core.network.Network` components that are under ``components`` field, have
+components like, `~brian2.groups.neurongroup.NeuronGroup`, `~brian2.synapses.synapses.Synapses`, etc and would look like,
 
 .. code:: python
 
@@ -58,7 +59,7 @@ components like, `NeuronGroup`, `Synapses`, etc and would look like,
     }
 
 Each component field has a list of objects of that component defined in the run time.
-The dictionary representation of `NeuronGroup` and its similar types would look like,
+The dictionary representation of `~brian2.groups.neurongroup.NeuronGroup` and its similar types would look like,
 
 .. code:: python
 
@@ -110,7 +111,7 @@ The dictionary representation of `NeuronGroup` and its similar types would look 
         }
     ]
 
-Similarly, `StateMonitor` and its similar types are represented like,
+Similarly, `~brian2.monitors.statemonitor.StateMonitor` and its similar types are represented like,
 
 .. code:: python
 
@@ -127,8 +128,8 @@ Similarly, `StateMonitor` and its similar types are represented like,
     . . .
     ]
 
-As `Synapses` has many similarity with `NeuronGroup`, the dictionary of the same
-also looks similar to it, however some of the `Synapses` specific fields are,
+As `~brian2.synapses.synapses.Synapses` has many similarity with `~brian2.groups.neurongroup.NeuronGroup`, the dictionary of the same
+also looks similar to it, however some of the `~brian2.synapses.synapses.Synapses` specific fields are,
 
 .. code:: python
 
@@ -175,8 +176,9 @@ also looks similar to it, however some of the `Synapses` specific fields are,
         }
     ]
 
-Also, the `identifiers` takes into account of `TimedArray` and custom user functions.
-The `initializers_connectors` field contains a list of initializers and synaptic connections,
+Also, the ``identifiers`` takes into account of `~brian2.input.timedarray.TimedArray` and
+`custom user functions <https://brian2.readthedocs.io/en/stable/advanced/functions.html#user-provided-functions>`_.
+The ``initializers_connectors`` field contains a list of initializers and synaptic connections,
 and their structure would look like,
 
 .. code:: python
@@ -318,10 +320,11 @@ MdExpander
 ----------
 
 To use the dictionary representation for creating markdown strings, by
-default `MdExpander` class is used. The class contains expand functions for different
-Brian components, such that the user can easily override the particular function without
+default `~brian2tools.mdexport.expander.MdExpander` class is used.
+The class contains expand functions for different Brian components,
+such that the user can easily override the particular function without
 affecting others. Also, different options can be given during the instantiation of the object
-and pass to the `set_device()` or `device.build()`.
+and pass to the `~brian2.devices.device.set_device` or ``device.build()``.
 
 As a simple example, to use GitHub based markdown rendering for mathematical statements,
 and use Brian specific jargons,
@@ -333,8 +336,8 @@ and use Brian specific jargons,
     custom = MdExpander(github_md=True, brian_verbose=True)
     set_device('markdown', expander=custom_options)  # pass the custom expander
 
-Similarly, `author` and `add_meta` options can also be customized during object instantiation, to
-add author name and to add meta data in the header of the markdown output.
+Similarly, ``author`` and ``add_meta`` options can also be customized during object instantiation, to
+add author name and meta data respectively in the header of the markdown output.
 
 Typically, expand function of the component would follow the structure similar to,
 
@@ -345,8 +348,8 @@ Typically, expand function of the component would follow the structure similar t
         md_string = . . . object_dict['field_A']
         return md_string
 
-However, enumerating components like `identifiers`, `pathways` have two functions in which the first
-one simply loops the list and the second one expands the member. For example, with `identifiers`,
+However, enumerating components like ``identifiers``, ``pathways`` have two functions in which the first
+one simply loops the list and the second one expands the member. For example, with ``identifiers``,
 
 .. code:: python
 
@@ -364,14 +367,14 @@ one simply loops the list and the second one expands the member. For example, wi
         . . . # use identifier dict to write markdown strings
         return markdown_str
 
-All the individual expand functions are tied to `create_md_string()` function that calls and collects
-all the returned markdown strings to pass it to `device.md_text`
+All the individual expand functions are tied to `~brian2tools.mdexport.expander.MdExpander.create_md_string` function that calls and collects
+all the returned markdown strings to pass it to ``device.md_text``
 
 
 Writing custom expand class
 ---------------------------
 
-With the understanding of standard dictionary representation and default markdown expand class,
+With the understanding of standard dictionary representation and default markdown expand class (`~brian2tools.mdexport.expander.MdExpander`),
 writing custom expand class becomes very straightforward. As a working example, the custom expand
 class to write equations in a table like format,
 

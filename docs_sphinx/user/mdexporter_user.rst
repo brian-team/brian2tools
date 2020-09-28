@@ -49,7 +49,7 @@ and write the markdown output in a file
     M_crossings = SpikeMonitor(IF, variables='v')
     run(2*second)
 
-The file `model_description.md` would look like,
+The file ``model_description.md`` would look like,
 
 .. raw:: html
 
@@ -121,12 +121,12 @@ The file `model_description.md` would look like,
     </ul>
     </div>
 
-Similar to other device modes, to inform Brian to run in the exporter mode, 
+Similar to other Brian2 device modes, to inform Brian to run in the exporter mode,
 the minimal changes required are importing the package
-and mentioning device `markdown` in `set_device()`. The markdown output can be
-accessed from `device.md_text`.
+and mentioning device ``markdown`` in `~brian2.devices.device.set_device`. The markdown output can be
+accessed from ``device.md_text``.
 
-The above example can also be run in `debug` mode to print the output in stdout. In that case,
+The above example can also be run in ``debug`` mode to print the output in ``stdout``. In that case,
 the changes to the above example are,
 
 
@@ -145,19 +145,19 @@ the changes to the above example are,
 Exporter specific build options
 -------------------------------
 
-Various options (apart from that of `RuntimeDevice`) shall be passed to 
-`set_device()` or in `device.build()`. Exporter specific ``build options`` are,
+Various options (apart from that of `~brian2.devices.device.RuntimeDevice`) shall be passed to 
+`~brian2.devices.device.set_device` or in ``device.build()``. Exporter specific ``build_options`` are,
 
 ``expander``
     Expander is the object of the call that contains expander functions to get information from
-    `baseexport` and use them to write markdown text. By default, `MdExpander`
+    `~brian2tools.baseexport` and use them to write markdown text. By default, `~brian2tools.mdexport.expander.MdExpander`
     is used. The default argument values can be changed and expand functions can be
-    overridden (see `developer documentation` for more details and how to write custom
+    overridden (see developer documentation of :doc:`../developer/markdown_developer` for more details and how to write custom
     expander functions).
 
-    A small example to enable `github_md` in `expander` that
+    A small example to enable ``github_md`` in expander that
     specifies, whether rendered output should be non-Mathjax based
-    (as in compilers like GitHub)
+    (as compilers like GitHub)
 
 .. code::
 
@@ -169,11 +169,11 @@ Various options (apart from that of `RuntimeDevice`) shall be passed to
 
 ``filename``
     Filename to write output markdown text. To use the same filename  of the user
-    script, `''` (empty string) shall be passed. By default, no file writing is
+    script, ``''`` (empty string) shall be passed. By default, no file writing is
     done
 
 Limitations
 -----------
 
-Since the package uses `baseexport` in the background, all the limitations
-applicable to `baseexport` applies here too
+Since the package uses `~brian2tools.baseexport` in the background, all the limitations
+applicable to `~brian2tools.baseexport` applies here as well

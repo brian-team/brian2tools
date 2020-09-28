@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Markdown exporter &mdash; brian2tools  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Developer’s guide" href="../developer/index.html" />
+    <link rel="prev" title="Base exporter" href="baseexporter_user.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> brian2tools
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.1.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release notes</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User’s guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installation instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">Plotting tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="exporter_user.html">NeuroML exporter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nmlimport.html">NeuroML importer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="baseexporter_user.html">Base exporter</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Markdown exporter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Developer’s guide</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/brian2tools.html">brian2tools package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">brian2tools</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">User’s guide</a> &raquo;</li>
+        
+      <li>Markdown exporter</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/user/mdexporter_user.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="markdown-exporter">
+<h1>Markdown exporter<a class="headerlink" href="#markdown-exporter" title="Permalink to this headline">¶</a></h1>
+<p>This is the user documentation of <a class="reference internal" href="../reference/brian2tools.mdexport.html#module-brian2tools.mdexport" title="brian2tools.mdexport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mdexport</span></code></a> package, that
+provides functionality to describe Brian2 models in Markdown. The markdown
+description provides human-readable information of Brian components defined.
+In background, the exporter uses <a class="reference internal" href="../reference/brian2tools.baseexport.html#module-brian2tools.baseexport" title="brian2tools.baseexport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">baseexport</span></code></a> to collect information
+from the run time and expand them to markdown strings.</p>
+<div class="contents local topic" id="overview">
+<p class="topic-title">Overview</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#working-example" id="id1">Working example</a></p></li>
+<li><p><a class="reference internal" href="#exporter-specific-build-options" id="id2">Exporter specific build options</a></p></li>
+<li><p><a class="reference internal" href="#limitations" id="id3">Limitations</a></p></li>
+</ul>
+</div>
+<div class="section" id="working-example">
+<h2><a class="toc-backref" href="#id1">Working example</a><a class="headerlink" href="#working-example" title="Permalink to this headline">¶</a></h2>
+<p>As a quick start to use the package, let us take a simple model with
+(<a class="reference external" href="https://brian2.readthedocs.io/en/stable/examples/adaptive_threshold.html">adaptive threshold that increases with each spike</a>)
+and write the markdown output in a file</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">brian2</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">brian2tools.mdexport</span>
+<span class="c1"># set device &#39;markdown&#39;</span>
+<span class="n">set_device</span><span class="p">(</span><span class="s1">&#39;markdown&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;model_description&#39;</span><span class="p">)</span>
+
+<span class="n">eqs</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">dv/dt = -v/(10*ms) : volt</span>
+<span class="s1">dvt/dt = (10*mV-vt)/(15*ms) : volt</span>
+<span class="s1">&#39;&#39;&#39;</span>
+
+<span class="n">reset</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;</span>
+<span class="s1">v = 0*mV</span>
+<span class="s1">vt += 3*mV</span>
+<span class="s1">&#39;&#39;&#39;</span>
+
+<span class="n">IF</span> <span class="o">=</span> <span class="n">NeuronGroup</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">eqs</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="n">reset</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="s1">&#39;v&gt;vt&#39;</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">)</span>
+<span class="n">IF</span><span class="o">.</span><span class="n">vt</span> <span class="o">=</span> <span class="mi">10</span><span class="o">*</span><span class="n">mV</span>
+<span class="n">PG</span> <span class="o">=</span> <span class="n">PoissonGroup</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">500</span> <span class="o">*</span> <span class="n">Hz</span><span class="p">)</span>
+
+<span class="n">C</span> <span class="o">=</span> <span class="n">Synapses</span><span class="p">(</span><span class="n">PG</span><span class="p">,</span> <span class="n">IF</span><span class="p">,</span> <span class="n">on_pre</span><span class="o">=</span><span class="s1">&#39;v += 3*mV&#39;</span><span class="p">)</span>
+<span class="n">C</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+<span class="n">Mv</span> <span class="o">=</span> <span class="n">StateMonitor</span><span class="p">(</span><span class="n">IF</span><span class="p">,</span> <span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="n">record</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">Mvt</span> <span class="o">=</span> <span class="n">StateMonitor</span><span class="p">(</span><span class="n">IF</span><span class="p">,</span> <span class="s1">&#39;vt&#39;</span><span class="p">,</span> <span class="n">record</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># Record the value of v when the threshold is crossed</span>
+<span class="n">M_crossings</span> <span class="o">=</span> <span class="n">SpikeMonitor</span><span class="p">(</span><span class="n">IF</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="s1">&#39;v&#39;</span><span class="p">)</span>
+<span class="n">run</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">second</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The file <code class="docutils literal notranslate"><span class="pre">model_description.md</span></code> would look like,</p>
+<div style="background-color:bisque;">
+
+<h1 id="networkdetails">Network details</h1>
+
+<p>The Network consist of <strong>1</strong> simulation                     run</p>
+
+<hr />
+
+<p>Duration of simulation is <strong>2. s</strong></p>
+
+<p><strong>Neuron group :</strong></p>
+
+<ul>
+<li><p>Name <strong>neurongroup</strong>, with                 population size <strong>1</strong>.</p>
+
+<p><strong>Dynamics:</strong></p>
+
+<p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} v">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{v}{10.ms}">, where unit of <img src="https://render.githubusercontent.com/render/math?math=v"> is V</p>
+
+<p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} vt">=<img src="https://render.githubusercontent.com/render/math?math=\frac{10.mV - vt}{15.ms}">, where unit of <img src="https://render.githubusercontent.com/render/math?math=vt"> is V</p>
+
+<p>exact method is used for integration</p>
+
+<p><strong>Events:</strong></p>
+
+<p>Event <strong>spike</strong>, after <img src="https://render.githubusercontent.com/render/math?math=v \gt vt">, <img src="https://render.githubusercontent.com/render/math?math=v">&#8592;<img src="https://render.githubusercontent.com/render/math?math=0">, <img src="https://render.githubusercontent.com/render/math?math=vt">+=<img src="https://render.githubusercontent.com/render/math?math=3.mV"></p></li>
+</ul>
+
+<p><strong>Poisson spike source :</strong></p>
+
+<ul>
+<li>Name <strong>poissongroup</strong>, with                 population size <strong>1</strong> and rate as <img src="https://render.githubusercontent.com/render/math?math=0.5 kHz">.</li>
+</ul>
+
+<p><strong>Synapse :</strong></p>
+
+<ul>
+<li><p>From poissongroup to neurongroup</p>
+
+<p><strong>Pathways:</strong></p>
+
+<p>On <strong>pre</strong> of event spike statements: <img src="https://render.githubusercontent.com/render/math?math=v">+=<img src="https://render.githubusercontent.com/render/math?math=3.mV"> executed</p></li>
+</ul>
+
+<p><strong>Activity recorders :</strong></p>
+
+<ul>
+<li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup for all members</li>
+<li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=v"> of neurongroup for all members</li>
+</ul>
+
+<p><strong>Spiking activity recorder :</strong></p>
+
+<ul>
+<li>Monitors variables: <img src="https://render.githubusercontent.com/render/math?math=t">,<img src="https://render.githubusercontent.com/render/math?math=v">,<img src="https://render.githubusercontent.com/render/math?math=i"> of neurongroup for all members when event <strong>spike</strong> is triggered.</li>
+</ul>
+
+<p><strong>Initializing at start</strong> and <strong>Synaptic connection :</strong></p>
+
+<ul>
+<li><p>Variable <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup initialized with <img src="https://render.githubusercontent.com/render/math?math=10. mV"> to all members</p></li>
+
+<li><p>Variable <img src="https://render.githubusercontent.com/render/math?math=rates"> of poissongroup initialized with <img src="https://render.githubusercontent.com/render/math?math=0.5 kHz"> to all members</p></li>
+
+<li><p>Connection from poissongroup to neurongroup</p></li>
+</ul>
+</div><p>Similar to other Brian2 device modes, to inform Brian to run in the exporter mode,
+the minimal changes required are importing the package
+and mentioning device <code class="docutils literal notranslate"><span class="pre">markdown</span></code> in <a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.devices.device.set_device.html#brian2.devices.device.set_device" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_device</span></code></a>. The markdown output can be
+accessed from <code class="docutils literal notranslate"><span class="pre">device.md_text</span></code>.</p>
+<p>The above example can also be run in <code class="docutils literal notranslate"><span class="pre">debug</span></code> mode to print the output in <code class="docutils literal notranslate"><span class="pre">stdout</span></code>. In that case,
+the changes to the above example are,</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">brian2</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">brian2tools.mdexport</span>
+<span class="c1"># set device &#39;markdown&#39;</span>
+<span class="n">set_device</span><span class="p">(</span><span class="s1">&#39;markdown&#39;</span><span class="p">,</span> <span class="n">build_on_run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># allow for manual build</span>
+<span class="o">.</span> <span class="o">.</span> <span class="o">.</span>
+
+<span class="n">run</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">second</span><span class="p">)</span>
+<span class="n">device</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># to print the output in stdout</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="exporter-specific-build-options">
+<h2><a class="toc-backref" href="#id2">Exporter specific build options</a><a class="headerlink" href="#exporter-specific-build-options" title="Permalink to this headline">¶</a></h2>
+<p>Various options (apart from that of <a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.devices.device.RuntimeDevice.html#brian2.devices.device.RuntimeDevice" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RuntimeDevice</span></code></a>) shall be passed to
+<a class="reference external" href="https://brian2.readthedocs.io/en/stable/reference/brian2.devices.device.set_device.html#brian2.devices.device.set_device" title="(in Brian 2 v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_device</span></code></a> or in <code class="docutils literal notranslate"><span class="pre">device.build()</span></code>. Exporter specific <code class="docutils literal notranslate"><span class="pre">build_options</span></code> are,</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">expander</span></code></dt><dd><p>Expander is the object of the call that contains expander functions to get information from
+<a class="reference internal" href="../reference/brian2tools.baseexport.html#module-brian2tools.baseexport" title="brian2tools.baseexport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">baseexport</span></code></a> and use them to write markdown text. By default, <a class="reference internal" href="../reference/brian2tools.mdexport.expander.html#brian2tools.mdexport.expander.MdExpander" title="brian2tools.mdexport.expander.MdExpander"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MdExpander</span></code></a>
+is used. The default argument values can be changed and expand functions can be
+overridden (see developer documentation of <a class="reference internal" href="../developer/markdown_developer.html"><span class="doc">Markdown exporter</span></a> for more details and how to write custom
+expander functions).</p>
+<p>A small example to enable <code class="docutils literal notranslate"><span class="pre">github_md</span></code> in expander that
+specifies, whether rendered output should be non-Mathjax based
+(as compilers like GitHub)</p>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">brian2tools.mdexport.expander</span> <span class="kn">import</span> <span class="n">MdExpander</span>
+<span class="c1"># change default value</span>
+<span class="n">custom_options</span> <span class="o">=</span> <span class="n">MdExpander</span><span class="p">(</span><span class="n">github_md</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">set_device</span><span class="p">(</span><span class="s1">&#39;markdown&#39;</span><span class="p">,</span> <span class="n">expander</span><span class="o">=</span><span class="n">custom_options</span><span class="p">)</span>  <span class="c1"># pass the custom expander object</span>
+<span class="o">.</span> <span class="o">.</span> <span class="o">.</span> <span class="o">.</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">filename</span></code></dt><dd><p>Filename to write output markdown text. To use the same filename  of the user
+script, <code class="docutils literal notranslate"><span class="pre">''</span></code> (empty string) shall be passed. By default, no file writing is
+done</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="limitations">
+<h2><a class="toc-backref" href="#id3">Limitations</a><a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h2>
+<p>Since the package uses <a class="reference internal" href="../reference/brian2tools.baseexport.html#module-brian2tools.baseexport" title="brian2tools.baseexport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">baseexport</span></code></a> in the background, all the limitations
+applicable to <a class="reference internal" href="../reference/brian2tools.baseexport.html#module-brian2tools.baseexport" title="brian2tools.baseexport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">baseexport</span></code></a> applies here as well</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../developer/index.html" class="btn btn-neutral float-right" title="Developer’s guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="baseexporter_user.html" class="btn btn-neutral float-left" title="Base exporter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Brian authors
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
