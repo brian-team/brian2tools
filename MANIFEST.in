@@ -1,4 +1,0 @@
-# Include documentation
-include README.rst
-include docs_sphinx/conf.py
-recursive-include docs_sphinx *.rst

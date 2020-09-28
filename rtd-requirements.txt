@@ -1,2 +1,0 @@
-setuptools_scm
-sphinx>=1.5
