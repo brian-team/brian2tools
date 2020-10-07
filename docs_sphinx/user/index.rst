@@ -6,7 +6,7 @@ User's guide
 
    installation
    plotting
-   exporter_user
+   nmlexporter
    nmlimport
-   baseexporter_user
-   mdexporter_user
+   baseexporter
+   mdexporter

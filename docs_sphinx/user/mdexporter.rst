@@ -4,7 +4,7 @@ Markdown exporter
 This is the user documentation of `~brian2tools.mdexport` package, that
 provides functionality to describe Brian2 models in Markdown. The markdown
 description provides human-readable information of Brian components defined.
-In background, the exporter uses the :doc:`baseexporter_user` to collect information
+In background, the exporter uses the :doc:`baseexporter` to collect information
 from the run time and expand them to markdown strings.
 
 .. contents::
@@ -151,7 +151,7 @@ Various options (apart from that of `~brian2.devices.device.RuntimeDevice`) shal
     Expander is the object of the call that contains expander functions to get information from
     `~brian2tools.baseexport` and use them to write markdown text. By default, `~brian2tools.mdexport.expander.MdExpander`
     is used. The default argument values can be changed and expand functions can be
-    overridden (see developer documentation of :doc:`../developer/markdown_developer` for more details and how to write custom
+    overridden (see developer documentation of :doc:`../developer/mdexporter` for more details and how to write custom
     expander functions).
 
     A small example to enable ``github_md`` in expander that

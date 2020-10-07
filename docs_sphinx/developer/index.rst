@@ -6,6 +6,6 @@ Developer's guide
    :titlesonly:
 
    coding
-   exporter_developer
-   markdown_developer
+   nmlexporter
+   mdexporter
    releases

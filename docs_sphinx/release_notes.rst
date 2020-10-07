@@ -16,7 +16,7 @@ Dominik Krzemiński (`@dokato <https://github.com/dokato>`_) as part of the
 umbrella of the `INCF <https://www.incf.org/>`_ organization. It currently
 allows to export neuronal models (with threshold, reset and refractory
 definition), but not synaptic models or multi-compartmental neurons. See the
-:doc:`user/exporter_user` documentation for details.
+:doc:`user/nmlexporter` documentation for details.
 
 Contributions
 ~~~~~~~~~~~~~
