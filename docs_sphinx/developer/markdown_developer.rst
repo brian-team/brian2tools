@@ -334,7 +334,7 @@ and use Brian specific jargons,
     from brian2tools import MdExpander  # import the standard expander
     # custom expander
     custom = MdExpander(github_md=True, brian_verbose=True)
-    set_device('markdown', expander=custom_options)  # pass the custom expander
+    set_device('markdown', expander=custom)  # pass the custom expander
 
 Similarly, ``author`` and ``add_meta`` options can also be customized during object instantiation, to
 add author name and meta data respectively in the header of the markdown output.

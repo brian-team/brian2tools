@@ -4,7 +4,7 @@ Markdown exporter
 This is the user documentation of `~brian2tools.mdexport` package, that
 provides functionality to describe Brian2 models in Markdown. The markdown
 description provides human-readable information of Brian components defined.
-In background, the exporter uses `~brian2tools.baseexport` to collect information
+In background, the exporter uses the :doc:`baseexporter_user` to collect information
 from the run time and expand them to markdown strings.
 
 .. contents::
@@ -15,7 +15,7 @@ Working example
 ---------------
 
 As a quick start to use the package, let us take a simple model with
-(`adaptive threshold that increases with each spike <https://brian2.readthedocs.io/en/stable/examples/adaptive_threshold.html>`_)
+`adaptive threshold that increases with each spike <https://brian2.readthedocs.io/en/stable/examples/adaptive_threshold.html>`_
 and write the markdown output in a file
 
 .. code:: python
@@ -49,7 +49,7 @@ and write the markdown output in a file
     M_crossings = SpikeMonitor(IF, variables='v')
     run(2*second)
 
-The file ``model_description.md`` would look like,
+The rendered file ``model_description.md`` would look like,
 
 .. raw:: html
 
@@ -135,11 +135,10 @@ the changes to the above example are,
     from brian2 import *
     import brian2tools.mdexport
     # set device 'markdown'
-    set_device('markdown', build_on_run=False)  # allow for manual build
+    set_device('markdown', debug=True)  # to print the output in stdout
     . . .
 
     run(2*second)
-    device.build(debug=True)  # to print the output in stdout
 
 
 Exporter specific build options

@@ -22,7 +22,7 @@ Working example
 ---------------
 Once the ``device.build()`` is called, the standard dictionary can be accessed by
 ``device.runs`` variable. As a working example, let us take a 
-(`simple unconnected Integrate & Fire neuronal model <https://brian2.readthedocs.io/en/stable/examples/IF_curve_LIF.html>`_)
+`simple unconnected Integrate & Fire neuronal model <https://brian2.readthedocs.io/en/stable/examples/IF_curve_LIF.html>`_
 with refractoriness and initializations,
 
 .. code:: python
@@ -114,7 +114,7 @@ The output standard dictionary would look similar to,
                                 'variable': 'v_rest'}]}]
 
 To the user side, the changes required to use the exporter are very minimal
-(very similar to accessing other Brian2 device modes. In the standard Brian code,
+(very similar to accessing other Brian2 device modes). In the standard Brian code,
 adding `~brian2tools.baseexport` import statement and setting device ``exporter``
 with proper ``build_options`` will be sufficient to use the exporter. To print the dictionary in ``stdout``,
 ``debug`` option shall also be used, apart from using ``device.runs`` variable.
@@ -125,13 +125,11 @@ The changes required to run in ``debug`` mode for the above example are,
     from brian2 import *
     import brian2tools.baseexport
 
-    set_device('exporter', build_on_run=False)   # build manually to run in debug mode
+    set_device('exporter', debug=True)   # build in debug mode to print out dictionary
 
    . . . .
 
     run(duration)
-
-    device.build(debug=True)   # print standard dictionary
 
 Most of the standard dictionary items have the same object type as in Brian2. For instance,
 ``identifiers`` and ``dt`` fields have values of type `~brian2.units.fundamentalunits.Quantity` but ``N`` (population size)
@@ -143,5 +141,5 @@ Limitations
 The Base export currently supports almost all Brian2 features except,
 
 - Multicompartmental neurons (`~brian2.spatialneuron.spatialneuron.SpatialNeuron`)
-- `~brian2.core.network.Network.store`/`~brian2.core.network.Network.store` mechanism
+- `~brian2.core.network.Network.store`/`~brian2.core.network.Network.restore` mechanism
 - Multiple `~brian2.core.network.Network` objects
