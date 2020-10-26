@@ -14,9 +14,41 @@ from brian2.spatialneuron.morphology import Soma
 __all__ = ['plot_morphology', 'plot_dendrogram']
 
 
-def _plot_morphology2D(morpho, axes, colors, show_diameter=False,
-                       show_compartments=True, color_counter=0):
-    color = colors[color_counter % len(colors)]
+def get_voltage_color(x, colormap, x_min, x_max):
+    """ This function gets the color that corresponds to the value x.
+    The value x is shifted by x_min and normalised by x_range = x_max - x_min.
+
+    Parameters
+    ----------
+    x : floats(s)
+    colormap
+    x_min : float
+        Sets range for colormap. Voltage values below x_min are assigned the
+        first colormap color
+    x_max
+        Sets range for colormap. Voltage values above x_max are assigned the
+        first colormap color
+
+    Returns
+    -------
+    color : tuple
+    """
+    return colormap((x - x_min)/(x_max - x_min))
+
+
+def _plot_morphology2D(morpho, axes, colors,
+                       voltage_values, voltage_max, voltage_min,
+                       voltage_colormap,
+                       show_diameter=False, show_compartments=True,
+                       color_counter=0):
+    if voltage_values:
+        # Determine colors based on compartment values
+        colors = get_voltage_color(voltage_values[morpho.indices[:]] / mV,
+                                   voltage_colormap, voltage_min / mV,
+                                   voltage_max / mV)
+        color = colors[0]
+    else:
+        color = colors[color_counter % len(colors)]
 
     if isinstance(morpho, Soma):
         x, y = morpho.x/um, morpho.y/um
@@ -36,12 +68,32 @@ def _plot_morphology2D(morpho, axes, colors, show_diameter=False,
             radius = np.hstack([morpho.start_diameter[0]/um/2,
                                 morpho.end_diameter/um/2])
             orthogonal /= np.sqrt(np.sum(orthogonal**2, axis=1))[:, np.newaxis]
-            points = np.vstack([coords_2d+ orthogonal*radius[:, np.newaxis],
-                                (coords_2d - orthogonal*radius[:, np.newaxis])[::-1]])
-            patch = Polygon(points, color=color)
-            axes.add_artist(patch)
-            # FIXME: Ugly workaround to make the auto-scaling work
-            axes.plot(points[:, 0], points[:, 1], color='white', alpha=0.)
+
+            if voltage_values:
+                border_1 = coords_2d + orthogonal * radius[:, np.newaxis]
+                border_2 = coords_2d - orthogonal * radius[:, np.newaxis]
+                # Plot filled polygons per compartments
+                for compartment in range(len(coords) - 1):
+                    # Create patch around compartment
+                    x = np.asarray([border_1[compartment, 0],
+                                    border_1[compartment + 1, 0],
+                                    border_2[compartment + 1, 0],
+                                    border_2[compartment, 0]])
+                    y = np.asarray([border_1[compartment, 1],
+                                    border_1[compartment + 1, 1],
+                                    border_2[compartment + 1, 1],
+                                    border_2[compartment, 1]])
+                    xy = np.vstack((x, y)).reshape(2, 4).T
+                    # Plot polygon
+                    axes.fill(y, x, color=colors[compartment], alpha=1,
+                              linewidth=0.)
+            else:
+                points = np.vstack([coords_2d + orthogonal*radius[:, np.newaxis],
+                                    (coords_2d - orthogonal*radius[:, np.newaxis])[::-1]])
+                patch = Polygon(points, color=color)
+                axes.add_artist(patch)
+                # FIXME: Ugly workaround to make the auto-scaling work
+                axes.plot(points[:, 0], points[:, 1], color='white', alpha=0.)
         else:
             axes.plot(coords[:, 0], coords[:, 1], color=color, lw=2)
         if show_compartments:
@@ -53,6 +105,10 @@ def _plot_morphology2D(morpho, axes, colors, show_diameter=False,
 
     for child in morpho.children:
         _plot_morphology2D(child, axes=axes,
+                           voltage_values=voltage_values,
+                           voltage_max=voltage_max,
+                           voltage_min=voltage_min,
+                           voltage_colormap=voltage_colormap,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter,
                            colors=colors, color_counter=color_counter+1)
@@ -138,6 +194,8 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
 
 def plot_morphology(morphology, plot_3d=None, show_compartments=False,
                     show_diameter=False, colors=('darkblue', 'darkred'),
+                    voltage_values=None, voltage_min=None, voltage_max=None,
+                    voltage_colormap=None,
                     axes=None):
     '''
     Plot a given `~brian2.spatialneuron.morphology.Morphology` in 2D or 3D.
@@ -160,6 +218,17 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         A list of colors that is cycled through for each new section. Can be
         any color specification that matplotlib understands (e.g. a string such
         as ``'darkblue'`` or a tuple such as `(0, 0.7, 0)`.
+    voltage_values : ~brian2.units.fundamentalunits.Quantity, optional
+        Values to fill compartment patches with a color that corresponds to
+        their given value.
+    voltage_min : ~brian2.units.fundamentalunits.Quantity, optional
+        Sets range for colormap. Voltage values below v_min are assigned the
+        first colormap color
+    voltage_max : ~brian2.units.fundamentalunits.Quantity, optional
+        Sets range for colormap. Voltage values above v_max are assigned the
+        last colormap color
+    voltage_colormap : matplotlib.colors.LinearSegmentedColormap, optional
+        Desired colormap for plots
     axes : `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene`, optional
         A matplotlib `~matplotlib.axes.Axes` (for 2D plots) or mayavi
         `~mayavi.core.api.Scene` ( for 3D plots) instance, where the plot will
@@ -180,6 +249,7 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         flat_morphology = FlatMorphology(morphology)
         plot_3d = any(np.abs(flat_morphology.z) > 1e-12)
 
+
     if plot_3d:
         try:
             import mayavi.mlab as mayavi
@@ -193,7 +263,17 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         axes.scene.disable_render = False
     else:
         axes = _setup_axes_matplotlib(axes)
+
+        if voltage_values != None:
+            if voltage_colormap == None:
+                voltage_colormap = plt.get_cmap('hot')
+            axes.set_facecolor('k')
+            show_compartments = True
+            show_diameter = True
+
         _plot_morphology2D(morphology, axes, colors,
+                           voltage_values, voltage_max, voltage_min,
+                           voltage_colormap,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter)
         axes.set_xlabel('x (um)')
