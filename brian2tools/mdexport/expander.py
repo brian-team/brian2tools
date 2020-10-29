@@ -250,7 +250,12 @@ class MdExpander():
         # render expression
         rend_exp = latex(expression, mode='equation',
                          itex=True, mul_symbol='dot')
-        # horrible way to remove _placeholder_{arg} inside brackets
+        # Deal with rand() and randn()
+        rend_exp = rend_exp.replace(r'\operatorname{rand}{\left(_placeholder_{arg} \right)}',
+                                    r'\mathcal{U}{\left(0, 1\right)}')
+        rend_exp = rend_exp.replace(r'\operatorname{randn}{\left(_placeholder_{arg} \right)}',
+                                    r'\mathcal{N}{\left(0, 1\right)}')
+        # remove remaining _placeholder_{arg} inside brackets
         rend_exp = rend_exp.replace('_placeholder_{arg}', '-')
         # check GitHub based markdown rendering
         if self.github_md:
