@@ -35,8 +35,9 @@ class MdExpander():
     markdown expander class to override the required changes in expand
     functions.
     """
-    def __init__(self, brian_verbose=False,
-                 author=None, add_meta=False, github_md=False):
+    def __init__(self, brian_verbose=False, include_monitors=False,
+                 keep_initializer_order=False, author=None,
+                 add_meta=False, github_md=False):
         """
         Constructor for `MdExpander`
 
@@ -45,10 +46,18 @@ class MdExpander():
 
         brian_verbose : bool, optional
             Whether to use Brian-like words for markdown exporter and
-            if set `True`, the names will be Brian based.
-            For example, when set `False`, 'SpikeGeneratorGroup` will be
+            if set ``True``, the names will be Brian based.
+            For example, when set ``False``, 'SpikeGeneratorGroup` will be
             changed to something like, "'Spike generating source"
-
+        include_monitors : bool, optional
+            Whether to document the monitors (e.g. `SpikeMonitor` or
+            `StateMonitor`). Defaults to ``False``
+        keep_initializer_order : bool, optional
+            Whether to keep the order of variable initializations and
+            `Synapses.connect` statements. If set to ``False`` (the
+            default), these will instead be included with the respective
+            objects which could in principle lead to inaccuracies if the
+            statements include references to other variables.
         author : str, optional
             Author field to add in the metadata
 
@@ -62,6 +71,9 @@ class MdExpander():
         """
 
         self.brian_verbose = brian_verbose
+        self.include_monitors = include_monitors
+        self.keep_initializer_order = keep_initializer_order
+
         # if author name is given
         if author:
             if type(author) != str:
@@ -294,7 +306,7 @@ class MdExpander():
             # h: "general user" naming / 'hb': "Brian" user naming
             func_map = {'neurongroup': {'f': self.expand_NeuronGroup,
                                         'hb': 'NeuronGroup',
-                                        'h': 'Neuron group', 'order': 1},
+                                        'h': 'Neuron population', 'order': 1},
                        'poissongroup': {'f': self.expand_PoissonGroup,
                                         'hb': 'PoissonGroup',
                                         'h': 'Poisson spike source',
@@ -321,7 +333,7 @@ class MdExpander():
                                      'h': 'Population rate recorder',
                                      'order': 4},
                        'synapses': {'f': self.expand_Synapses,
-                                    'hb': 'Synapse',
+                                    'hb': 'Synapses',
                                     'h': 'Synapse', 'order': 3},
                        'poissoninput': {'f': self.expand_PoissonInput,
                                          'hb': 'PoissonInput',
@@ -330,6 +342,9 @@ class MdExpander():
             # (same complexity as sorting the dict)
             order_list = [0, 1, 2, 3, 4]
             for current_order in order_list:
+                # TODO: Implement skipping monitors properly
+                if current_order == 4 and not self.include_monitors:
+                    continue
                 # loop through the components
                 for (obj_key, obj_list) in run_dict['components'].items():
                     # whether object component is in map and correct order
@@ -453,22 +468,22 @@ class MdExpander():
         # start expanding
         md_str = ''
         # name and size
-        md_str += 'Name ' + bold(neurongrp['name']) + ', with \
-                population size ' + bold(neurongrp['N']) + '.' + endll
+        md_str += ('Group ' + bold(neurongrp['name']) + ', consisting of ' +
+                   bold(neurongrp['N']) + ' neurons.' + endll)
         # expand model equations
-        md_str += tab + bold('Dynamics:') + endll
+        md_str += tab + bold('Model dynamics:') + endll
         md_str += self.expand_equations(neurongrp['equations'])
         if neurongrp['user_method']:
-            md_str += (tab + neurongrp['user_method'] +
-                    ' method is used for integration' + endll)
+            md_str += (tab + 'The equations are integrated with the \'' +
+                       neurongrp['user_method'] + '\' method.' + endll)
         # expand associated events
         if 'events' in neurongrp:
             md_str += tab + bold('Events:') + endll
             md_str += self.expand_events(neurongrp['events'])
         # expand identifiers associated
         if 'identifiers' in neurongrp:
-            md_str += tab + bold('Constants:') + endll
-            md_str += tab + self.expand_identifiers(neurongrp['identifiers']) + endll
+            md_str += tab + bold('Constants:')
+            md_str += self.expand_identifiers(neurongrp['identifiers']) + endll
         # expand run_regularly()
         if 'run_regularly' in neurongrp:
             md_str += (tab + bold('Run regularly') +
@@ -489,14 +504,14 @@ class MdExpander():
             Source group name or subgroup dictionary
         """
         if isinstance(source, str):
-            return source
+            return italics(source)
         # if not one member
         if source['start'] != source['stop']:
-            return ('subgroup (' + str(source['start']) + ' to ' +
-                    str(source['stop']) + ') of ' + source['group'])
+            return ('neurons ' + str(source['start']) + ' to ' +
+                    str(source['stop']) + ' of ' + italics(source['group']))
         # if only single member
-        return ('subgroup (member: ' + str(source['start']) + ') of '+
-                source['group'])
+        return ('neuron ' + str(source['start']) + ' of '+
+                italics(source['group']))
 
     def expand_identifier(self, ident_key, ident_value):
         """
@@ -556,18 +571,17 @@ class MdExpander():
             details of the event
         """
         event_str = ''
-        event_str += tab + 'Event ' + bold(event_name) + ', '
-        event_str += ('after ' +
-                    self.render_expression(event_details['threshold']['code']))
+        event_str += tab + ('If ' + self.render_expression(event_details['threshold']['code']) +
+                            ', a ' + bold(event_name) + ' event is triggered')
         if 'reset' in event_details:
-            event_str += (', ' +
-                        self.prepare_math_statements(
-                                        event_details['reset']['code'],
-                                        separate=True)
+            event_str += (' and ' + self.prepare_math_statements(
+                event_details['reset']['code'],
+                separate=True)
                          )
+        event_str += '.'
         if 'refractory' in event_details:
-            event_str += ', with refractory '
-            event_str += self.render_expression(event_details['refractory'])
+            event_str += ' The neuron remains refractory for '
+            event_str += self.render_expression(event_details['refractory']) + '.'
 
         return event_str + endll
 
@@ -603,12 +617,16 @@ class MdExpander():
             rend_eqn += 'Parameter ' + self.render_expression(var)
         if 'expr' in equation:
             rend_eqn += '=' + self.render_expression(equation['expr'])
-        rend_eqn += (", where unit of " + self.render_expression(var) +
-                        " is " + str(equation['unit']))
+        # TODO: How to handle units
+        # rend_eqn += (", where unit of " + self.render_expression(var) +
+        #                 " is " + str(equation['unit']))
         if 'flags' in equation:
-            rend_eqn += (' and ' + self.prepare_array(equation['flags']) +
-                         ' as flag' + self.check_plural(equation['flags']) +
-                         ' associated')
+            if 'unless refractory' in equation['flags']:
+                rend_eqn += ', except during the refractory period.'
+            # TODO: How to handle other flags?
+            # rend_eqn += (' and ' + self.prepare_array(equation['flags']) +
+            #              ' as flag' + self.check_plural(equation['flags']) +
+            #              ' associated')
         return tab + rend_eqn + endll
 
     def expand_equations(self, equations):
@@ -880,16 +898,25 @@ class MdExpander():
         pathway : dict
             SynapticPathway's baseexport dictionary
         """
-        md_str = (tab + 'On ' + bold(pathway['prepost']) +
-                ' of event ' + pathway['event'] + ' statements: ' +
-                self.prepare_math_statements(pathway['code'], separate=True) +
-                ' executed'
-                )
+        if pathway['prepost'] == 'pre':
+            pathway_str = 'pre-synaptic'
+        elif pathway['prepost'] == 'post':
+            pathway_str = 'post-synaptic'
+        else:
+            pathway_str = pathway['prepost']
+        if pathway['event'] == 'spike':
+            event_str = 'spike'
+        else:
+            event_str = italics(pathway['event']) + ' event'
+        md_str = (tab + 'For each ' + bold(pathway_str) +
+                  ' ' + pathway['event'] + ': ' +
+                  self.prepare_math_statements(pathway['code'], separate=True)
+                  )
         # check delay is associated
         if 'delay' in pathway:
-            md_str += (', with synaptic delay of ' +
+            md_str += (', with a synaptic delay of ' +
                     self.render_expression(pathway['delay']))
-
+        md_str += '.'
         return md_str + endll
 
     def expand_pathways(self, pathways):
@@ -938,20 +965,19 @@ class MdExpander():
             Dictionary representation of `Synapses` object
         """
         md_str = ''
-        md_str += (tab + 'From ' +
+        md_str += (tab + 'Connections ' + bold(synapse['name']) + ', connecting ' +
                    self.expand_SpikeSource(synapse['source']) +
                    ' to ' + self.expand_SpikeSource(synapse['target']) + endll
                   )
         # expand model equations
         if 'equations' in synapse:
-            md_str += tab + bold('Dynamics:') + endll
+            md_str += tab + bold('Model dynamics:') + endll
             md_str += self.expand_equations(synapse['equations'])
             if 'user_method' in synapse:
-                md_str += (tab + synapse['user_method'] +
-                    ' method is used for integration' + endll)
+                md_str += (tab + 'The equations are integrated with the \'' +
+                           synapse['user_method'] + '\' method.' + endll)
         # expand pathways using `expand_pathways`
         if 'pathways' in synapse:
-            md_str += tab + bold('Pathways:') + endll
             md_str += self.expand_pathways(synapse['pathways'])
         # expand summed_variables using `expand_summed_variables`
         if 'summed_variables' in synapse:
@@ -959,8 +985,8 @@ class MdExpander():
             md_str += self.expand_summed_variables(synapse['summed_variables'])
         # expand identifiers if defined
         if 'identifiers' in synapse:
-            md_str += tab + bold('Constants:') + endll
-            md_str += self.expand_identifiers(synapse['identifiers'])
+            md_str += tab + bold('Constants: ')
+            md_str += self.expand_identifiers(synapse['identifiers']) + endll
         return md_str
 
     def expand_PoissonInput(self, poinp):
