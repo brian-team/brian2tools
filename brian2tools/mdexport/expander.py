@@ -237,9 +237,7 @@ class MdExpander():
             Markdown text for the expression
         """
         # change to str
-        if isinstance(expression, Quantity):
-            expression = str(expression)
-        else:
+        if not isinstance(expression, Quantity):
             if not isinstance(expression, str):
                 expression = str(expression)
             # convert to sympy expression
@@ -251,7 +249,7 @@ class MdExpander():
             expression = Derivative(expression, 't')
         # render expression
         rend_exp = latex(expression, mode='equation',
-                         itex=True, mul_symbol='.')
+                         itex=True, mul_symbol='dot')
         # horrible way to remove _placeholder_{arg} inside brackets
         rend_exp = rend_exp.replace('_placeholder_{arg}', '-')
         rend_exp = rend_exp.replace('\operatorname', '')
