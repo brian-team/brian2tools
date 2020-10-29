@@ -252,7 +252,6 @@ class MdExpander():
                          itex=True, mul_symbol='dot')
         # horrible way to remove _placeholder_{arg} inside brackets
         rend_exp = rend_exp.replace('_placeholder_{arg}', '-')
-        rend_exp = rend_exp.replace('\operatorname', '')
         # check GitHub based markdown rendering
         if self.github_md:
             # to remove `$$`
