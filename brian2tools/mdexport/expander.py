@@ -355,7 +355,7 @@ class MdExpander():
             if 'initializers_connectors' in run_dict:
                 # loop through the members only to check the items
                 for init_cont in run_dict['initializers_connectors']:
-                    if init_cont['type'] is 'initializer':
+                    if init_cont['type'] == 'initializer':
                         any_init = True
                     else:
                         any_connect += 1
@@ -373,7 +373,7 @@ class MdExpander():
 
                 for init_cont in run_dict['initializers_connectors']:
                     # expand accordingly
-                    if init_cont['type'] is 'initializer':
+                    if init_cont['type'] == 'initializer':
                         run_string += ('- ' +
                                        self.expand_initializer(init_cont))
                     else:
@@ -518,7 +518,7 @@ class MdExpander():
         else:
             ident_str += (self.render_expression(ident_key) + ' of type ' +
                             ident_value['type'])
-            if ident_value['type'] is 'timedarray':
+            if ident_value['type'] == 'timedarray':
                 ident_str += (' with dimension ' +
                               self.render_expression(ident_value['ndim']) +
                               ' and dt as ' +
@@ -638,9 +638,9 @@ class MdExpander():
         (initializer['index'] != 'True' and initializer['index'] != 'False')):
             init_str += ' on condition ' + initializer['index']
         elif (isinstance(initializer['index'], bool) or
-            (initializer['index'] is 'True' or
-             initializer['index'] is 'False')):
-            if initializer['index'] or initializer['index'] is 'True':
+            (initializer['index'] == 'True' or
+             initializer['index'] == 'False')):
+            if initializer['index'] is True or initializer['index'] == 'True':
                 init_str += ' to all members'
             else:
                 init_str += ' to no member'
