@@ -468,7 +468,7 @@ class MdExpander():
         # expand identifiers associated
         if 'identifiers' in neurongrp:
             md_str += tab + bold('Constants:') + endll
-            md_str += self.expand_identifiers(neurongrp['identifiers'])
+            md_str += tab + self.expand_identifiers(neurongrp['identifiers']) + endll
         # expand run_regularly()
         if 'run_regularly' in neurongrp:
             md_str += (tab + bold('Run regularly') +
@@ -514,30 +514,32 @@ class MdExpander():
         ident_str = ''
         # if not `TimedArray` nor custom function
         if type(ident_value) != dict:
-            ident_str += (self.render_expression(ident_key) + ": " +
-                        self.render_expression(ident_value))
+            ident_str += (self.render_expression(ident_key) + "= " +
+                          self.render_expression(ident_value))
         # expand dictionary
         else:
             ident_str += (self.render_expression(ident_key) + ' of type ' +
-                            ident_value['type'])
+                          ident_value['type'])
             if ident_value['type'] == 'timedarray':
                 ident_str += (' with dimension ' +
                               self.render_expression(ident_value['ndim']) +
                               ' and dt as ' +
                               self.render_expression(ident_value['dt']))
-        return ident_str + ', '
+        return ident_str
 
     def expand_identifiers(self, identifiers):
         """
         Expand function to loop through identifiers and call
         `expand_identifier`
         """
-        idents_str = ''
-        # loop through all identifiers
-        for key, value in identifiers.items():
-            idents_str += self.expand_identifier(key, value)
-        # to remove ', ' for last item
-        idents_str = tab + idents_str[:-2] + endll
+        idents = [self.expand_identifier(key, value)
+                  for key, value in identifiers.items()]
+        if len(idents) == 1:
+            idents_str = idents[0]
+        elif len(idents) == 2:
+            idents_str = idents[0] + ' and ' + idents[1]
+        else:
+            idents_str = ', '.join(idents[:-1]) + ', and ' + idents[-1]
         return idents_str
 
     def expand_event(self, event_name, event_details):
@@ -656,10 +658,7 @@ class MdExpander():
                     [str(ind) for ind in initializer['index']]
                                     )
         if 'identifiers' in initializer:
-            init_str += ('. Identifier' +
-                        self.check_plural(initializer['identifiers']) +
-                        ' associated: ' +
-                        self.expand_identifiers(initializer['identifiers']))
+            init_str += (', where ' + self.expand_identifiers(initializer['identifiers']) + '.')
         return init_str + endll
 
     def expand_connector(self, connector):
