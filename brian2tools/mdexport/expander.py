@@ -372,7 +372,6 @@ class MdExpander():
                                                                 connector['synapses'] == obj_mem['name']]
                             run_string += ('- ' +
                                            func_map[obj_key]['f'](obj_mem))
-                    run_string += endl
 
             if self.keep_initializer_order:
                 # differentiate connectors and initializers
@@ -493,7 +492,7 @@ class MdExpander():
             md_str += self.expand_events(neurongrp['events'])
         # expand identifiers associated
         if 'identifiers' in neurongrp:
-            md_str += tab + bold('Constants:')
+            md_str += tab + bold('Constants:') + ' '
             md_str += self.expand_identifiers(neurongrp['identifiers']) + endll
         if not self.keep_initializer_order and 'initializer' in neurongrp and len(neurongrp['initializer']):
             md_str += tab + bold('Initial values:') + '\n'
@@ -997,7 +996,7 @@ class MdExpander():
         if not self.keep_initializer_order and 'connectors' in synapse:
             if len(synapse['connectors']) > 1:
                 raise NotImplementedError('Only a single connect statement per Synapses object supported.')
-            md_str += tab + self.expand_connector(synapse['connectors'][0]) + endll
+            md_str += tab + self.expand_connector(synapse['connectors'][0])
         # expand model equations
         if 'equations' in synapse:
             md_str += tab + bold('Model dynamics:') + endll
