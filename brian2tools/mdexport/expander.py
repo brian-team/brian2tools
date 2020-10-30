@@ -296,11 +296,8 @@ class MdExpander():
             # details about the particular run
             run_dict = net_dict[run_indx]
             # expand run header
-            if len(net_dict) > 1:
-                run_string = self.expand_run_header(run_dict, run_indx)
-            else:
-                run_string = self.expand_run_header(run_dict, run_indx,
-                                                    single_run=True)
+            run_string = self.expand_run_header(run_dict, run_indx,
+                                                single_run=len(net_dict) == 1)
 
             # map expand functions for particular components
             # h: "general user" naming / 'hb': "Brian" user naming
@@ -415,6 +412,10 @@ class MdExpander():
                                self.check_plural(run_dict['inactive']) + ':')
                                + endl)
                 run_string += ', '.join(run_dict['inactive'])
+
+            run_string += ('The simulation was run for ' +
+                       bold(str(run_dict['duration'])) + endll)
+
             overall_string += run_string
 
         # final markdown text to pass to `build()`
@@ -433,11 +434,11 @@ class MdExpander():
         n_runs = ''
         if len(net_dict) > 1:
             n_runs += 's'
-        # mention about no. of total run simulations
-        md_str += ('The Network consist' + n_runs + ' of {} simulation \
-                    run'.format(bold(len(net_dict))) +
-                    self.check_plural(net_dict) + endl + horizontal_rule() +
-                    endl)
+            # mention about no. of total run simulations
+            md_str += ('The Network consist' + n_runs + ' of {} simulation \
+                        run'.format(bold(len(net_dict))) +
+                        self.check_plural(net_dict) + endl + horizontal_rule() +
+                        endl)
         return md_str
 
     def expand_run_header(self, run_dict, run_indx, single_run=False):
@@ -462,8 +463,6 @@ class MdExpander():
             md_str += header('Run ' + str(run_indx + 1) + ' details', 3)
 
         md_str += endl
-        md_str += ('Duration of simulation is ' +
-                    bold(str(run_dict['duration'])) + endll)
 
         return md_str
 
