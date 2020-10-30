@@ -361,40 +361,52 @@ class MdExpander():
                                        ' :') + endl)
                         # point out components
                         for obj_mem in obj_list:
+                            if not self.keep_initializer_order:
+                                # Add initializer/connector information to the respective dict
+                                if obj_key in ['neurongroup', 'synapses']:
+                                    obj_mem['initializer'] = [initializer
+                                                              for initializer in run_dict['initializers_connectors']
+                                                              if initializer['type'] == 'initializer' and
+                                                                 initializer['source'] == obj_mem['name']]
+                                if obj_key == 'synapses':
+                                    obj_mem['connectors'] = [connector
+                                                             for connector in run_dict['initializers_connectors']
+                                                             if connector['type'] == 'connect' and
+                                                                connector['synapses'] == obj_mem['name']]
                             run_string += ('- ' +
                                            func_map[obj_key]['f'](obj_mem))
                     run_string += endl
 
-            # differentiate connectors and initializers
-            any_init = False
-            any_connect = 0
-
-            if 'initializers_connectors' in run_dict:
-                # loop through the members only to check the items
-                for init_cont in run_dict['initializers_connectors']:
-                    if init_cont['type'] == 'initializer':
-                        any_init = True
-                    else:
-                        any_connect += 1
-            # check at least any one is present
-            if any_init or any_connect:
-                if any_init:
-                    run_string += bold('Initializing at start')
-                if any_connect:
+            if self.keep_initializer_order:
+                # differentiate connectors and initializers
+                any_init = False
+                any_connect = 0
+                if 'initializers_connectors' in run_dict:
+                    # loop through the members only to check the items
+                    for init_cont in run_dict['initializers_connectors']:
+                        if init_cont['type'] == 'initializer':
+                            any_init = True
+                        else:
+                            any_connect += 1
+                # check at least any one is present
+                if any_init or any_connect:
                     if any_init:
-                        run_string += ' and '
-                    run_string += bold('Synaptic connection' +
-                                self.check_plural(any_connect, is_int=True) +
-                                ' :')
-                run_string += endl
+                        run_string += bold('Initializing at start')
+                    if any_connect:
+                        if any_init:
+                            run_string += ' and '
+                        run_string += bold('Synaptic connection' +
+                                    self.check_plural(any_connect, is_int=True) +
+                                    ' :')
+                    run_string += endl
 
-                for init_cont in run_dict['initializers_connectors']:
-                    # expand accordingly
-                    if init_cont['type'] == 'initializer':
-                        run_string += ('- ' +
-                                       self.expand_initializer(init_cont))
-                    else:
-                        run_string += '- ' + self.expand_connector(init_cont)
+                    for init_cont in run_dict['initializers_connectors']:
+                        # expand accordingly
+                        if init_cont['type'] == 'initializer':
+                            run_string += ('- ' +
+                                           self.expand_initializer(init_cont))
+                        else:
+                            run_string += '- ' + self.expand_connector(init_cont)
 
             # check inactive objects
             if 'inactive' in run_dict:
@@ -484,6 +496,11 @@ class MdExpander():
         if 'identifiers' in neurongrp:
             md_str += tab + bold('Constants:')
             md_str += self.expand_identifiers(neurongrp['identifiers']) + endll
+        if not self.keep_initializer_order and 'initializer' in neurongrp and len(neurongrp['initializer']):
+            md_str += tab + bold('Initial values:') + '\n'
+            for initializer in neurongrp['initializer']:
+                md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
+            md_str += '\n'
         # expand run_regularly()
         if 'run_regularly' in neurongrp:
             md_str += (tab + bold('Run regularly') +
@@ -650,11 +667,14 @@ class MdExpander():
         """
         init_str = ''
         init_str += ('Variable ' +
-                     self.render_expression(initializer['variable']) +
-                     ' of ' + self.expand_SpikeSource(initializer['source']) +
-                     ' initialized with ' +
-                     self.render_expression(initializer['value'])
-                    )
+                     self.render_expression(initializer['variable']))
+        if self.keep_initializer_order:
+            init_str += (' of ' + self.expand_SpikeSource(initializer['source']) +
+                     ' initialized with ')
+        else:
+            init_str += '= '
+        init_str += self.render_expression(initializer['value'])
+
         # not a good checking
         if (isinstance(initializer['index'], str) and
         (initializer['index'] != 'True' and initializer['index'] != 'False')):
@@ -663,8 +683,9 @@ class MdExpander():
             (initializer['index'] == 'True' or
              initializer['index'] == 'False')):
             if initializer['index'] is True or initializer['index'] == 'True':
-                init_str += ' to all members'
+                init_str += ''  # "to all members" implied
             else:
+                raise AssertionError('Initialization with \'False\' as index?')
                 init_str += ' to no member'
         else:
             init_str += (' to member' +
@@ -690,9 +711,11 @@ class MdExpander():
             Dictionary representation of connector
         """
         con_str = ''
-        con_str += ('Connection from ' +
-                    self.expand_SpikeSource(connector['source']) +
-                    ' to ' + self.expand_SpikeSource(connector['target']))
+        if self.keep_initializer_order:
+            # Otherwise not necessary since this is part of the Synapses description
+            con_str += ('Connection from ' +
+                        self.expand_SpikeSource(connector['source']) +
+                        ' to ' + self.expand_SpikeSource(connector['target']))
         if 'i' in connector:
             con_str += ('. From source group ' +
                         self.check_plural(connector['i'], 'index') + ': ')
@@ -734,16 +757,18 @@ class MdExpander():
         elif 'condition' in connector:
             con_str += (' with condition ' +
                         self.render_expression(connector['condition']))
+        else:
+            con_str += 'Pairwise connections'
         if connector['probability'] != 1:
-            con_str += (', with probability ' +
+            con_str += (' with probability ' +
                         self.render_expression(connector['probability']))
         if connector['n_connections'] != 1:
-            con_str += (', with number of connections ' +
+            con_str += (' with number of connections ' +
                         self.render_expression(connector['n_connections']))
         if 'identifiers' in connector:
             con_str += ('. Constants associated: ' +
                         self.expand_identifiers(connector['identifiers']))
-        return con_str + endll
+        return con_str + '.' + endll
 
     def expand_PoissonGroup(self, poisngrp):
         """
@@ -967,8 +992,13 @@ class MdExpander():
         md_str = ''
         md_str += (tab + 'Connections ' + bold(synapse['name']) + ', connecting ' +
                    self.expand_SpikeSource(synapse['source']) +
-                   ' to ' + self.expand_SpikeSource(synapse['target']) + endll
+                   ' to ' + self.expand_SpikeSource(synapse['target']) + '.' + endll
                   )
+        # expand connectors
+        if not self.keep_initializer_order and 'connectors' in synapse:
+            if len(synapse['connectors']) > 1:
+                raise NotImplementedError('Only a single connect statement per Synapses object supported.')
+            md_str += tab + self.expand_connector(synapse['connectors'][0]) + endll
         # expand model equations
         if 'equations' in synapse:
             md_str += tab + bold('Model dynamics:') + endll
@@ -979,14 +1009,23 @@ class MdExpander():
         # expand pathways using `expand_pathways`
         if 'pathways' in synapse:
             md_str += self.expand_pathways(synapse['pathways'])
+            if 'equations' not in synapse and 'identifiers' in synapse:
+                # Put the external constants right here
+                md_str += tab + 'With ' + self.expand_identifiers(synapse['identifiers']) + '.'
+            md_str += endll
         # expand summed_variables using `expand_summed_variables`
         if 'summed_variables' in synapse:
             md_str += tab + bold('Summed variables: ') + endll
             md_str += self.expand_summed_variables(synapse['summed_variables'])
         # expand identifiers if defined
-        if 'identifiers' in synapse:
+        if 'identifiers' in synapse and 'equations' in synapse:
             md_str += tab + bold('Constants: ')
             md_str += self.expand_identifiers(synapse['identifiers']) + endll
+        if not self.keep_initializer_order and 'initializer' in synapse and len(synapse['initializer']):
+            md_str += tab + bold('Initial values:') + '\n'
+            for initializer in synapse['initializer']:
+                md_str += tab + '* ' + self.expand_initializer(initializer) + '</li>\n'
+            md_str += '\n'
         return md_str
 
     def expand_PoissonInput(self, poinp):
