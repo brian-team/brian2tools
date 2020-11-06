@@ -3,7 +3,7 @@ Standard markdown expander class to expand Brian objects to
 markdown text using standard dictionary representation of baseexport
 """
 from brian2.equations.equations import str_to_sympy
-from brian2 import Quantity
+from brian2.units.fundamentalunits import DIMENSIONLESS, Quantity, get_dimensions
 from sympy import Derivative, symbols
 from sympy.printing import latex
 from sympy.abc import *
@@ -635,6 +635,11 @@ class MdExpander():
             rend_eqn += self.render_expression(var)
         else:
             rend_eqn += 'Parameter ' + self.render_expression(var)
+            if get_dimensions(equation['unit']) is DIMENSIONLESS:
+                unit = '(dimensionless)'
+            else:
+                unit = '(in units of ' + self.render_expression(equation['unit']) + ')'
+            rend_eqn += ' ' + unit
         if 'expr' in equation:
             rend_eqn += '=' + self.render_expression(equation['expr'])
         # TODO: How to handle units
