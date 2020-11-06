@@ -676,8 +676,8 @@ class MdExpander():
 
         # not a good checking
         if (isinstance(initializer['index'], str) and
-        (initializer['index'] != 'True' and initializer['index'] != 'False')):
-            init_str += ' on condition ' + initializer['index']
+                (initializer['index'] != 'True' and initializer['index'] != 'False')):
+            init_str += ' if ' + self.render_expression(initializer['index'])
         elif (isinstance(initializer['index'], bool) or
             (initializer['index'] == 'True' or
              initializer['index'] == 'False')):
@@ -685,7 +685,6 @@ class MdExpander():
                 init_str += ''  # "to all members" implied
             else:
                 raise AssertionError('Initialization with \'False\' as index?')
-                init_str += ' to no member'
         else:
             init_str += (' to member' +
                          self.check_plural(initializer['index']) + ' ')
@@ -1014,11 +1013,11 @@ class MdExpander():
             md_str += endll
         # expand summed_variables using `expand_summed_variables`
         if 'summed_variables' in synapse:
-            md_str += tab + bold('Summed variables: ') + endll
+            md_str += tab + bold('Summed variables:') + endll
             md_str += self.expand_summed_variables(synapse['summed_variables'])
         # expand identifiers if defined
         if 'identifiers' in synapse and 'equations' in synapse:
-            md_str += tab + bold('Constants: ')
+            md_str += tab + bold('Constants:') + ' '
             md_str += self.expand_identifiers(synapse['identifiers']) + endll
         if not self.keep_initializer_order and 'initializer' in synapse and len(synapse['initializer']):
             md_str += tab + bold('Initial values:') + '\n'
