@@ -360,14 +360,15 @@ class MdExpander():
                         for obj_mem in obj_list:
                             if not self.keep_initializer_order:
                                 # Add initializer/connector information to the respective dict
+                                initializers_connectors = run_dict.get('initializers_connectors', [])
                                 if obj_key in ['neurongroup', 'synapses']:
                                     obj_mem['initializer'] = [initializer
-                                                              for initializer in run_dict['initializers_connectors']
+                                                              for initializer in initializers_connectors
                                                               if initializer['type'] == 'initializer' and
                                                                  initializer['source'] == obj_mem['name']]
                                 if obj_key == 'synapses':
                                     obj_mem['connectors'] = [connector
-                                                             for connector in run_dict['initializers_connectors']
+                                                             for connector in initializers_connectors
                                                              if connector['type'] == 'connect' and
                                                                 connector['synapses'] == obj_mem['name']]
                             run_string += ('- ' +
@@ -996,7 +997,8 @@ class MdExpander():
         if not self.keep_initializer_order and 'connectors' in synapse:
             if len(synapse['connectors']) > 1:
                 raise NotImplementedError('Only a single connect statement per Synapses object supported.')
-            md_str += tab + self.expand_connector(synapse['connectors'][0])
+            if len(synapse['connectors']):
+                md_str += tab + self.expand_connector(synapse['connectors'][0])
         # expand model equations
         if 'equations' in synapse:
             md_str += tab + bold('Model dynamics:') + endll
