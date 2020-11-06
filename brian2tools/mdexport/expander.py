@@ -596,8 +596,12 @@ class MdExpander():
                          )
         event_str += '.'
         if 'refractory' in event_details:
-            event_str += ' The neuron remains refractory for '
-            event_str += self.render_expression(event_details['refractory']) + '.'
+            if isinstance(event_details['refractory'], Quantity):
+                event_str += ' The neuron remains refractory for '
+                event_str += self.render_expression(event_details['refractory']) + '.'
+            else:
+                event_str += ' The neuron remains refractory as long as '
+                event_str += self.render_expression(event_details['refractory']) + '.'
 
         return event_str + endll
 
