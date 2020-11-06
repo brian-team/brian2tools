@@ -697,7 +697,7 @@ class MdExpander():
                                     )
         if 'identifiers' in initializer:
             init_str += (', where ' + self.expand_identifiers(initializer['identifiers']) + '.')
-        return init_str + endll
+        return init_str
 
     def expand_connector(self, connector):
         """
@@ -941,16 +941,15 @@ class MdExpander():
             md_str += (', with a synaptic delay of ' +
                     self.render_expression(pathway['delay']))
         md_str += '.'
-        return md_str + endll
+        return md_str
 
     def expand_pathways(self, pathways):
         """
         Loop through pathways and call `expand_pathway`
         """
-        path_str = ''
-        for pathway in pathways:
-            path_str += self.expand_pathway(pathway)
-        return path_str
+        path_strs = [self.expand_pathway(pathway)
+                     for pathway in pathways]
+        return endll.join(path_strs)
 
     def expand_summed_variable(self, sum_variable):
         """
@@ -1024,7 +1023,7 @@ class MdExpander():
         if not self.keep_initializer_order and 'initializer' in synapse and len(synapse['initializer']):
             md_str += tab + bold('Initial values:') + '\n'
             for initializer in synapse['initializer']:
-                md_str += tab + '* ' + self.expand_initializer(initializer) + '</li>\n'
+                md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
             md_str += '\n'
         return md_str
 
