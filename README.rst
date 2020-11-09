@@ -4,8 +4,8 @@ Tools to use with the `Brian 2 simulator <http://briansimulator.org>`_. The `bri
 collection of useful tools for simulating spiking neural networks with ``brian2`` and for analyzing the results from
 those simulations.
 
-.. image:: https://travis-ci.org/brian-team/brian2tools.svg?branch=master
-    :target: https://travis-ci.org/brian-team/brian2tools
+.. image:: https://github.com/brian-team/brian2tool/workflows/Python%20tests%20using%20Conda/badge.svg
+    :target: https://github.com/brian-team/brian2tools/actions
 
 .. image:: https://img.shields.io/pypi/v/brian2tools.svg
    :target: https://pypi.python.org/pypi/brian2tools
