@@ -192,7 +192,7 @@ class NMLExporter(object):
     def add_neurongroup(self,neurongrp, index_neurongrp, initializers):
         """
         Add NeuronGroup to self._model
-        
+    
         If number of elements is 1 it adds component of that type, if
         it's bigger, the network is created by calling:
         `make_multiinstantiate`.
@@ -215,7 +215,7 @@ class NMLExporter(object):
         identifiers = {}
         if 'identifiers' in neurongrp:
             identifiers = neurongrp['identifiers']
-        # add the identifers as propoerties of the component
+        # add the identifers as properties of the component
         for param in self._determine_properties(identifiers):
             self._component_type.add(param)
         # common things for every neuron definition
@@ -361,7 +361,7 @@ class NMLExporter(object):
         multi_ins = lems.MultiInstantiate(component_type=name,
                                           number="N")
         param_dict = {}
-        # number of neruons
+        # number of neurons
         multi_ct.add(lems.Parameter(name="N", dimension="none"))
         # TODO: not very clear with Properties
         # filter out initializers with source name and index specific
@@ -389,7 +389,7 @@ class NMLExporter(object):
                                 regexp_noletter = "[^a-zA-Z0-9]"
                                 equation = re.sub("{re}i{re}".format(re=regexp_noletter),
                                                         " {} ".format(INDEX), equation)
-                            # here it's assumed that we don't use Netwton in neuron models
+
                             elif i in name_to_unit and i != "N":
                                 const_i = i+'const'
                                 multi_ct.add(lems.Constant(name=const_i, symbol=const_i,
@@ -525,14 +525,13 @@ class NMLExporter(object):
 
         Parameters
         ----------
-        obj : brian2.NeuronGroup
-            neuronal input object
+        obj : Standard dict representation of PoissonInput
         counter : str or int, optional
             number of object added to identifier
         """
         if isinstance(obj,PoissonInput):
             name = '{}{}'.format(self._model_namespace['poiss_generator'], str(counter))
-            nml_poisson = NeuroMLPoissonGenerator(name, int(obj.rate))
+            nml_poisson = NeuroMLPoissonGenerator(name, int(obj['rate']))
             nml_poisson = nml_poisson.build()
             self._extend_dommodel(nml_poisson)
         else:
@@ -599,20 +598,25 @@ class NMLExporter(object):
         includes = set(includes)
         for include in INCLUDES:
             includes.add(include)
+
+        netinputs = []
+
         # TODO: deal with single run for now
         single_run = run_dict[0]
 
         self._model_namespace['simulname'] = "sim1"
         self._simulation = NeuroMLSimulation(self._model_namespace['simulname'],
                                              self._model_namespace['networkname'])
-        
+
         #loop over components field of single_run
         for (obj_name, obj_list) in single_run['components'].items():
 
             # check initializers are defined
             initializers = []
-            if 'initializers' in single_run:
-                initializers = single_run['initializers']
+            if 'initializers_connectors' in single_run:
+                for item in single_run['initializers_connectors']:
+                    if item['type'] == 'initializer':
+                        initializers.append(item)
 
             # check whether neurongroup
             if obj_name == 'neurongroup':
@@ -632,24 +636,31 @@ class NMLExporter(object):
             if obj_name == 'spikemonitor':
                 for spikemonitor in obj_list:
                     self.add_spikemonitor(spikemonitor, filename=recordingsname)
-            
+  
             # check whether EventMonitor
             # TODO: is this valid in NML/LEMS?
             if obj_name == 'eventmonitor':
                 for eventmonitor in obj_list:
                     self.add_eventmonitor(eventmonitor, filename=recordingsname)
 
-        """
-        #TODO: add PoissonInput
-        if len(netinputs) > 0:
+            # check poisson input
+            if obj_name == 'poissoninput':
+                netinputs = obj_list
+
+        if netinputs:
             includes.add(LEMS_INPUTS)
-        for incl in includes:
-            self.add_include(incl)
-        """
+
+        for include in includes:
+            self.add_include(include)
+
 
         # DOM structure of the whole model is constructed below
         self._dommodel = self._model.export_to_dom()
-
+        # add input
+        input_counter = 0
+        for poisson_inp in netinputs:
+            self.add_input(poisson_inp, input_counter)
+            input_counter += 1
         # A population should be created in `make_multiinstantiate`
         # so we can add it to our DOM structure.
         if self._population:
