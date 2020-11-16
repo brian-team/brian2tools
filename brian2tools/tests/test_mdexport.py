@@ -18,7 +18,7 @@ def _markdown_lint(md_str):
     """
     stack = []
     # symbols to consider
-    symbols = ['*', '$', '|', '{', '}', '(', ')', '`']
+    symbols = ['**', '$', '|', '{', '}', '(', ')', '`']
 
     for char in md_str:
         # check syntax symbols
@@ -157,6 +157,7 @@ def test_common_example():
     trace = StateMonitor(P, 'v', record=[1, 10, 100])
     run(1 * second)
     md_str = device.md_text
+    print(md_str)
     assert _markdown_lint(md_str)
     device.reinit()
 
@@ -279,7 +280,8 @@ def test_custom_expander():
         def expand_identifiers(self, identifiers):
             return 'Identifiers are not shown'
 
-    custom_expander = Custom(brian_verbose=True)
+    custom_expander = Custom(brian_verbose=True, include_monitors=True,
+                             keep_initializer_order=True)
     set_device('markdown', expander=custom_expander)
     # check custom expander
     v_rest = -79 * mV
