@@ -765,7 +765,7 @@ class MdExpander():
             con_str += (' with condition ' +
                         self.render_expression(connector['condition']))
         else:
-            con_str += '\nPairwise connections'
+            con_str += ' Pairwise connections'
         if connector['probability'] != 1:
             con_str += (' with probability ' +
                         self.render_expression(connector['probability']))
