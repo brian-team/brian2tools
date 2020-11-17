@@ -705,6 +705,9 @@ class MdExpander():
                                     )
         if 'identifiers' in initializer:
             init_str += (', where ' + self.expand_identifiers(initializer['identifiers']) + '.')
+        # pad new line if ordered in list
+        if self.keep_initializer_order:
+            return init_str + endll
         return init_str
 
     def expand_connector(self, connector):
@@ -765,7 +768,7 @@ class MdExpander():
             con_str += (' with condition ' +
                         self.render_expression(connector['condition']))
         else:
-            con_str += ' Pairwise connections'
+            con_str += 'Pairwise connections'
         if connector['probability'] != 1:
             con_str += (' with probability ' +
                         self.render_expression(connector['probability']))
@@ -940,7 +943,7 @@ class MdExpander():
             event_str = 'spike'
         else:
             event_str = italics(pathway['event']) + ' event'
-        md_str = ('For each ' + bold(pathway_str) +
+        md_str = (tab + 'For each ' + bold(pathway_str) +
                   ' ' + pathway['event'] + ': ' +
                   self.prepare_math_statements(pathway['code'], separate=True)
                   )

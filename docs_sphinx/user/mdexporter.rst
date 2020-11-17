@@ -11,6 +11,8 @@ from the run time and expand them to markdown strings.
     Overview
     :local:
 
+.. _working_example_label:
+
 Working example
 ---------------
 
@@ -57,69 +59,56 @@ The rendered file ``model_description.md`` would look like,
 
     <h1 id="networkdetails">Network details</h1>
 
-    <p>The Network consist of <strong>1</strong> simulation                     run</p>
-
-    <hr />
-
-    <p>Duration of simulation is <strong>2. s</strong></p>
-
-    <p><strong>Neuron group :</strong></p>
+    <p><strong>Neuron population :</strong></p>
 
     <ul>
-    <li><p>Name <strong>neurongroup</strong>, with                 population size <strong>1</strong>.</p>
+    <li><p>Group <strong>neurongroup</strong>, consisting of <strong>1</strong> neurons.</p>
 
-    <p><strong>Dynamics:</strong></p>
+    <p><strong>Model dynamics:</strong></p>
 
-    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} v">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{v}{10.ms}">, where unit of <img src="https://render.githubusercontent.com/render/math?math=v"> is V</p>
+    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} v">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{v}{10 \cdot ms}"></p>
 
-    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} vt">=<img src="https://render.githubusercontent.com/render/math?math=\frac{10.mV - vt}{15.ms}">, where unit of <img src="https://render.githubusercontent.com/render/math?math=vt"> is V</p>
+    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} vt">=<img src="https://render.githubusercontent.com/render/math?math=\frac{10 \cdot mV - vt}{15 \cdot ms}"></p>
 
-    <p>exact method is used for integration</p>
+    <p>The equations are integrated with the 'exact' method.</p>
 
     <p><strong>Events:</strong></p>
 
-    <p>Event <strong>spike</strong>, after <img src="https://render.githubusercontent.com/render/math?math=v \gt vt">, <img src="https://render.githubusercontent.com/render/math?math=v">&#8592;<img src="https://render.githubusercontent.com/render/math?math=0">, <img src="https://render.githubusercontent.com/render/math?math=vt">+=<img src="https://render.githubusercontent.com/render/math?math=3.mV"></p></li>
+    <p>If <img src="https://render.githubusercontent.com/render/math?math=v \gt vt">, a <strong>spike</strong> event is triggered and <img src="https://render.githubusercontent.com/render/math?math=v">&#8592;<img src="https://render.githubusercontent.com/render/math?math=0">, <img src="https://render.githubusercontent.com/render/math?math=vt">+=<img src="https://render.githubusercontent.com/render/math?math=3 \cdot mV">.</p>
+
+    <p><strong>Initial values:</strong></p>
+
+    <ul>
+    <li>Variable <img src="https://render.githubusercontent.com/render/math?math=vt">= <img src="https://render.githubusercontent.com/render/math?math=10.0\,\mathrm{m}\,\mathrm{V}"></li></ul></li>
     </ul>
 
     <p><strong>Poisson spike source :</strong></p>
 
     <ul>
-    <li>Name <strong>poissongroup</strong>, with                 population size <strong>1</strong> and rate as <img src="https://render.githubusercontent.com/render/math?math=0.5 kHz">.</li>
+    <li>Name <strong>poissongroup</strong>, with                 population size <strong>1</strong> and rate as <img src="https://render.githubusercontent.com/render/math?math=0.5\,\mathrm{k}\,\mathrm{Hz}">.</li>
     </ul>
 
     <p><strong>Synapse :</strong></p>
 
     <ul>
-    <li><p>From poissongroup to neurongroup</p>
+    <li><p>Connections <strong>synapses</strong>, connecting <em>poissongroup</em> to <em>neurongroup</em>.</p>
 
-    <p><strong>Pathways:</strong></p>
+    <p>Pairwise connections.</p>
 
-    <p>On <strong>pre</strong> of event spike statements: <img src="https://render.githubusercontent.com/render/math?math=v">+=<img src="https://render.githubusercontent.com/render/math?math=3.mV"> executed</p></li>
+    <p>For each <strong>pre-synaptic</strong> spike: <img src="https://render.githubusercontent.com/render/math?math=v">+=<img src="https://render.githubusercontent.com/render/math?math=3 \cdot mV">.</p></li>
     </ul>
 
-    <p><strong>Activity recorders :</strong></p>
+    <p>The simulation was run for <strong>2. s</strong></p>
 
-    <ul>
-    <li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup for all members</li>
-    <li>Monitors variable: <img src="https://render.githubusercontent.com/render/math?math=v"> of neurongroup for all members</li>
-    </ul>
-
-    <p><strong>Spiking activity recorder :</strong></p>
-
-    <ul>
-    <li>Monitors variables: <img src="https://render.githubusercontent.com/render/math?math=t">,<img src="https://render.githubusercontent.com/render/math?math=v">,<img src="https://render.githubusercontent.com/render/math?math=i"> of neurongroup for all members when event <strong>spike</strong> is triggered.</li>
-    </ul>
-
-    <p><strong>Initializing at start</strong> and <strong>Synaptic connection :</strong></p>
-
-    <ul>
-    <li><p>Variable <img src="https://render.githubusercontent.com/render/math?math=vt"> of neurongroup initialized with <img src="https://render.githubusercontent.com/render/math?math=10. mV"> to all members</p></li>
-
-    <li><p>Variable <img src="https://render.githubusercontent.com/render/math?math=rates"> of poissongroup initialized with <img src="https://render.githubusercontent.com/render/math?math=0.5 kHz"> to all members</p></li>
-
-    <li><p>Connection from poissongroup to neurongroup</p></li>
-    </ul>
     </div>
+
+.. note::
+
+    By default, Monitors are not included in markdown output, and the order of variable 
+    initializations and `~brian2.synapses.synapses.Synapses.connect` statements are not shown but rather included 
+    with the respective objects. However, these default options shall be changed according to one's
+    need (see developer documentation of :doc:`../developer/mdexporter` for how to change the default 
+    options).
 
 Similar to other Brian2 device modes, to inform Brian to run in the exporter mode,
 the minimal changes required are importing the package
