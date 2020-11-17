@@ -768,7 +768,7 @@ class MdExpander():
             con_str += (' with condition ' +
                         self.render_expression(connector['condition']))
         else:
-            con_str += 'Pairwise connections'
+            con_str += '. Pairwise connections'
         if connector['probability'] != 1:
             con_str += (' with probability ' +
                         self.render_expression(connector['probability']))
@@ -1001,7 +1001,7 @@ class MdExpander():
         md_str = ''
         md_str += (tab + 'Connections ' + bold(synapse['name']) + ', connecting ' +
                    self.expand_SpikeSource(synapse['source']) +
-                   ' to ' + self.expand_SpikeSource(synapse['target']) + '.' + endll
+                   ' to ' + self.expand_SpikeSource(synapse['target'])
                   )
         # expand connectors
         if not self.keep_initializer_order and 'connectors' in synapse:
@@ -1009,6 +1009,8 @@ class MdExpander():
                 raise NotImplementedError('Only a single connect statement per Synapses object supported.')
             if len(synapse['connectors']):
                 md_str += tab + self.expand_connector(synapse['connectors'][0])
+        else:
+            md_str += '.' + endll
         # expand model equations
         if 'equations' in synapse:
             md_str += tab + bold('Model dynamics:') + endll
