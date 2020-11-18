@@ -112,8 +112,10 @@ def collect_Equations(equations):
 
     eqn_dict = {}
 
-    for name in (equations.diff_eq_names | equations.subexpr_names |
-                 equations.parameter_names):
+    # Using the keys of the _equations dictionary makes sure
+    # that we go through the equations in the same order
+    # in which they were defined
+    for name in equations._equations:
 
         eqs = equations[name]
 

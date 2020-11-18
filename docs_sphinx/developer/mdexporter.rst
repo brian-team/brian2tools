@@ -336,6 +336,76 @@ and use Brian specific jargons,
     custom = MdExpander(github_md=True, brian_verbose=True)
     set_device('markdown', expander=custom)  # pass the custom expander
 
+Details about the monitors are not included by default in the output markdown and to include
+them,
+
+.. code:: python
+
+    # custom expander to include monitors
+    custom_with_monitors = MdExpander(include_monitors=True)
+    set_device('markdown', expander=custom_with_monitors)
+
+Also, the order of variable initializations and `~brian2.synapses.synapses.Synapses.connect` statements
+are not shown in the markdown output by default, this may likely result to inaccurate results, when the
+values of variables during synaptic connections are contingent upon their order. In that case, the order
+shall be included to markdown output as,
+
+.. code:: python
+
+    # custom expander to include monitors
+    custom = MdExpander(keep_initializer_order=True)
+    set_device('markdown', expander=custom)
+
+The modified output with details about the order of initialization and Synaptic connection,
+when running on the :ref:`working_example_label` would look like,
+
+.. raw:: html
+
+    <h1 id="networkdetails">Network details</h1>
+
+    <p><strong>Neuron population :</strong></p>
+
+    <ul>
+    <li><p>Group <strong>neurongroup</strong>, consisting of <strong>1</strong> neurons.</p>
+
+    <p><strong>Model dynamics:</strong></p>
+
+    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} v">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{v}{10 \cdot ms}"></p>
+
+    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} vt">=<img src="https://render.githubusercontent.com/render/math?math=\frac{10 \cdot mV - vt}{15 \cdot ms}"></p>
+
+    <p>The equations are integrated with the 'exact' method.</p>
+
+    <p><strong>Events:</strong></p>
+
+    <p>If <img src="https://render.githubusercontent.com/render/math?math=v \gt vt">, a <strong>spike</strong> event is triggered and <img src="https://render.githubusercontent.com/render/math?math=v">&#8592;<img src="https://render.githubusercontent.com/render/math?math=0">, <img src="https://render.githubusercontent.com/render/math?math=vt">+=<img src="https://render.githubusercontent.com/render/math?math=3 \cdot mV">.</p></li>
+    </ul>
+
+    <p><strong>Poisson spike source :</strong></p>
+
+    <ul>
+    <li>Name <strong>poissongroup</strong>, with                 population size <strong>1</strong> and rate as <img src="https://render.githubusercontent.com/render/math?math=0.5\,\mathrm{k}\,\mathrm{Hz}">.</li>
+    </ul>
+
+    <p><strong>Synapse :</strong></p>
+
+    <ul>
+    <li><p>Connections <strong>synapses</strong>, connecting <em>poissongroup</em> to <em>neurongroup</em>.</p>
+
+    <p>For each <strong>pre-synaptic</strong> spike: <img src="https://render.githubusercontent.com/render/math?math=v">+=<img src="https://render.githubusercontent.com/render/math?math=3 \cdot mV">.</p></li>
+    </ul>
+
+    <p><strong>Initializing at start</strong> and <strong>Synaptic connection :</strong></p>
+
+    <ul>
+    <li>Variable <img src="https://render.githubusercontent.com/render/math?math=vt"> of <em>neurongroup</em> initialized with <img src="https://render.githubusercontent.com/render/math?math=10.0\,\mathrm{m}\,\mathrm{V}">- Variable <img src="https://render.githubusercontent.com/render/math?math=rates"> of <em>poissongroup</em> initialized with <img src="https://render.githubusercontent.com/render/math?math=0.5\,\mathrm{k}\,\mathrm{Hz}"></li>
+
+    <li>Connection from <em>poissongroup</em> to <em>neurongroup</em>.Pairwise connections.</li>
+    </ul>
+
+    <p>The simulation was run for <strong>2. s</strong></p>
+
+
 Similarly, ``author`` and ``add_meta`` options can also be customized during object instantiation, to
 add author name and meta data respectively in the header of the markdown output.
 
