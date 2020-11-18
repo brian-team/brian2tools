@@ -157,7 +157,6 @@ def test_common_example():
     trace = StateMonitor(P, 'v', record=[1, 10, 100])
     run(1 * second)
     md_str = device.md_text
-    print(md_str)
     assert _markdown_lint(md_str)
     device.reinit()
 
