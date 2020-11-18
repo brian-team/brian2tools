@@ -3,7 +3,7 @@ Standard markdown expander class to expand Brian objects to
 markdown text using standard dictionary representation of baseexport
 """
 from brian2.equations.equations import str_to_sympy
-from brian2 import Quantity
+from brian2.units.fundamentalunits import DIMENSIONLESS, Quantity, get_dimensions
 from sympy import Derivative, symbols
 from sympy.printing import latex
 from sympy.abc import *
@@ -35,8 +35,9 @@ class MdExpander():
     markdown expander class to override the required changes in expand
     functions.
     """
-    def __init__(self, brian_verbose=False,
-                 author=None, add_meta=False, github_md=False):
+    def __init__(self, brian_verbose=False, include_monitors=False,
+                 keep_initializer_order=False, author=None,
+                 add_meta=False, github_md=False):
         """
         Constructor for `MdExpander`
 
@@ -45,10 +46,18 @@ class MdExpander():
 
         brian_verbose : bool, optional
             Whether to use Brian-like words for markdown exporter and
-            if set `True`, the names will be Brian based.
-            For example, when set `False`, 'SpikeGeneratorGroup` will be
+            if set ``True``, the names will be Brian based.
+            For example, when set ``False``, 'SpikeGeneratorGroup` will be
             changed to something like, "'Spike generating source"
-
+        include_monitors : bool, optional
+            Whether to document the monitors (e.g. `SpikeMonitor` or
+            `StateMonitor`). Defaults to ``False``
+        keep_initializer_order : bool, optional
+            Whether to keep the order of variable initializations and
+            `Synapses.connect` statements. If set to ``False`` (the
+            default), these will instead be included with the respective
+            objects which could in principle lead to inaccuracies if the
+            statements include references to other variables.
         author : str, optional
             Author field to add in the metadata
 
@@ -62,6 +71,9 @@ class MdExpander():
         """
 
         self.brian_verbose = brian_verbose
+        self.include_monitors = include_monitors
+        self.keep_initializer_order = keep_initializer_order
+
         # if author name is given
         if author:
             if type(author) != str:
@@ -237,9 +249,7 @@ class MdExpander():
             Markdown text for the expression
         """
         # change to str
-        if isinstance(expression, Quantity):
-            expression = str(expression)
-        else:
+        if not isinstance(expression, Quantity):
             if not isinstance(expression, str):
                 expression = str(expression)
             # convert to sympy expression
@@ -251,10 +261,14 @@ class MdExpander():
             expression = Derivative(expression, 't')
         # render expression
         rend_exp = latex(expression, mode='equation',
-                         itex=True, mul_symbol='.')
-        # horrible way to remove _placeholder_{arg} inside brackets
+                         itex=True, mul_symbol='dot')
+        # Deal with rand() and randn()
+        rend_exp = rend_exp.replace(r'\operatorname{rand}{\left(_placeholder_{arg} \right)}',
+                                    r'\mathcal{U}{\left(0, 1\right)}')
+        rend_exp = rend_exp.replace(r'\operatorname{randn}{\left(_placeholder_{arg} \right)}',
+                                    r'\mathcal{N}{\left(0, 1\right)}')
+        # remove remaining _placeholder_{arg} inside brackets
         rend_exp = rend_exp.replace('_placeholder_{arg}', '-')
-        rend_exp = rend_exp.replace('\operatorname', '')
         # check GitHub based markdown rendering
         if self.github_md:
             # to remove `$$`
@@ -282,17 +296,14 @@ class MdExpander():
             # details about the particular run
             run_dict = net_dict[run_indx]
             # expand run header
-            if len(net_dict) > 1:
-                run_string = self.expand_run_header(run_dict, run_indx)
-            else:
-                run_string = self.expand_run_header(run_dict, run_indx,
-                                                    single_run=True)
+            run_string = self.expand_run_header(run_dict, run_indx,
+                                                single_run=len(net_dict) == 1)
 
             # map expand functions for particular components
             # h: "general user" naming / 'hb': "Brian" user naming
             func_map = {'neurongroup': {'f': self.expand_NeuronGroup,
                                         'hb': 'NeuronGroup',
-                                        'h': 'Neuron group', 'order': 1},
+                                        'h': 'Neuron population', 'order': 1},
                        'poissongroup': {'f': self.expand_PoissonGroup,
                                         'hb': 'PoissonGroup',
                                         'h': 'Poisson spike source',
@@ -319,7 +330,7 @@ class MdExpander():
                                      'h': 'Population rate recorder',
                                      'order': 4},
                        'synapses': {'f': self.expand_Synapses,
-                                    'hb': 'Synapse',
+                                    'hb': 'Synapses',
                                     'h': 'Synapse', 'order': 3},
                        'poissoninput': {'f': self.expand_PoissonInput,
                                          'hb': 'PoissonInput',
@@ -328,6 +339,9 @@ class MdExpander():
             # (same complexity as sorting the dict)
             order_list = [0, 1, 2, 3, 4]
             for current_order in order_list:
+                # TODO: Implement skipping monitors properly
+                if current_order == 4 and not self.include_monitors:
+                    continue
                 # loop through the components
                 for (obj_key, obj_list) in run_dict['components'].items():
                     # whether object component is in map and correct order
@@ -344,40 +358,52 @@ class MdExpander():
                                        ' :') + endl)
                         # point out components
                         for obj_mem in obj_list:
+                            if not self.keep_initializer_order:
+                                # Add initializer/connector information to the respective dict
+                                initializers_connectors = run_dict.get('initializers_connectors', [])
+                                if obj_key in ['neurongroup', 'synapses']:
+                                    obj_mem['initializer'] = [initializer
+                                                              for initializer in initializers_connectors
+                                                              if initializer['type'] == 'initializer' and
+                                                                 initializer['source'] == obj_mem['name']]
+                                if obj_key == 'synapses':
+                                    obj_mem['connectors'] = [connector
+                                                             for connector in initializers_connectors
+                                                             if connector['type'] == 'connect' and
+                                                                connector['synapses'] == obj_mem['name']]
                             run_string += ('- ' +
                                            func_map[obj_key]['f'](obj_mem))
+
+            if self.keep_initializer_order:
+                # differentiate connectors and initializers
+                any_init = False
+                any_connect = 0
+                if 'initializers_connectors' in run_dict:
+                    # loop through the members only to check the items
+                    for init_cont in run_dict['initializers_connectors']:
+                        if init_cont['type'] == 'initializer':
+                            any_init = True
+                        else:
+                            any_connect += 1
+                # check at least any one is present
+                if any_init or any_connect:
+                    if any_init:
+                        run_string += bold('Initializing at start')
+                    if any_connect:
+                        if any_init:
+                            run_string += ' and '
+                        run_string += bold('Synaptic connection' +
+                                    self.check_plural(any_connect, is_int=True) +
+                                    ' :')
                     run_string += endl
 
-            # differentiate connectors and initializers
-            any_init = False
-            any_connect = 0
-
-            if 'initializers_connectors' in run_dict:
-                # loop through the members only to check the items
-                for init_cont in run_dict['initializers_connectors']:
-                    if init_cont['type'] == 'initializer':
-                        any_init = True
-                    else:
-                        any_connect += 1
-            # check at least any one is present
-            if any_init or any_connect:
-                if any_init:
-                    run_string += bold('Initializing at start')
-                if any_connect:
-                    if any_init:
-                        run_string += ' and '
-                    run_string += bold('Synaptic connection' +
-                                self.check_plural(any_connect, is_int=True) +
-                                ' :')
-                run_string += endl
-
-                for init_cont in run_dict['initializers_connectors']:
-                    # expand accordingly
-                    if init_cont['type'] == 'initializer':
-                        run_string += ('- ' +
-                                       self.expand_initializer(init_cont))
-                    else:
-                        run_string += '- ' + self.expand_connector(init_cont)
+                    for init_cont in run_dict['initializers_connectors']:
+                        # expand accordingly
+                        if init_cont['type'] == 'initializer':
+                            run_string += ('- ' +
+                                           self.expand_initializer(init_cont))
+                        else:
+                            run_string += '- ' + self.expand_connector(init_cont)
 
             # check inactive objects
             if 'inactive' in run_dict:
@@ -386,6 +412,10 @@ class MdExpander():
                                self.check_plural(run_dict['inactive']) + ':')
                                + endl)
                 run_string += ', '.join(run_dict['inactive'])
+
+            run_string += ('The simulation was run for ' +
+                       bold(str(run_dict['duration'])) + endll)
+
             overall_string += run_string
 
         # final markdown text to pass to `build()`
@@ -404,11 +434,11 @@ class MdExpander():
         n_runs = ''
         if len(net_dict) > 1:
             n_runs += 's'
-        # mention about no. of total run simulations
-        md_str += ('The Network consist' + n_runs + ' of {} simulation \
-                    run'.format(bold(len(net_dict))) +
-                    self.check_plural(net_dict) + endl + horizontal_rule() +
-                    endl)
+            # mention about no. of total run simulations
+            md_str += ('The Network consist' + n_runs + ' of {} simulation \
+                        run'.format(bold(len(net_dict))) +
+                        self.check_plural(net_dict) + endl + horizontal_rule() +
+                        endl)
         return md_str
 
     def expand_run_header(self, run_dict, run_indx, single_run=False):
@@ -433,8 +463,6 @@ class MdExpander():
             md_str += header('Run ' + str(run_indx + 1) + ' details', 3)
 
         md_str += endl
-        md_str += ('Duration of simulation is ' +
-                    bold(str(run_dict['duration'])) + endll)
 
         return md_str
 
@@ -451,22 +479,27 @@ class MdExpander():
         # start expanding
         md_str = ''
         # name and size
-        md_str += 'Name ' + bold(neurongrp['name']) + ', with \
-                population size ' + bold(neurongrp['N']) + '.' + endll
+        md_str += ('Group ' + bold(neurongrp['name']) + ', consisting of ' +
+                   bold(neurongrp['N']) + ' neurons.' + endll)
         # expand model equations
-        md_str += tab + bold('Dynamics:') + endll
+        md_str += tab + bold('Model dynamics:') + endll
         md_str += self.expand_equations(neurongrp['equations'])
         if neurongrp['user_method']:
-            md_str += (tab + neurongrp['user_method'] +
-                    ' method is used for integration' + endll)
+            md_str += (tab + 'The equations are integrated with the \'' +
+                       neurongrp['user_method'] + '\' method.' + endll)
         # expand associated events
         if 'events' in neurongrp:
             md_str += tab + bold('Events:') + endll
             md_str += self.expand_events(neurongrp['events'])
         # expand identifiers associated
         if 'identifiers' in neurongrp:
-            md_str += tab + bold('Constants:') + endll
-            md_str += self.expand_identifiers(neurongrp['identifiers'])
+            md_str += tab + bold('Constants:') + ' '
+            md_str += self.expand_identifiers(neurongrp['identifiers']) + endll
+        if not self.keep_initializer_order and 'initializer' in neurongrp and len(neurongrp['initializer']):
+            md_str += tab + bold('Initial values:') + '\n'
+            for initializer in neurongrp['initializer']:
+                md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
+            md_str += '\n'
         # expand run_regularly()
         if 'run_regularly' in neurongrp:
             md_str += (tab + bold('Run regularly') +
@@ -487,14 +520,14 @@ class MdExpander():
             Source group name or subgroup dictionary
         """
         if isinstance(source, str):
-            return source
+            return italics(source)
         # if not one member
         if source['start'] != source['stop']:
-            return ('subgroup (' + str(source['start']) + ' to ' +
-                    str(source['stop']) + ') of ' + source['group'])
+            return ('neurons ' + str(source['start']) + ' to ' +
+                    str(source['stop']) + ' of ' + italics(source['group']))
         # if only single member
-        return ('subgroup (member: ' + str(source['start']) + ') of '+
-                source['group'])
+        return ('neuron ' + str(source['start']) + ' of '+
+                italics(source['group']))
 
     def expand_identifier(self, ident_key, ident_value):
         """
@@ -512,30 +545,32 @@ class MdExpander():
         ident_str = ''
         # if not `TimedArray` nor custom function
         if type(ident_value) != dict:
-            ident_str += (self.render_expression(ident_key) + ": " +
-                        self.render_expression(ident_value))
+            ident_str += (self.render_expression(ident_key) + "= " +
+                          self.render_expression(ident_value))
         # expand dictionary
         else:
             ident_str += (self.render_expression(ident_key) + ' of type ' +
-                            ident_value['type'])
+                          ident_value['type'])
             if ident_value['type'] == 'timedarray':
                 ident_str += (' with dimension ' +
                               self.render_expression(ident_value['ndim']) +
                               ' and dt as ' +
                               self.render_expression(ident_value['dt']))
-        return ident_str + ', '
+        return ident_str
 
     def expand_identifiers(self, identifiers):
         """
         Expand function to loop through identifiers and call
         `expand_identifier`
         """
-        idents_str = ''
-        # loop through all identifiers
-        for key, value in identifiers.items():
-            idents_str += self.expand_identifier(key, value)
-        # to remove ', ' for last item
-        idents_str = tab + idents_str[:-2] + endll
+        idents = [self.expand_identifier(key, value)
+                  for key, value in identifiers.items()]
+        if len(idents) == 1:
+            idents_str = idents[0]
+        elif len(idents) == 2:
+            idents_str = idents[0] + ' and ' + idents[1]
+        else:
+            idents_str = ', '.join(idents[:-1]) + ', and ' + idents[-1]
         return idents_str
 
     def expand_event(self, event_name, event_details):
@@ -552,18 +587,21 @@ class MdExpander():
             details of the event
         """
         event_str = ''
-        event_str += tab + 'Event ' + bold(event_name) + ', '
-        event_str += ('after ' +
-                    self.render_expression(event_details['threshold']['code']))
+        event_str += tab + ('If ' + self.render_expression(event_details['threshold']['code']) +
+                            ', a ' + bold(event_name) + ' event is triggered')
         if 'reset' in event_details:
-            event_str += (', ' +
-                        self.prepare_math_statements(
-                                        event_details['reset']['code'],
-                                        separate=True)
+            event_str += (' and ' + self.prepare_math_statements(
+                event_details['reset']['code'],
+                separate=True)
                          )
+        event_str += '.'
         if 'refractory' in event_details:
-            event_str += ', with refractory '
-            event_str += self.render_expression(event_details['refractory'])
+            if isinstance(event_details['refractory'], Quantity):
+                event_str += ' The neuron remains refractory for '
+                event_str += self.render_expression(event_details['refractory']) + '.'
+            else:
+                event_str += ' The neuron remains refractory as long as '
+                event_str += self.render_expression(event_details['refractory']) + '.'
 
         return event_str + endll
 
@@ -597,14 +635,23 @@ class MdExpander():
             rend_eqn += self.render_expression(var)
         else:
             rend_eqn += 'Parameter ' + self.render_expression(var)
+            if get_dimensions(equation['unit']) is DIMENSIONLESS:
+                unit = '(dimensionless)'
+            else:
+                unit = '(in units of ' + self.render_expression(equation['unit']) + ')'
+            rend_eqn += ' ' + unit
         if 'expr' in equation:
             rend_eqn += '=' + self.render_expression(equation['expr'])
-        rend_eqn += (", where unit of " + self.render_expression(var) +
-                        " is " + str(equation['unit']))
+        # TODO: How to handle units
+        # rend_eqn += (", where unit of " + self.render_expression(var) +
+        #                 " is " + str(equation['unit']))
         if 'flags' in equation:
-            rend_eqn += (' and ' + self.prepare_array(equation['flags']) +
-                         ' as flag' + self.check_plural(equation['flags']) +
-                         ' associated')
+            if 'unless refractory' in equation['flags']:
+                rend_eqn += ', except during the refractory period.'
+            # TODO: How to handle other flags?
+            # rend_eqn += (' and ' + self.prepare_array(equation['flags']) +
+            #              ' as flag' + self.check_plural(equation['flags']) +
+            #              ' associated')
         return tab + rend_eqn + endll
 
     def expand_equations(self, equations):
@@ -628,22 +675,25 @@ class MdExpander():
         """
         init_str = ''
         init_str += ('Variable ' +
-                     self.render_expression(initializer['variable']) +
-                     ' of ' + self.expand_SpikeSource(initializer['source']) +
-                     ' initialized with ' +
-                     self.render_expression(initializer['value'])
-                    )
+                     self.render_expression(initializer['variable']))
+        if self.keep_initializer_order:
+            init_str += (' of ' + self.expand_SpikeSource(initializer['source']) +
+                     ' initialized with ')
+        else:
+            init_str += '= '
+        init_str += self.render_expression(initializer['value'])
+
         # not a good checking
         if (isinstance(initializer['index'], str) and
-        (initializer['index'] != 'True' and initializer['index'] != 'False')):
-            init_str += ' on condition ' + initializer['index']
+                (initializer['index'] != 'True' and initializer['index'] != 'False')):
+            init_str += ' if ' + self.render_expression(initializer['index'])
         elif (isinstance(initializer['index'], bool) or
             (initializer['index'] == 'True' or
              initializer['index'] == 'False')):
             if initializer['index'] is True or initializer['index'] == 'True':
-                init_str += ' to all members'
+                init_str += ''  # "to all members" implied
             else:
-                init_str += ' to no member'
+                raise AssertionError('Initialization with \'False\' as index?')
         else:
             init_str += (' to member' +
                          self.check_plural(initializer['index']) + ' ')
@@ -654,11 +704,11 @@ class MdExpander():
                     [str(ind) for ind in initializer['index']]
                                     )
         if 'identifiers' in initializer:
-            init_str += ('. Identifier' +
-                        self.check_plural(initializer['identifiers']) +
-                        ' associated: ' +
-                        self.expand_identifiers(initializer['identifiers']))
-        return init_str + endll
+            init_str += (', where ' + self.expand_identifiers(initializer['identifiers']) + '.')
+        # pad new line if ordered in list
+        if self.keep_initializer_order:
+            return init_str + endll
+        return init_str
 
     def expand_connector(self, connector):
         """
@@ -671,9 +721,11 @@ class MdExpander():
             Dictionary representation of connector
         """
         con_str = ''
-        con_str += ('Connection from ' +
-                    self.expand_SpikeSource(connector['source']) +
-                    ' to ' + self.expand_SpikeSource(connector['target']))
+        if self.keep_initializer_order:
+            # Otherwise not necessary since this is part of the Synapses description
+            con_str += ('Connection from ' +
+                        self.expand_SpikeSource(connector['source']) +
+                        ' to ' + self.expand_SpikeSource(connector['target']))
         if 'i' in connector:
             con_str += ('. From source group ' +
                         self.check_plural(connector['i'], 'index') + ': ')
@@ -715,16 +767,18 @@ class MdExpander():
         elif 'condition' in connector:
             con_str += (' with condition ' +
                         self.render_expression(connector['condition']))
+        else:
+            con_str += '. Pairwise connections'
         if connector['probability'] != 1:
-            con_str += (', with probability ' +
+            con_str += (' with probability ' +
                         self.render_expression(connector['probability']))
         if connector['n_connections'] != 1:
-            con_str += (', with number of connections ' +
+            con_str += (' with number of connections ' +
                         self.render_expression(connector['n_connections']))
         if 'identifiers' in connector:
             con_str += ('. Constants associated: ' +
                         self.expand_identifiers(connector['identifiers']))
-        return con_str + endll
+        return con_str + '.' + endll
 
     def expand_PoissonGroup(self, poisngrp):
         """
@@ -879,26 +933,34 @@ class MdExpander():
         pathway : dict
             SynapticPathway's baseexport dictionary
         """
-        md_str = (tab + 'On ' + bold(pathway['prepost']) +
-                ' of event ' + pathway['event'] + ' statements: ' +
-                self.prepare_math_statements(pathway['code'], separate=True) +
-                ' executed'
-                )
+        if pathway['prepost'] == 'pre':
+            pathway_str = 'pre-synaptic'
+        elif pathway['prepost'] == 'post':
+            pathway_str = 'post-synaptic'
+        else:
+            pathway_str = pathway['prepost']
+        if pathway['event'] == 'spike':
+            event_str = 'spike'
+        else:
+            event_str = italics(pathway['event']) + ' event'
+        md_str = (tab + 'For each ' + bold(pathway_str) +
+                  ' ' + pathway['event'] + ': ' +
+                  self.prepare_math_statements(pathway['code'], separate=True)
+                  )
         # check delay is associated
         if 'delay' in pathway:
-            md_str += (', with synaptic delay of ' +
+            md_str += (', with a synaptic delay of ' +
                     self.render_expression(pathway['delay']))
-
-        return md_str + endll
+        md_str += '.'
+        return md_str
 
     def expand_pathways(self, pathways):
         """
         Loop through pathways and call `expand_pathway`
         """
-        path_str = ''
-        for pathway in pathways:
-            path_str += self.expand_pathway(pathway)
-        return path_str
+        path_strs = [self.expand_pathway(pathway)
+                     for pathway in pathways]
+        return endll.join(path_strs)
 
     def expand_summed_variable(self, sum_variable):
         """
@@ -937,29 +999,45 @@ class MdExpander():
             Dictionary representation of `Synapses` object
         """
         md_str = ''
-        md_str += (tab + 'From ' +
+        md_str += (tab + 'Connections ' + bold(synapse['name']) + ', connecting ' +
                    self.expand_SpikeSource(synapse['source']) +
-                   ' to ' + self.expand_SpikeSource(synapse['target']) + endll
+                   ' to ' + self.expand_SpikeSource(synapse['target'])
                   )
+        # expand connectors
+        if not self.keep_initializer_order and 'connectors' in synapse:
+            if len(synapse['connectors']) > 1:
+                raise NotImplementedError('Only a single connect statement per Synapses object supported.')
+            if len(synapse['connectors']):
+                md_str += tab + self.expand_connector(synapse['connectors'][0])
+        else:
+            md_str += '.' + endll
         # expand model equations
         if 'equations' in synapse:
-            md_str += tab + bold('Dynamics:') + endll
+            md_str += tab + bold('Model dynamics:') + endll
             md_str += self.expand_equations(synapse['equations'])
             if 'user_method' in synapse:
-                md_str += (tab + synapse['user_method'] +
-                    ' method is used for integration' + endll)
+                md_str += (tab + 'The equations are integrated with the \'' +
+                           synapse['user_method'] + '\' method.' + endll)
         # expand pathways using `expand_pathways`
         if 'pathways' in synapse:
-            md_str += tab + bold('Pathways:') + endll
             md_str += self.expand_pathways(synapse['pathways'])
+            if 'equations' not in synapse and 'identifiers' in synapse:
+                # Put the external constants right here
+                md_str += tab + 'With ' + self.expand_identifiers(synapse['identifiers']) + '.'
+            md_str += endll
         # expand summed_variables using `expand_summed_variables`
         if 'summed_variables' in synapse:
-            md_str += tab + bold('Summed variables: ') + endll
+            md_str += tab + bold('Summed variables:') + endll
             md_str += self.expand_summed_variables(synapse['summed_variables'])
         # expand identifiers if defined
-        if 'identifiers' in synapse:
-            md_str += tab + bold('Constants:') + endll
-            md_str += self.expand_identifiers(synapse['identifiers'])
+        if 'identifiers' in synapse and 'equations' in synapse:
+            md_str += tab + bold('Constants:') + ' '
+            md_str += self.expand_identifiers(synapse['identifiers']) + endll
+        if not self.keep_initializer_order and 'initializer' in synapse and len(synapse['initializer']):
+            md_str += tab + bold('Initial values:') + '\n'
+            for initializer in synapse['initializer']:
+                md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
+            md_str += '\n'
         return md_str
 
     def expand_PoissonInput(self, poinp):
