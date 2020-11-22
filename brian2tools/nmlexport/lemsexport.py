@@ -211,22 +211,35 @@ class NMLExporter(object):
         self._model_namespace["neuronname"] = component_name
         # add BASE_CELL component
         self._component_type = lems.ComponentType(component_name, extends=BASE_CELL)
-        # get identifiers attached to neurongrp
-        identifiers = {}
+        # get identifiers attached to neurongrp and create special_properties dict
+        identifiers = []
+        special_properties = {}
+
         if 'identifiers' in neurongrp:
             identifiers = neurongrp['identifiers']
+
+        for identifier in identifiers.keys():
+            special_properties.update({identifier: None})
+
         # add the identifers as properties of the component
         for param in self._determine_properties(identifiers):
             self._component_type.add(param)
         # common things for every neuron definition
         # TODO: Is this same for custom events too?
         self._component_type.add(lems.EventPort(name='spike', direction='out'))
+
         # dynamics of the network
         dynamics = lems.Dynamics()
         # get neurongrp equations
         equations = neurongrp['equations']
         # loop over the variables
-        for var in equations:
+        initializer_vars = []
+        for initializer in initializers:
+            if initializer['source'] == neurongrp['name']:
+                initializer_vars.append(initializer['variable'])
+
+        for var in equations.keys():
+
             # determine the dimension
             dimension = _determine_dimension(equations[var]['unit'])
             # add to all_params_unit
@@ -235,26 +248,35 @@ class NMLExporter(object):
             if equations[var]['type'] == 'differential equation':
                 state_var = lems.StateVariable(var, dimension=dimension, exposure=var)
                 self._component_type.add(lems.Exposure(var, dimension=dimension))
+                dynamics.add_state_variable(state_var)
             else:
+                if var in initializer_vars and 'i' in initializer['value']:
+                    self._component_type.add(lems.Property(var, dimension))
+                    special_properties[var] = initializer['value']
+                    continue
                 state_var = lems.StateVariable(var, dimension=dimension)
-            # add state variable to dynamics
-            dynamics.add_state_variable(state_var)
+                dynamics.add_state_variable(state_var)
 
         # what happens at initialization
         onstart = lems.OnStart()
         # loop over the initializers
-        for initializer in initializers:
+        for var in equations.keys():
+            if var in (NOT_REFRACTORY, LAST_SPIKE):
+                continue
             # check the initializer is connected to this neurongrp
-            if initializer['source'] == neurongrp['name']:
-                init_value = initializer['value']
-                # value would be Quantity except for conditional expression
-                # TODO: shall we handle this render_expr in Baseexport itself?
-                if type(init_value) != str:
-                    value = brian_unit_to_lems(init_value)
-                else:
-                    value = renderer.render_expr(str(init_value))
+            if var not in initializer_vars:
+                continue
+            if var in special_properties:
+                continue
+            for initializer in initializers:
+                if initializer['variable'] == var and initializer['source'] == neurongrp['name']:
+                    init_value = initializer['value']
+            if type(init_value) != str:
+                value = brian_unit_to_lems(init_value)
+            else:
+                value = renderer.render_expr(str(init_value))
             # add to onstart
-            onstart.add(lems.StateAssignment(initializer['variable'], value))
+            onstart.add(lems.StateAssignment(var, value))
         dynamics.add(onstart)
 
         # check whether refractoriness is defined
@@ -331,10 +353,10 @@ class NMLExporter(object):
             self._model.add(lems.Component("n{}".format(index_neurongrp),
                                            component_name, **paramdict))
         else:
-            self.make_multiinstantiate(initializers, component_name,
+            self.make_multiinstantiate(special_properties, component_name,
                                        paramdict, neurongrp['N'])
 
-    def make_multiinstantiate(self, initializers, name, parameters, N):
+    def make_multiinstantiate(self, special_properties, name, parameters, N):
         """
         Adds ComponentType with MultiInstantiate in order to make
         a population of neurons
@@ -363,40 +385,33 @@ class NMLExporter(object):
         param_dict = {}
         # number of neurons
         multi_ct.add(lems.Parameter(name="N", dimension="none"))
-        # TODO: not very clear with Properties
-        # filter out initializers with source name and index specific
-        for initializer in initializers:
-            if initializer['source'] == name:
-                variable = initializer['variable']
-                # only for variableview_with_expression_condition, the index would be str
-                if type(initializer['index']) != str:
-                    # add the variable to lems.Parameter
-                    multi_ct.add(lems.Parameter(name=variable+PARAM_SUBSCRIPT, dimension=self._all_params_unit[variable]))
-                    multi_ins.add(lems.Assign(property=variable, value=variable+PARAM_SUBSCRIPT))
-                    param_dict['variable'] = self._unit_lems_validator(initializer['value'])
 
-                else:
-                    if 'i' in get_identifiers(initializer['index']):
-                        self._component_type.add(lems.Property(initializer['value'], self._all_params_unit[variable]))
-                        # check if there are some units in equations
-                        equation = initializer['value']
-                        # add spaces around brackets to prevent mismatching
-                        equation = re.sub("\(", " ( ", equation)
-                        equation = re.sub("\)", " ) ", equation)
-                        for i in get_identifiers(equation):
-                            # iterator is a special case
-                            if i == "i":
-                                regexp_noletter = "[^a-zA-Z0-9]"
-                                equation = re.sub("{re}i{re}".format(re=regexp_noletter),
-                                                        " {} ".format(INDEX), equation)
-
-                            elif i in name_to_unit and i != "N":
-                                const_i = i+'const'
-                                multi_ct.add(lems.Constant(name=const_i, symbol=const_i,
-                                            dimension=self._all_params_unit[variable], value="1"+i))
-                                equation = re.sub(i, const_i, equation)
-                        multi_ins.add(lems.Assign(property=variable, value=equation))
-                
+        for sp in special_properties:
+            if special_properties[sp] is None:
+                multi_ct.add(lems.Parameter(name=sp+PARAM_SUBSCRIPT, dimension=self._all_params_unit[sp]))
+                multi_ins.add(lems.Assign(property=sp, value=sp+PARAM_SUBSCRIPT))
+                param_dict[sp] = parameters[sp]
+            else:
+                # multi_ct.add(lems.Parameter(name=sp, dimension=self._all_params_unit[sp]))
+                # check if there are some units in equations
+                equation = special_properties[sp]
+                # add spaces around brackets to prevent mismatching
+                equation = re.sub("\(", " ( ", equation)
+                equation = re.sub("\)", " ) ", equation)
+                for i in get_identifiers(equation):
+                    # iterator is a special case
+                    if i == "i":
+                        regexp_noletter = "[^a-zA-Z0-9]"
+                        equation = re.sub("{re}i{re}".format(re=regexp_noletter),
+                                                  " {} ".format(INDEX), equation)
+                    # here it's assumed that we don't use Netwton in neuron models
+                    elif i in name_to_unit and i != "N":
+                        const_i = i+'const'
+                        multi_ct.add(lems.Constant(name=const_i, symbol=const_i,
+                                     dimension=self._all_params_unit[sp], value="1"+i))
+                        equation = re.sub(i, const_i, equation)
+                multi_ins.add(lems.Assign(property=sp, value=equation))
+   
         structure.add(multi_ins)
         multi_ct.structure = structure
         self._model.add(multi_ct)
@@ -589,7 +604,6 @@ class NMLExporter(object):
         """
 
         # if no constants_file is specified, use LEMS_CONSTANTS_XML
-        # TODO: this and includes are never used
         if not constants_file:
             self._model.add(lems.Include(LEMS_CONSTANTS_XML))
         else:
@@ -599,10 +613,41 @@ class NMLExporter(object):
         for include in INCLUDES:
             includes.add(include)
 
-        netinputs = []
-
         # TODO: deal with single run for now
         single_run = run_dict[0]
+        # check initializers are defined
+        initializers = []
+        if 'initializers_connectors' in single_run:
+            for item in single_run['initializers_connectors']:
+                if item['type'] == 'initializer':
+                    initializers.append(item)
+
+        netinputs = []
+        if 'poissoninput' in single_run['components'].keys():
+            netinputs = single_run['components']['poissoninput']
+
+        if netinputs:
+            includes.add(LEMS_INPUTS)
+        for include in includes:
+            self.add_include(include)
+
+        if 'neurongroup' in single_run['components'].keys():
+            neuron_count = 0
+            for neurongroup in single_run['components']['neurongroup']:
+                self.add_neurongroup(neurongroup, neuron_count, initializers)
+                neuron_count += 1
+
+        # DOM structure of the whole model is constructed below
+        self._dommodel = self._model.export_to_dom()
+        # add input
+        input_counter = 0
+        for poisson_inp in netinputs:
+            self.add_input(poisson_inp, input_counter)
+            input_counter += 1
+        # A population should be created in `make_multiinstantiate`
+        # so we can add it to our DOM structure.
+        if self._population:
+            self._extend_dommodel(self._population)
 
         self._model_namespace['simulname'] = "sim1"
         self._simulation = NeuroMLSimulation(self._model_namespace['simulname'],
@@ -610,21 +655,10 @@ class NMLExporter(object):
 
         #loop over components field of single_run
         for (obj_name, obj_list) in single_run['components'].items():
-
-            # check initializers are defined
-            initializers = []
-            if 'initializers_connectors' in single_run:
-                for item in single_run['initializers_connectors']:
-                    if item['type'] == 'initializer':
-                        initializers.append(item)
-
-            # check whether neurongroup
-            if obj_name == 'neurongroup':
-                # loop over the list of NeuronGroup objects defined
-                neuron_count = 0
-                for neurongroup in obj_list:                    
-                    self.add_neurongroup(neurongroup, neuron_count, initializers)
-                    neuron_count += 1
+            
+            #check unsupported
+            if obj_name == 'synapses':
+                raise NotImplementedError("Synapses are not supported yet")
 
             # check whether StateMonitor
             if obj_name == 'statemonitor':
@@ -643,31 +677,8 @@ class NMLExporter(object):
                 for eventmonitor in obj_list:
                     self.add_eventmonitor(eventmonitor, filename=recordingsname)
 
-            # check poisson input
-            if obj_name == 'poissoninput':
-                netinputs = obj_list
-
-        if netinputs:
-            includes.add(LEMS_INPUTS)
-
-        for include in includes:
-            self.add_include(include)
-
-
-        # DOM structure of the whole model is constructed below
-        self._dommodel = self._model.export_to_dom()
-        # add input
-        input_counter = 0
-        for poisson_inp in netinputs:
-            self.add_input(poisson_inp, input_counter)
-            input_counter += 1
-        # A population should be created in `make_multiinstantiate`
-        # so we can add it to our DOM structure.
-        if self._population:
-            self._extend_dommodel(self._population)
         # build the simulation
         simulation = self._simulation.build()
-
         self._extend_dommodel(simulation)
         target = NeuroMLTarget(self._model_namespace['simulname'])
         target = target.build()
