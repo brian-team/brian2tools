@@ -2,50 +2,28 @@
 Module to plot Brian `~brian2.spatialneuron.morphology.Morphology` objects.
 '''
 import numpy as np
-from brian2.spatialneuron.spatialneuron import FlatMorphology
 
-from matplotlib.colors import colorConverter
+from matplotlib.colors import colorConverter, Normalize
 from matplotlib.patches import Circle, Polygon
 import matplotlib.pyplot as plt
 
+from brian2.spatialneuron.spatialneuron import FlatMorphology
 from brian2.units.stdunits import um
+from brian2.units.fundamentalunits import fail_for_dimension_mismatch
 from brian2.spatialneuron.morphology import Soma
 
 __all__ = ['plot_morphology', 'plot_dendrogram']
 
 
-def get_voltage_color(x, colormap, x_min, x_max):
-    """ This function gets the color that corresponds to the value x.
-    The value x is shifted by x_min and normalised by x_range = x_max - x_min.
-
-    Parameters
-    ----------
-    x : floats(s)
-    colormap
-    x_min : float
-        Sets range for colormap. Voltage values below x_min are assigned the
-        first colormap color
-    x_max
-        Sets range for colormap. Voltage values above x_max are assigned the
-        first colormap color
-
-    Returns
-    -------
-    color : tuple
-    """
-    return colormap((x - x_min)/(x_max - x_min))
-
-
 def _plot_morphology2D(morpho, axes, colors,
-                       voltage_values, voltage_max, voltage_min,
+                       values, value_norm,
                        voltage_colormap,
                        show_diameter=False, show_compartments=True,
                        color_counter=0):
-    if voltage_values:
+    if values:
         # Determine colors based on compartment values
-        colors = get_voltage_color(voltage_values[morpho.indices[:]] / mV,
-                                   voltage_colormap, voltage_min / mV,
-                                   voltage_max / mV)
+        normed_values = value_norm(values[morpho.indices[:]])
+        colors = voltage_colormap(normed_values)
         color = colors[0]
     else:
         color = colors[color_counter % len(colors)]
@@ -69,45 +47,25 @@ def _plot_morphology2D(morpho, axes, colors,
                                 morpho.end_diameter/um/2])
             orthogonal /= np.sqrt(np.sum(orthogonal**2, axis=1))[:, np.newaxis]
 
-            if voltage_values:
-                border_1 = coords_2d + orthogonal * radius[:, np.newaxis]
-                border_2 = coords_2d - orthogonal * radius[:, np.newaxis]
-                # Plot filled polygons per compartments
-                for compartment in range(len(coords) - 1):
-                    # Create patch around compartment
-                    x = np.asarray([border_1[compartment, 0],
-                                    border_1[compartment + 1, 0],
-                                    border_2[compartment + 1, 0],
-                                    border_2[compartment, 0]])
-                    y = np.asarray([border_1[compartment, 1],
-                                    border_1[compartment + 1, 1],
-                                    border_2[compartment + 1, 1],
-                                    border_2[compartment, 1]])
-                    xy = np.vstack((x, y)).reshape(2, 4).T
-                    # Plot polygon
-                    axes.fill(y, x, color=colors[compartment], alpha=1,
-                              linewidth=0.)
-            else:
-                points = np.vstack([coords_2d + orthogonal*radius[:, np.newaxis],
-                                    (coords_2d - orthogonal*radius[:, np.newaxis])[::-1]])
-                patch = Polygon(points, color=color)
-                axes.add_artist(patch)
-                # FIXME: Ugly workaround to make the auto-scaling work
-                axes.plot(points[:, 0], points[:, 1], color='white', alpha=0.)
+            points = np.vstack([coords_2d + orthogonal*radius[:, np.newaxis],
+                                (coords_2d - orthogonal*radius[:, np.newaxis])[::-1]])
+            patch = Polygon(points, color=color)
+            axes.add_artist(patch)
+            # FIXME: Ugly workaround to make the auto-scaling work
+            axes.plot(points[:, 0], points[:, 1], color='white', alpha=0.)
         else:
             axes.plot(coords[:, 0], coords[:, 1], color=color, lw=2)
         if show_compartments:
             # dots at the center of the compartments
             if show_diameter:
                 color = 'black'
-            axes.plot(morpho.x/um, morpho.y/um, 'o', color=color,
+            axes.plot(morpho.x/um, morpho.y/um, '.', color=color,
                       mec='none', alpha=0.75)
 
     for child in morpho.children:
         _plot_morphology2D(child, axes=axes,
-                           voltage_values=voltage_values,
-                           voltage_max=voltage_max,
-                           voltage_min=voltage_min,
+                           values=values,
+                           value_norm=value_norm,
                            voltage_colormap=voltage_colormap,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter,
@@ -194,8 +152,7 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
 
 def plot_morphology(morphology, plot_3d=None, show_compartments=False,
                     show_diameter=False, colors=('darkblue', 'darkred'),
-                    voltage_values=None, voltage_min=None, voltage_max=None,
-                    voltage_colormap=None,
+                    values=None, value_norm=(None, None), value_colormap='hot',
                     axes=None):
     '''
     Plot a given `~brian2.spatialneuron.morphology.Morphology` in 2D or 3D.
@@ -218,17 +175,20 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         A list of colors that is cycled through for each new section. Can be
         any color specification that matplotlib understands (e.g. a string such
         as ``'darkblue'`` or a tuple such as `(0, 0.7, 0)`.
-    voltage_values : ~brian2.units.fundamentalunits.Quantity, optional
+    values : ~brian2.units.fundamentalunits.Quantity, optional
         Values to fill compartment patches with a color that corresponds to
         their given value.
-    voltage_min : ~brian2.units.fundamentalunits.Quantity, optional
-        Sets range for colormap. Voltage values below v_min are assigned the
-        first colormap color
-    voltage_max : ~brian2.units.fundamentalunits.Quantity, optional
-        Sets range for colormap. Voltage values above v_max are assigned the
-        last colormap color
-    voltage_colormap : matplotlib.colors.LinearSegmentedColormap, optional
-        Desired colormap for plots
+    value_norm : tuple or callable, optional
+        Normalization function to scale the displayed values. Can be a tuple
+        of a minimum and a maximum value (where either of them can be ``None``
+        to denote taking the minimum/maximum from the data) or a function that
+        takes a value and returns the scaled value (e.g. as returned by
+        `.matplotlib.colors.PowerNorm`). For a tuple of values, will use
+        `.matplotlib.colors.Normalize```(vmin, vmax, clip=True)``` with the
+        given ``(vmin, vmax)`` values.
+    value_colormap : str or matplotlib.colors.Colormap, optional
+        Desired colormap for plots. Either the name of a standard colormap
+        or a `.matplotlib.colors.Colormap` instance. Defaults to ``'hot'``.
     axes : `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene`, optional
         A matplotlib `~matplotlib.axes.Axes` (for 2D plots) or mayavi
         `~mayavi.core.api.Scene` ( for 3D plots) instance, where the plot will
@@ -264,16 +224,29 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
     else:
         axes = _setup_axes_matplotlib(axes)
 
-        if voltage_values != None:
-            if voltage_colormap == None:
-                voltage_colormap = plt.get_cmap('hot')
-            axes.set_facecolor('k')
-            show_compartments = True
-            show_diameter = True
+        if values is not None:
+            if isinstance(value_norm, tuple):
+                if not len(value_norm) == 2:
+                    raise TypeError('Need a (vmin, vmax) tuple for the value '
+                                    'normalization, but got a tuple of length '
+                                    f'{len(value_norm)}.')
+                vmin, vmax = value_norm
+                if vmin is not None:
+                    err_msg = ('The minimum value in \'value_norm\' needs to '
+                               'have the same units as \'values\'.')
+                    fail_for_dimension_mismatch(vmin, values,
+                                                error_message=err_msg)
+                if vmax is not None:
+                    err_msg = ('The maximum value in \'value_norm\' needs to '
+                               'have the same units as \'values\'.')
+                    fail_for_dimension_mismatch(vmax, values,
+                                                error_message=err_msg)
+                value_norm = Normalize(vmin=vmin, vmax=vmax, clip=True)
+                value_norm.autoscale_None(values)
+            value_colormap = plt.get_cmap(value_colormap)
 
         _plot_morphology2D(morphology, axes, colors,
-                           voltage_values, voltage_max, voltage_min,
-                           voltage_colormap,
+                           values, value_norm, value_colormap,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter)
         axes.set_xlabel('x (um)')
