@@ -452,8 +452,6 @@ class NMLExporter(object):
             indices = np.arange(statemonitor['n_indices'])
         else:
             indices = np.asarray(indices).copy()
-        # make it as one-indexed
-        indices += 1
         # get the variables monitored
         variables = statemonitor['variables']
         # timestep of monitoring
@@ -497,8 +495,6 @@ class NMLExporter(object):
             indices = np.arange(eventmonitor['source_size'])
         else:
             indices = np.asarray(indices).copy()
-        # make one-indexed
-        indices += 1
         # get variables #NOTE: no use variables?
         variables = eventmonitor['variables']
         # add event output file
