@@ -1,15 +1,21 @@
 '''
 Module to plot Brian `~brian2.spatialneuron.morphology.Morphology` objects.
 '''
+from typing import Mapping
+
 import numpy as np
 
 from matplotlib.colors import colorConverter, Normalize
+from matplotlib.cm import ScalarMappable
 from matplotlib.patches import Circle, Polygon
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from brian2 import Unit, have_same_dimensions
 from brian2.spatialneuron.spatialneuron import FlatMorphology
 from brian2.units.stdunits import um
-from brian2.units.fundamentalunits import fail_for_dimension_mismatch
+from brian2.units.fundamentalunits import fail_for_dimension_mismatch, DIMENSIONLESS
 from brian2.spatialneuron.morphology import Soma
 
 __all__ = ['plot_morphology', 'plot_dendrogram']
@@ -20,7 +26,7 @@ def _plot_morphology2D(morpho, axes, colors,
                        voltage_colormap,
                        show_diameter=False, show_compartments=True,
                        color_counter=0):
-    if values:
+    if values is not None:
         # Determine colors based on compartment values
         normed_values = value_norm(values[morpho.indices[:]])
         colors = voltage_colormap(normed_values)
@@ -153,7 +159,7 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
 def plot_morphology(morphology, plot_3d=None, show_compartments=False,
                     show_diameter=False, colors=('darkblue', 'darkred'),
                     values=None, value_norm=(None, None), value_colormap='hot',
-                    axes=None):
+                    value_colorbar=True, value_unit=None, axes=None):
     '''
     Plot a given `~brian2.spatialneuron.morphology.Morphology` in 2D or 3D.
 
@@ -189,6 +195,13 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
     value_colormap : str or matplotlib.colors.Colormap, optional
         Desired colormap for plots. Either the name of a standard colormap
         or a `.matplotlib.colors.Colormap` instance. Defaults to ``'hot'``.
+    value_colorbar : bool or dict, optional
+        Whether to add a colorbar for the ``values``. Defaults to ``True``,
+        but will be ignored if no ``values`` are provided.
+    value_unit : `Unit`, optional
+        A `Unit` to rescale the values for display in the colorbar. Does not
+        have any visible effect if no colorbar is used. If not specified, will
+        try to determine the "best unit" to use itself.
     axes : `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene`, optional
         A matplotlib `~matplotlib.axes.Axes` (for 2D plots) or mayavi
         `~mayavi.core.api.Scene` ( for 3D plots) instance, where the plot will
@@ -225,6 +238,24 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         axes = _setup_axes_matplotlib(axes)
 
         if values is not None:
+            if hasattr(values, 'name'):
+                value_varname = values.name
+            else:
+                value_varname = 'values'
+            if value_unit is not None:
+                if not isinstance(value_unit, Unit):
+                    raise TypeError(f'\'value_unit\' has to be a unit but is'
+                                    f'\'{type(value_unit)}\'.')
+                fail_for_dimension_mismatch(value_unit, values,
+                                            'The \'value_unit\' arguments needs '
+                                            'to have the same dimensions as '
+                                            'the \'values\'.')
+            else:
+                if have_same_dimensions(values, DIMENSIONLESS):
+                    value_unit = 1.
+                else:
+                    value_unit = values[:].get_best_unit()
+            values = values/value_unit
             if isinstance(value_norm, tuple):
                 if not len(value_norm) == 2:
                     raise TypeError('Need a (vmin, vmax) tuple for the value '
@@ -252,7 +283,21 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         axes.set_xlabel('x (um)')
         axes.set_ylabel('y (um)')
         axes.set_aspect('equal')
-
+        if value_colorbar:
+            divider = make_axes_locatable(axes)
+            cax = divider.append_axes("right", size="5%", pad=0.1)
+            mappable = ScalarMappable(norm=value_norm, cmap=value_colormap)
+            mappable.set_array([])
+            fig = axes.get_figure()
+            if not isinstance(value_colorbar, Mapping):
+                value_colorbar = {}
+                if not have_same_dimensions(value_unit, DIMENSIONLESS):
+                    unit_str = f' ({value_unit!s})'
+                else:
+                    unit_str = ''
+                if value_varname:
+                    value_colorbar['label'] = f'{value_varname}{unit_str}'
+            fig.colorbar(mappable, cax=cax, **value_colorbar)
     return axes
 
 
