@@ -5,11 +5,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import pytest
 
 # We avoid "from brian2 import *", as this would also import Brian's test
 # function which will then be collected by py.test
 from brian2 import (NeuronGroup, SpikeMonitor, PopulationRateMonitor,
-                    StateMonitor, Synapses, run, set_device)
+                    StateMonitor, Synapses, run, set_device, SpatialNeuron, DimensionMismatchError, meter)
 from brian2 import Cylinder, Soma, Section
 from brian2 import ms, mV, um
 
@@ -123,6 +124,64 @@ def test_plot_morphology():
     ax = plot_morphology(morpho)
     assert isinstance(ax, matplotlib.axes.Axes)
     plt.close()
+    ax = plot_morphology(morpho, show_diameter=True)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+    ax = plot_morphology(morpho, show_compartments=True)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+    ax = plot_morphology(morpho, show_diameter=True,
+                         show_compartments=True)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+def test_plot_morphology_values():
+    set_device('runtime')
+    # Only testing 2D plotting for now
+    morpho = Soma(diameter=30*um)
+    morpho.axon = Cylinder(diameter=10*um, n=10, length=100*um)
+    morpho.dend = Section(diameter=np.linspace(10, 1, 11)*um, n=10,
+                          length=np.ones(10)*5*um)
+    morpho = morpho.generate_coordinates()
+
+    neuron = SpatialNeuron(morpho, 'Im = 0*amp/meter**2 : amp/meter**2')
+
+    # Just checking whether the plotting does not fail with an error and that
+    # it retuns an Axis object as promised
+    ax = plot_morphology(morpho, values=neuron.distance, plot_3d=False)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+    ax = plot_morphology(morpho, values=neuron.distance,
+                         show_diameter=True, plot_3d=False)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+    ax = plot_morphology(morpho, values=neuron.distance,
+                         show_compartments=True, plot_3d=False)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+    ax = plot_morphology(morpho, values=neuron.distance,
+                         show_diameter=True,
+                         show_compartments=True, plot_3d=False)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+    # Check a few wrong usages
+    with pytest.raises(DimensionMismatchError):
+        plot_morphology(morpho, values=neuron.distance, value_unit=mV, plot_3d=False)
+    with pytest.raises(DimensionMismatchError):
+        plot_morphology(morpho, values=neuron.distance, value_norm=(-65*mV, None),
+                        plot_3d=False)
+    with pytest.raises(DimensionMismatchError):
+        plot_morphology(morpho, values=neuron.distance, value_norm=(None, -60*mV),
+                        plot_3d=False)
+    with pytest.raises(TypeError):
+        plot_morphology(morpho, values=neuron.distance, value_norm=(0*meter,
+                                                             1*meter,
+                                                             2*meter),
+                        plot_3d=False)
 
 
 if __name__ == '__main__':

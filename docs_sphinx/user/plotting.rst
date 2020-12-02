@@ -259,6 +259,36 @@ use the default alternation between blue and red for each section::
 
 .. image:: ../images/plot_morphology_3d_diameters.png
 
+The `plot_morphology` function also makes it possible to use colors according to some property that varies between the
+compartments of a `SpatialNeuron`. This could be the membrane potential, a current or conductance, a channel density
+or morphological parameters like the distance to the soma. By default, it will add a colorbar and figure out a useful
+unit scale (e.g. mV for membrane potential values, or µm for distances)::
+
+    # neuron = SpatialNeuron(...)
+    plot_morphology(neuron.morphology, values=neuron.distance,
+                    plot_3d=False)
+
+.. image:: ../images/plot_morphology_values_2d.svg
+
+This works for 3D plots as well::
+
+    plot_morphology(neuron.morphology, values=neuron.distance,
+                    plot_3d=True)
+
+.. image:: ../images/plot_morphology_values_3d.png
+
+Both types of plots can be further customized, e.g. to change the details of the colorbar, the range, and the colormap::
+
+    plot_morphology(neuron.morphology, values=neuron.distance,
+                    value_norm=(50*um, 200*um),
+                    value_colormap='viridis', value_unit=mm,
+                    value_colorbar={'label': 'distance from soma in mm',
+                                    'extend': 'both'},
+                    plot_3d=False)
+
+.. image:: ../images/plot_morphology_values_2d_custom.svg
+
+
 .. _`Mayavi package`: http://docs.enthought.com/mayavi/mayavi/
 
 .. [#] Available at http://neuromorpho.org/neuron_info.jsp?neuron_name=51-2a
