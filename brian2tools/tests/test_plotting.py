@@ -124,7 +124,16 @@ def test_plot_morphology():
     ax = plot_morphology(morpho)
     assert isinstance(ax, matplotlib.axes.Axes)
     plt.close()
-
+    ax = plot_morphology(morpho, show_diameter=True)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+    ax = plot_morphology(morpho, show_compartments=True)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+    ax = plot_morphology(morpho, show_diameter=True,
+                         show_compartments=True)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
 
 def test_plot_morphology_values():
     set_device('runtime')
@@ -140,6 +149,22 @@ def test_plot_morphology_values():
     # Just checking whether the plotting does not fail with an error and that
     # it retuns an Axis object as promised
     ax = plot_morphology(morpho, values=neuron.distance, plot_3d=False)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+    ax = plot_morphology(morpho, values=neuron.distance,
+                         show_diameter=True, plot_3d=False)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+    ax = plot_morphology(morpho, values=neuron.distance,
+                         show_compartments=True, plot_3d=False)
+    assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+    ax = plot_morphology(morpho, values=neuron.distance,
+                         show_diameter=True,
+                         show_compartments=True, plot_3d=False)
     assert isinstance(ax, matplotlib.axes.Axes)
     plt.close()
 
