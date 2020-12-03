@@ -218,6 +218,10 @@ class NMLExporter(object):
         if 'identifiers' in neurongrp:
             identifiers = neurongrp['identifiers']
 
+        for initializer in initializers:
+            if 'identifiers' in initializer:
+                identifiers.update(initializer['identifiers'])
+
         for identifier in identifiers.keys():
             special_properties.update({identifier: None})
 
