@@ -546,7 +546,7 @@ class NMLExporter(object):
         """
         if isinstance(obj,PoissonInput):
             name = '{}{}'.format(self._model_namespace['poiss_generator'], str(counter))
-            nml_poisson = NeuroMLPoissonGenerator(name, int(obj['rate']))
+            nml_poisson = NeuroMLPoissonGenerator(name, float(obj['rate']))
             nml_poisson = nml_poisson.build()
             self._extend_dommodel(nml_poisson)
         else:

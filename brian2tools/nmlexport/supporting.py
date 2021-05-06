@@ -435,17 +435,13 @@ class NeuroMLPoissonGenerator(object):
         ----------
         poissid : str
             generator id
-        average_rate : str or int
+        average_rate : float
             average rate of firing in Hz
         '''
         self.doc = minidom.Document()
         self.generator = self.doc.createElement('spikeGeneratorPoisson')
         self.generator.setAttribute("id", poissid)
-        if type(average_rate) == int:
-            average_rate = str(average_rate) + ' Hz'
-        if type(average_rate) == str:
-            if not average_rate.split(' ')[-1] == 'Hz':
-                average_rate += ' Hz'
+        average_rate = str(average_rate) + ' Hz'
         self.generator.setAttribute("averageRate", average_rate)
 
     def build(self):
