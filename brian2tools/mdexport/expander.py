@@ -185,11 +185,13 @@ class MdExpander():
                     lhs, rhs = re.split('-=|\+=|=', statement)
 
                     if '+=' in statement:
-                        rend_str += (self.render_expression(lhs) +
-                                     '+=' + self.render_expression(rhs))
+                        rend_str += ('Increase ' +
+                                      self.render_expression(lhs) + ' by ' +
+                                      self.render_expression(rhs))
                     elif '-=' in statement:
-                        rend_str += (self.render_expression(lhs) +
-                                     '-=' + self.render_expression(rhs))
+                        rend_str += ('Decrease ' +
+                                      self.render_expression(lhs) + ' by ' +
+                                      self.render_expression(rhs))
                     else:
                         rend_str += (self.render_expression(lhs) +
                                      equals +  self.render_expression(rhs))
@@ -951,7 +953,6 @@ class MdExpander():
         if 'delay' in pathway:
             md_str += (', with a synaptic delay of ' +
                     self.render_expression(pathway['delay']))
-        md_str += '.'
         return md_str
 
     def expand_pathways(self, pathways):
@@ -1023,7 +1024,7 @@ class MdExpander():
             md_str += self.expand_pathways(synapse['pathways'])
             if 'equations' not in synapse and 'identifiers' in synapse:
                 # Put the external constants right here
-                md_str += tab + 'With ' + self.expand_identifiers(synapse['identifiers']) + '.'
+                md_str += tab + ', where ' + self.expand_identifiers(synapse['identifiers']) + '.'
             md_str += endll
         # expand summed_variables using `expand_summed_variables`
         if 'summed_variables' in synapse:

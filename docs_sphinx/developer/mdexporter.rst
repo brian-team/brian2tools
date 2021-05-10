@@ -361,49 +361,50 @@ when running on the :ref:`working_example_label` would look like,
 
 .. raw:: html
 
-    <h1 id="networkdetails">Network details</h1>
-
+    <div style="background-color:bisque;">
+    <h1 id="network-details">Network details</h1>
     <p><strong>Neuron population :</strong></p>
-
     <ul>
     <li><p>Group <strong>neurongroup</strong>, consisting of <strong>1</strong> neurons.</p>
-
-    <p><strong>Model dynamics:</strong></p>
-
-    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} v">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{v}{10 \cdot ms}"></p>
-
-    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} vt">=<img src="https://render.githubusercontent.com/render/math?math=\frac{10 \cdot mV - vt}{15 \cdot ms}"></p>
-
-    <p>The equations are integrated with the 'exact' method.</p>
-
-    <p><strong>Events:</strong></p>
-
-    <p>If <img src="https://render.githubusercontent.com/render/math?math=v \gt vt">, a <strong>spike</strong> event is triggered and <img src="https://render.githubusercontent.com/render/math?math=v">&#8592;<img src="https://render.githubusercontent.com/render/math?math=0">, <img src="https://render.githubusercontent.com/render/math?math=vt">+=<img src="https://render.githubusercontent.com/render/math?math=3 \cdot mV">.</p></li>
+    <p>  <strong>Model dynamics:</strong></p>
+    <p>  <img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} v">=<img src="https://render.githubusercontent.com/render/math?math=\frac{El + ge \cdot \left(Ee - v\right) - v}{taum}"></p>
+    <p>  <img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} ge">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{ge}{taue}"></p>
+    <p>  The equations are integrated with the &#39;euler&#39; method.</p>
+    <p>  <strong>Events:</strong></p>
+    <p>  If <img src="https://render.githubusercontent.com/render/math?math=v \gt vt">, a <strong>spike</strong> event is triggered and <img src="https://render.githubusercontent.com/render/math?math=v">&#8592;<img src="https://render.githubusercontent.com/render/math?math=vr">.</p>
+    
+    <p>  <strong>Constants:</strong>
+    <img src="https://render.githubusercontent.com/render/math?math=El">= <img src="https://render.githubusercontent.com/render/math?math=-74.0\,\mathrm{m}\,\mathrm{V}">, <img src="https://render.githubusercontent.com/render/math?math=Ee">= <img src="https://render.githubusercontent.com/render/math?math=0.0\,\mathrm{V}">, <img src="https://render.githubusercontent.com/render/math?math=taue">= <img src="https://render.githubusercontent.com/render/math?math=5.0\,\mathrm{m}\,\mathrm{s}">, <img src="https://render.githubusercontent.com/render/math?math=taum">= <img src="https://render.githubusercontent.com/render/math?math=10.0\,\mathrm{m}\,\mathrm{s}">, <img src="https://render.githubusercontent.com/render/math?math=vt">= <img src="https://render.githubusercontent.com/render/math?math=-54.0\,\mathrm{m}\,\mathrm{V}">, and <img src="https://render.githubusercontent.com/render/math?math=vr">= <img src="https://render.githubusercontent.com/render/math?math=-60.0\,\mathrm{m}\,\mathrm{V}"></p>
+    </li>
     </ul>
-
     <p><strong>Poisson spike source :</strong></p>
-
     <ul>
-    <li>Name <strong>poissongroup</strong>, with                 population size <strong>1</strong> and rate as <img src="https://render.githubusercontent.com/render/math?math=0.5\,\mathrm{k}\,\mathrm{Hz}">.</li>
+    <li>Name <strong>poissongroup</strong>, with population size <strong>1000</strong> and rate as <img src="https://render.githubusercontent.com/render/math?math=15.0\,\mathrm{Hz}">.</li>
     </ul>
-
     <p><strong>Synapse :</strong></p>
-
     <ul>
     <li><p>Connections <strong>synapses</strong>, connecting <em>poissongroup</em> to <em>neurongroup</em>.</p>
-
-    <p>For each <strong>pre-synaptic</strong> spike: <img src="https://render.githubusercontent.com/render/math?math=v">+=<img src="https://render.githubusercontent.com/render/math?math=3 \cdot mV">.</p></li>
+    <p><strong>Model dynamics:</strong></p>
+    <p>Parameter <img src="https://render.githubusercontent.com/render/math?math=w"> (dimensionless)</p>
+    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} Apost">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{Apost}{taupost}"></p>
+    <p><img src="https://render.githubusercontent.com/render/math?math=\frac{d}{d t} Apre">=<img src="https://render.githubusercontent.com/render/math?math=- \frac{Apre}{taupre}"></p>
+    <p>For each <strong>pre-synaptic</strong> spike: Increase <img src="https://render.githubusercontent.com/render/math?math=ge"> by <img src="https://render.githubusercontent.com/render/math?math=w">, Increase <img src="https://render.githubusercontent.com/render/math?math=Apre"> by <img src="https://render.githubusercontent.com/render/math?math=dApre">, <img src="https://render.githubusercontent.com/render/math?math=w">&#8592;<img src="https://render.githubusercontent.com/render/math?math=\operatorname{clip}{\left(Apost + w,0,gmax \right)}"></p>
+    <p>For each <strong>post-synaptic</strong> spike: Increase <img src="https://render.githubusercontent.com/render/math?math=Apost"> by <img src="https://render.githubusercontent.com/render/math?math=dApost">, <img src="https://render.githubusercontent.com/render/math?math=w">&#8592;<img src="https://render.githubusercontent.com/render/math?math=\operatorname{clip}{\left(Apre + w,0,gmax \right)}"></p>
+    <p><strong>Constants:</strong>
+    <img src="https://render.githubusercontent.com/render/math?math=dApre">= <img src="https://render.githubusercontent.com/render/math?math=0.0001">, <img src="https://render.githubusercontent.com/render/math?math=dApost">= <img src="https://render.githubusercontent.com/render/math?math=-0.000105">, <img src="https://render.githubusercontent.com/render/math?math=taupre">= <img src="https://render.githubusercontent.com/render/math?math=20.0\,\mathrm{m}\,\mathrm{s}">, <img src="https://render.githubusercontent.com/render/math?math=taupost">= <img src="https://render.githubusercontent.com/render/math?math=20.0\,\mathrm{m}\,\mathrm{s}">, and <img src="https://render.githubusercontent.com/render/math?math=gmax">= <img src="https://render.githubusercontent.com/render/math?math=0.01"></p>
+    </li>
     </ul>
-
     <p><strong>Initializing at start</strong> and <strong>Synaptic connection :</strong></p>
-
     <ul>
-    <li>Variable <img src="https://render.githubusercontent.com/render/math?math=vt"> of <em>neurongroup</em> initialized with <img src="https://render.githubusercontent.com/render/math?math=10.0\,\mathrm{m}\,\mathrm{V}">- Variable <img src="https://render.githubusercontent.com/render/math?math=rates"> of <em>poissongroup</em> initialized with <img src="https://render.githubusercontent.com/render/math?math=0.5\,\mathrm{k}\,\mathrm{Hz}"></li>
-
-    <li>Connection from <em>poissongroup</em> to <em>neurongroup</em>.Pairwise connections.</li>
+    <li><p>Variable <img src="https://render.githubusercontent.com/render/math?math=rates"> of <em>poissongroup</em> initialized with <img src="https://render.githubusercontent.com/render/math?math=15.0\,\mathrm{Hz}"></p>
+    </li>
+    <li><p>Connection from <em>poissongroup</em> to <em>neurongroup</em>. Pairwise connections.</p>
+    </li>
+    <li><p>Variable <img src="https://render.githubusercontent.com/render/math?math=w"> of <em>synapses</em> initialized with <img src="https://render.githubusercontent.com/render/math?math=gmax \cdot \mathcal{U}{\left(0, 1\right)}">, where <img src="https://render.githubusercontent.com/render/math?math=gmax">= <img src="https://render.githubusercontent.com/render/math?math=0.01">.</p>
+    </li>
     </ul>
-
-    <p>The simulation was run for <strong>2. s</strong></p>
+    <p>The simulation was run for <strong>100. s</strong></p>
+    </div>
 
 
 Similarly, ``author`` and ``add_meta`` options can also be customized during object instantiation, to
