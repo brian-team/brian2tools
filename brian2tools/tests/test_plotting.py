@@ -22,7 +22,7 @@ from brian2tools import (brian_plot, plot_synapses, plot_raster, plot_state,
 def test_plot_monitors():
     set_device('runtime')
     group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt', threshold='False',
-                        method='linear')
+                        reset='', method='linear')
     group.v = np.linspace(0, 1, 10)*mV
     spike_mon = SpikeMonitor(group)
     rate_mon = PopulationRateMonitor(group)
@@ -52,7 +52,8 @@ def test_plot_monitors():
 
 def test_plot_synapses():
     set_device('runtime')
-    group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt', threshold='False')
+    group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt', threshold='False',
+                        reset='')
     group.v = np.linspace(0, 1, 10)*mV
     synapses = Synapses(group, group, 'w : volt', on_pre='v += w')
     synapses.connect('i != j')

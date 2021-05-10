@@ -168,7 +168,7 @@ def test_spike_neurongroup():
 
     start_scope()
     grp2 = NeuronGroup(size, '''dv/dt = (100 * mV - v) / tau_n : volt''',
-                             threshold='v > 800 * mV',
+                             threshold='v > 800 * mV', reset='v = 0*mV',
                              method='euler')
     tau_n = 10 * ms
 
@@ -555,7 +555,7 @@ def test_Synapses():
     # check simple Synapses
     eqn = 'dv/dt = (1 - v)/tau :1'
     tau = 1 * ms
-    P = NeuronGroup(1, eqn, method='euler', threshold='v>0.7')
+    P = NeuronGroup(1, eqn, method='euler', threshold='v>0.7', reset='v=0')
     Q = NeuronGroup(1, eqn, method='euler')
     w = 1
     S = Synapses(P, Q, on_pre='v += w')
@@ -586,8 +586,8 @@ def test_Synapses():
     summ_v :1
     '''
     tau = 1 * ms
-    P = NeuronGroup(1, eqn, method='euler', threshold='v>0.7')
-    Q = NeuronGroup(1, eqn, method='euler', threshold='v>0.9')
+    P = NeuronGroup(1, eqn, method='euler', threshold='v>0.7', reset='v=0')
+    Q = NeuronGroup(1, eqn, method='euler', threshold='v>0.9', reset='v=0')
     eqn = '''
     dvar/dt = -var/tau :1 (event-driven)
     dvarr/dt = -varr/tau :1 (clock-driven)
@@ -776,11 +776,9 @@ def test_synapse_init():
     eqn = 'dv/dt = -v/tau :1'
     tau = 1 * ms
     w = 1
-    P = NeuronGroup(5, eqn, method='euler',
-                    threshold='v>0.8')
-    Q = NeuronGroup(10, eqn, method='euler',
-                    threshold='v>0.9')
-    S = Synapses(P, Q, 'g :1', on_pre='v += w')
+    P = NeuronGroup(5, eqn, method='euler')
+    Q = NeuronGroup(10, eqn, method='euler')
+    S = Synapses(P, Q, 'g :1')
     S.connect()
     # allowable
     S.g['i>10'] = 10
@@ -806,13 +804,13 @@ def test_synapse_connect_cond():
     set_device('exporter')
     eqn = 'dv/dt = (1 - v)/tau :1'
     tau = 1 * ms
-    P = NeuronGroup(5, eqn, method='euler', threshold='v>0.8')
-    Q = NeuronGroup(10, eqn, method='euler', threshold='v>0.9')
+    P = NeuronGroup(5, eqn, method='euler')
+    Q = NeuronGroup(10, eqn, method='euler')
     w = 1
     tata = 2
     bye = 2
     my_prob = -1
-    S = Synapses(P, Q, on_pre='v += w')
+    S = Synapses(P, Q)
     S.connect('tata > bye', p='my_prob', n=5)
     run(1*ms)
     connect = device.runs[0]['initializers_connectors'][0]
@@ -833,7 +831,7 @@ def test_synapse_connect_ij():
     tau = 10 * ms
     eqn = 'dv/dt = (1 - v)/tau :1'
     my_prob = -1
-    Source = NeuronGroup(10, eqn, method='exact', threshold='v>0.9')
+    Source = NeuronGroup(10, eqn, method='exact')
     S1 = Synapses(Source, Source)
     nett = Network(Source, S1)
     S1.connect(i=[0, 1], j=[1, 2], p='my_prob')
@@ -853,7 +851,7 @@ def test_synapse_connect_generator():
     set_device('exporter', build_on_run=False)
     tau = 1 * ms
     eqn = 'dv/dt = (1 - v)/tau :1'
-    Source = NeuronGroup(10, eqn, method='exact', threshold='v>0.9')
+    Source = NeuronGroup(10, eqn, method='exact')
     S1 = Synapses(Source, Source)
     nett2 = Network(Source, S1)
     S1.connect(j='k for k in range(0, i+1)')
