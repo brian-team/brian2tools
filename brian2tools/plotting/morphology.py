@@ -1,22 +1,37 @@
 '''
 Module to plot Brian `~brian2.spatialneuron.morphology.Morphology` objects.
 '''
-import numpy as np
-from brian2.spatialneuron.spatialneuron import FlatMorphology
+from typing import Mapping
 
-from matplotlib.colors import colorConverter
+import numpy as np
+
+from matplotlib.colors import colorConverter, Normalize
+from matplotlib.cm import ScalarMappable
 from matplotlib.patches import Circle, Polygon
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from brian2 import Unit, have_same_dimensions
+from brian2.spatialneuron.spatialneuron import FlatMorphology
 from brian2.units.stdunits import um
+from brian2.units.fundamentalunits import fail_for_dimension_mismatch, DIMENSIONLESS
 from brian2.spatialneuron.morphology import Soma
 
 __all__ = ['plot_morphology', 'plot_dendrogram']
 
 
-def _plot_morphology2D(morpho, axes, colors, show_diameter=False,
-                       show_compartments=True, color_counter=0):
-    color = colors[color_counter % len(colors)]
+def _plot_morphology2D(morpho, axes, colors,
+                       values, value_norm,
+                       voltage_colormap,
+                       show_diameter=False, show_compartments=True,
+                       color_counter=0):
+    if values is not None:
+        # Determine colors based on compartment values
+        normed_values = value_norm(values[morpho.indices[:]])
+        colors = voltage_colormap(normed_values)
+        color = colors[0]
+    else:
+        color = colors[color_counter % len(colors)]
 
     if isinstance(morpho, Soma):
         x, y = morpho.x/um, morpho.y/um
@@ -36,7 +51,8 @@ def _plot_morphology2D(morpho, axes, colors, show_diameter=False,
             radius = np.hstack([morpho.start_diameter[0]/um/2,
                                 morpho.end_diameter/um/2])
             orthogonal /= np.sqrt(np.sum(orthogonal**2, axis=1))[:, np.newaxis]
-            points = np.vstack([coords_2d+ orthogonal*radius[:, np.newaxis],
+
+            points = np.vstack([coords_2d + orthogonal*radius[:, np.newaxis],
                                 (coords_2d - orthogonal*radius[:, np.newaxis])[::-1]])
             patch = Polygon(points, color=color)
             axes.add_artist(patch)
@@ -48,20 +64,35 @@ def _plot_morphology2D(morpho, axes, colors, show_diameter=False,
             # dots at the center of the compartments
             if show_diameter:
                 color = 'black'
-            axes.plot(morpho.x/um, morpho.y/um, 'o', color=color,
+            axes.plot(morpho.x/um, morpho.y/um, '.', color=color,
                       mec='none', alpha=0.75)
 
     for child in morpho.children:
         _plot_morphology2D(child, axes=axes,
+                           values=values,
+                           value_norm=value_norm,
+                           voltage_colormap=voltage_colormap,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter,
                            colors=colors, color_counter=color_counter+1)
 
 
-def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
+def _plot_morphology3D(morpho, figure, colors, values, value_norm,
+                       value_colormap,
+                       show_diameters=True,
                        show_compartments=False):
     import mayavi.mlab as mayavi
-    colors = np.vstack(colorConverter.to_rgba(c) for c in colors)
+    if values is not None:
+        # calculate color for the soma
+        vmin, vmax = value_norm
+        if vmin is None:
+            vmin = min(values)
+        if vmax is None:
+            vmax = max(values)
+        normed_value = (values[0] - vmin)/(vmax - vmin)
+        colors = np.vstack(value_colormap([normed_value]))
+    else:
+        colors = np.vstack([colorConverter.to_rgba(c) for c in colors])
     flat_morpho = FlatMorphology(morpho)
     if isinstance(morpho, Soma):
         start_idx = 1
@@ -97,10 +128,14 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
     points[::2, :] = start_points
     points[1::2, :] = end_points
     # Create the points at start and end of the compartments
+    if values is not None:
+        scatter_values = values[start_idx:].repeat(2)
+    else:
+        scatter_values = flat_morpho.depth[start_idx:].repeat(2)
     src = mayavi.pipeline.scalar_scatter(points[:, 0],
                                          points[:, 1],
                                          points[:, 2],
-                                         flat_morpho.depth[start_idx:].repeat(2),
+                                         scatter_values,
                                          scale_factor=1)
     # Create the lines between compartments
     connections = []
@@ -127,18 +162,27 @@ def _plot_morphology3D(morpho, figure, colors, show_diameters=True,
     else:
         tubes = mayavi.pipeline.tube(lines, tube_radius=1)
     max_depth = max(flat_morpho.depth)
-    surf = mayavi.pipeline.surface(tubes, colormap='prism', line_width=1,
-                                   opacity=0.5,
-                                   vmin=0, vmax=max(flat_morpho.depth))
-    surf.module_manager.scalar_lut_manager.lut.number_of_colors = max_depth + start_idx
-    cmap = np.int_(np.round(255*colors[np.arange(max_depth + start_idx)%len(colors), :]))
+    if values is not None:
+        surf = mayavi.pipeline.surface(tubes, colormap='prism', line_width=1,
+                                       opacity=0.5, vmin=vmin, vmax=vmax)
+        surf.module_manager.scalar_lut_manager.lut.number_of_colors = 256
+        cmap = np.array(np.vstack(value_colormap(np.linspace(0., 1., num=256, endpoint=True)))*255.,
+                        dtype=np.uint8)
+    else:
+        surf = mayavi.pipeline.surface(tubes, colormap='prism', line_width=1,
+                                       opacity=0.5,
+                                       vmin=0, vmax=max(flat_morpho.depth))
+        surf.module_manager.scalar_lut_manager.lut.number_of_colors = max_depth + start_idx
+        cmap = np.int_(np.round(255*colors[np.arange(max_depth + start_idx)%len(colors), :]))
     surf.module_manager.scalar_lut_manager.lut.table = cmap
     src.update()
+    return surf
 
 
 def plot_morphology(morphology, plot_3d=None, show_compartments=False,
                     show_diameter=False, colors=('darkblue', 'darkred'),
-                    axes=None):
+                    values=None, value_norm=(None, None), value_colormap='hot',
+                    value_colorbar=True, value_unit=None, axes=None):
     '''
     Plot a given `~brian2.spatialneuron.morphology.Morphology` in 2D or 3D.
 
@@ -160,6 +204,32 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         A list of colors that is cycled through for each new section. Can be
         any color specification that matplotlib understands (e.g. a string such
         as ``'darkblue'`` or a tuple such as `(0, 0.7, 0)`.
+    values : ~brian2.units.fundamentalunits.Quantity, optional
+        Values to fill compartment patches with a color that corresponds to
+        their given value.
+    value_norm : tuple or callable, optional
+        Normalization function to scale the displayed values. Can be a tuple
+        of a minimum and a maximum value (where either of them can be ``None``
+        to denote taking the minimum/maximum from the data) or a function that
+        takes a value and returns the scaled value (e.g. as returned by
+        `.matplotlib.colors.PowerNorm`). For a tuple of values, will use
+        `.matplotlib.colors.Normalize```(vmin, vmax, clip=True)``` with the
+        given ``(vmin, vmax)`` values.
+    value_colormap : str or matplotlib.colors.Colormap, optional
+        Desired colormap for plots. Either the name of a standard colormap
+        or a `.matplotlib.colors.Colormap` instance. Defaults to ``'hot'``.
+        Note that this uses ``matplotlib`` color maps even for 3D plots with
+        Mayavi.
+    value_colorbar : bool or dict, optional
+        Whether to add a colorbar for the ``values``. Defaults to ``True``,
+        but will be ignored if no ``values`` are provided. Can also be a
+        dictionary with the keyword arguments for matplotlib's
+        `~.matplotlib.figure.Figure.colorbar` method (2D plot), or for
+        Mayavi's `~.mayavi.mlab.scalarbar` method (3D plot).
+    value_unit : `Unit`, optional
+        A `Unit` to rescale the values for display in the colorbar. Does not
+        have any visible effect if no colorbar is used. If not specified, will
+        try to determine the "best unit" to itself.
     axes : `~matplotlib.axes.Axes` or `~mayavi.core.api.Scene`, optional
         A matplotlib `~matplotlib.axes.Axes` (for 2D plots) or mayavi
         `~mayavi.core.api.Scene` ( for 3D plots) instance, where the plot will
@@ -175,10 +245,59 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
     # Avoid circular import issues
     from brian2tools.plotting.base import (_setup_axes_matplotlib,
                                            _setup_axes_mayavi)
+
     if plot_3d is None:
         # Decide whether to use 2d or 3d plotting based on the coordinates
         flat_morphology = FlatMorphology(morphology)
         plot_3d = any(np.abs(flat_morphology.z) > 1e-12)
+
+    if values is not None:
+        if hasattr(values, 'name'):
+            value_varname = values.name
+        else:
+            value_varname = 'values'
+        if value_unit is not None:
+            if not isinstance(value_unit, Unit):
+                raise TypeError(f'\'value_unit\' has to be a unit but is'
+                                f'\'{type(value_unit)}\'.')
+            fail_for_dimension_mismatch(value_unit, values,
+                                        'The \'value_unit\' arguments needs '
+                                        'to have the same dimensions as '
+                                        'the \'values\'.')
+        else:
+            if have_same_dimensions(values, DIMENSIONLESS):
+                value_unit = 1.
+            else:
+                value_unit = values[:].get_best_unit()
+        orig_values = values
+        values = values/value_unit
+        if isinstance(value_norm, tuple):
+            if not len(value_norm) == 2:
+                raise TypeError('Need a (vmin, vmax) tuple for the value '
+                                'normalization, but got a tuple of length '
+                                f'{len(value_norm)}.')
+            vmin, vmax = value_norm
+            if vmin is not None:
+                err_msg = ('The minimum value in \'value_norm\' needs to '
+                           'have the same units as \'values\'.')
+                fail_for_dimension_mismatch(vmin, orig_values,
+                                            error_message=err_msg)
+                vmin /= value_unit
+            if vmax is not None:
+                err_msg = ('The maximum value in \'value_norm\' needs to '
+                           'have the same units as \'values\'.')
+                fail_for_dimension_mismatch(vmax, orig_values,
+                                            error_message=err_msg)
+                vmax /= value_unit
+            if plot_3d:
+                value_norm = (vmin, vmax)
+            else:
+                value_norm = Normalize(vmin=vmin, vmax=vmax, clip=True)
+                value_norm.autoscale_None(values)
+        elif plot_3d:
+            raise TypeError('3d plots only support normalizations given by '
+                            'a (min, max) tuple.')
+        value_colormap = plt.get_cmap(value_colormap)
 
     if plot_3d:
         try:
@@ -187,19 +306,50 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
             raise ImportError('3D plotting needs the mayavi library')
         axes = _setup_axes_mayavi(axes)
         axes.scene.disable_render = True
-        _plot_morphology3D(morphology, axes, colors=colors,
-                           show_diameters=show_diameter,
-                           show_compartments=show_compartments)
+        surf = _plot_morphology3D(morphology, axes, colors=colors,
+                                  values=values, value_norm=value_norm,
+                                  value_colormap=value_colormap,
+                                  show_diameters=show_diameter,
+                                  show_compartments=show_compartments)
+        if values is not None and value_colorbar:
+            if not isinstance(value_colorbar, Mapping):
+                value_colorbar = {}
+                if not have_same_dimensions(value_unit, DIMENSIONLESS):
+                    unit_str = f' ({value_unit!s})'
+                else:
+                    unit_str = ''
+                if value_varname:
+                    value_colorbar['title'] = f'{value_varname}{unit_str}'
+            cb = mayavi.scalarbar(surf, **value_colorbar)
+            # Make text dark gray
+            cb.title_text_property.color = (0.1, 0.1, 0.1)
+            cb.label_text_property.color = (0.1, 0.1, 0.1)
         axes.scene.disable_render = False
     else:
         axes = _setup_axes_matplotlib(axes)
+
         _plot_morphology2D(morphology, axes, colors,
+                           values, value_norm, value_colormap,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter)
         axes.set_xlabel('x (um)')
         axes.set_ylabel('y (um)')
         axes.set_aspect('equal')
-
+        if values is not None and value_colorbar:
+            divider = make_axes_locatable(axes)
+            cax = divider.append_axes("right", size="5%", pad=0.1)
+            mappable = ScalarMappable(norm=value_norm, cmap=value_colormap)
+            mappable.set_array([])
+            fig = axes.get_figure()
+            if not isinstance(value_colorbar, Mapping):
+                value_colorbar = {}
+                if not have_same_dimensions(value_unit, DIMENSIONLESS):
+                    unit_str = f' ({value_unit!s})'
+                else:
+                    unit_str = ''
+                if value_varname:
+                    value_colorbar['label'] = f'{value_varname}{unit_str}'
+            fig.colorbar(mappable, cax=cax, **value_colorbar)
     return axes
 
 
