@@ -68,6 +68,7 @@ from unittest.mock import Mock, MagicMock
 
 MOCK_MODULES = ['matplotlib', 'matplotlib.colors', 'matplotlib.patches', 'matplotlib.pyplot', 'matplotlib.ticker', 'matplotlib.cm',
                 'mpl_toolkits', 'mpl_toolkits.axes_grid1',
+                'markdown_strings',
                 'numpy', 'numpy.ma',
                 'lems', 'lems.api',
                 'brian2',
@@ -82,7 +83,8 @@ MOCK_MODULES = ['matplotlib', 'matplotlib.colors', 'matplotlib.patches', 'matplo
                 'brian2.spatialneuron', 'brian2.spatialneuron.morphology', 'brian2.spatialneuron.spatialneuron',
                 'brian2.synapses', 'brian2.synapses.synapses',
                 'brian2.units', 'brian2.units.allunits', 'brian2.units.fundamentalunits', 'brian2.units.stdunits',
-                'brian2.utils', 'brian2.utils.logger', 'brian2.utils.stringtools']
+                'brian2.utils', 'brian2.utils.logger', 'brian2.utils.stringtools',
+                'sympy', 'sympy.printing', 'sympy.abc']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 sys.modules['brian2.units.allunits'].all_units = MagicMock()
 sys.modules['brian2.devices.device'].all_devices = MagicMock()
