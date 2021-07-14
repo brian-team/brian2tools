@@ -17,12 +17,6 @@ from .supporting import (read_nml_units, read_nml_dims, brian_unit_to_lems,
                          name_to_unit, NeuroMLSimulation, NeuroMLSimpleNetwork,
                          NeuroMLTarget, NeuroMLPoissonGenerator)
 
-# Make a "basestring class" for Python 3 that can be used with isinstance
-try:
-    basestring
-except NameError:
-    basestring = (str, bytes)
-
 __all__ = []
 
 logger = get_logger(__name__)
