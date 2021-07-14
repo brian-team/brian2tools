@@ -19,6 +19,30 @@ figure()
 plot_morphology(morpho, plot_3d=False)
 savefig(os.path.join(fig_dir, 'plot_morphology_2d.svg'))
 close()
+
+# Value plots
+neuron = SpatialNeuron(morpho, 'Im = 0*amp/meter**2 : amp/meter**2')
+
+figure()
+plot_morphology(neuron.morphology, values=neuron.distance,
+                plot_3d=False)
+savefig(os.path.join(fig_dir, 'plot_morphology_values_2d.svg'))
+close()
+
+figure()
+plot_morphology(neuron.morphology, values=neuron.distance,
+                value_norm=(50*um, 200*um),
+                value_colormap='viridis', value_unit=mm,
+                value_colorbar={'label': 'distance from soma in mm',
+                                'extend': 'both'},
+                plot_3d=False)
+savefig(os.path.join(fig_dir, 'plot_morphology_values_2d_custom.svg'))
+close()
+
 plot_morphology(morpho, plot_3d=True, show_compartments=True,
                 show_diameter=True, colors=('darkblue',))
+mayavi.show()
+
+neuron = SpatialNeuron(morpho, 'Im = 0*amp/meter**2 : amp/meter**2')
+plot_morphology(morpho, values=neuron.distance, plot_3d=True)
 mayavi.show()

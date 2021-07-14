@@ -7,6 +7,8 @@ import warnings
 from .plotting import *
 from .nmlexport import *
 from .tests import run as test
+from .baseexport import *
+from .mdexport import *
 
 from pkg_resources import get_distribution, DistributionNotFound
 try:
@@ -17,7 +19,6 @@ except DistributionNotFound:
     try:
         from setuptools_scm import get_version
         __version__ = get_version(relative_to=os.path.dirname(__file__))
-    except ImportError:
-        warnings.warn('Cannot determine brian2tools version (running directly '
-                      'from source code and no setuptools_scm package '
-                      'available).')
+    except (ImportError, LookupError):
+        warnings.warn('Cannot determine brian2tools version')
+        __version__ = None
