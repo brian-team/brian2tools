@@ -68,9 +68,9 @@ def test_simulation1(plot=False):
     outnml = simulation1(True, path=tempdir)
     set_device('runtime')
     os.chdir(JNML_PATH)
-    outcommand = call("jnml {path} -nogui".format(path=os.path.join(current_path, xml_filename)),
+    outcommand = call("./jnml {path} -nogui".format(path=os.path.join(current_path, xml_filename)),
                       shell=True)
-
+    os.chdir(current_path)
     timevec = []
     valuesvec = []
     with open(output_jnml_file+'.dat','r') as f:
