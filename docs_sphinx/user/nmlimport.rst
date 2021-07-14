@@ -2,11 +2,12 @@ NeuroML importer
 ================
 
 This is a short overview of the `~brian2tools.nmlimport` package, providing
-functionality to import a morphology from a ``.nml`` file.
+functionality to import a morphology – including some associated information about
+biophysical properties and ion channels – from an ``.nml`` file.
 
 NeuroML is a XML-based description that provides a common data format
 for defining and exchanging descriptions of neuronal cell and network models
-(`NML project website <https://neuroml.org/>`_).
+(`NeuroML project website <https://neuroml.org/>`_).
 
 .. contents::
     Overview
@@ -25,7 +26,7 @@ can download it from `OpenSourceBrain's ACnet2 project <https://raw.githubuserco
     from brian2tools.nmlimport.nml import NMLMorphology
     nml_object = NMLMorphology('pyr_4_sym.cell.nml', name_heuristic=True)
 
-This call provides us the ``nml_object`` that contains all the information
+This call provides the ``nml_object`` that contains all the information
 extracted from ``.nml`` file. When ``name_heuristic`` is set to ``True``,
 morphology sections will be determined based on the segment names. In
 this case `~.Section` names will be created by combining names of the inner
@@ -156,9 +157,9 @@ given segment is connected with its parent segment. So a ``fractionAlong`` value
 of 1 means the segment is connected to bottom (distal) of its parent segment, 0
 means it is connected to the top (proximal) of its parent segment. Similarly a
 value of 0.5 would mean the segment is connected to the middle point of its parent
-segment. Currently the ``nmlimport`` library supports ``fractionAlong`` value to be
+segment. Currently, the ``nmlimport`` library supports ``fractionAlong`` value to be
 0 or 1 only, as there is no predefined way to connect a segment at
-some inbetween point of its parent segment in ``Brian``.
+some intermediate point of its parent segment in ``Brian``.
 
 
 Extracting channel properties and Equations
@@ -189,7 +190,7 @@ For the example file, these dictionaries look like this:
 
     >>> print(nml_object.properties) # threshold, refractory etc.
     {'threshold': 'v > 0*mV', 'refractory': 'v > 0*mV',
-    'Cm': 2.84 * ufarad / cmetre2,'Ri': 0.2 * kohm * cmetre}
+    'Cm': 2.84 * ufarad / cmetre2, 'Ri': 0.2 * kohm * cmetre}
 
     >>> print(nml_object.reversal_potentials) # erev property
     {'Ca_pyr': {'soma_group': 80. * mvolt}, 'Kahp_pyr': {'soma_group': -75. *
