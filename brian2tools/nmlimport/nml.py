@@ -113,7 +113,7 @@ class NMLMorphology(object):
 
         # biophysical Properties
         self.properties = self._get_properties(cell.biophysical_properties)
-        self.reversal_potentials, self.conductances = self._get_channel_props(
+        self.channel_properties = self._get_channel_props(
             cell.biophysical_properties.membrane_properties.channel_densities)
 
     def _get_nml_doc(self, file_obj):
@@ -516,7 +516,8 @@ class NMLMorphology(object):
 
     def _get_channel_props(self, channels):
         """
-        Returns dictionaries containing `channel density` and `erev` properties.
+        Returns dictionaries mapping segment groups to `channel density` and
+        `erev` properties.
 
         Parameters
         ----------
@@ -525,21 +526,17 @@ class NMLMorphology(object):
 
         Returns
         -------
-        dict, dict
-            erev and channel density dictionary
+        dict
+            Mapping from segment groups to g_... and E_... attributes of the
+            various channels
         """
-        cd = {}
-        ed = {}
+        properties = defaultdict(dict)
         for c in channels:
-            if c.ion_channel not in cd:
-                cd[c.ion_channel] = {}
-            if c.ion_channel not in ed:
-                ed[c.ion_channel] = {}
-
-            cd[c.ion_channel][c.segment_groups] = string_to_quantity(
+            properties[c.segment_groups]['g_' + c.ion_channel] = string_to_quantity(
                 c.cond_density)
-            ed[c.ion_channel][c.segment_groups] = string_to_quantity(c.erev)
-        return ed, cd
+            properties[c.segment_groups]['E_' + c.ion_channel] = string_to_quantity(
+                c.erev)
+        return dict(properties)
 
     def get_channel_equations(self, ion_channel):
         """
@@ -649,24 +646,31 @@ class NMLMorphology(object):
             gate_str, str_list = _gate_value_str(itertools.chain(channel_obj.gates,
                                                                  channel_obj.gate_hh_rates))
 
-            I = '{} = {}*{}*(erev - v): amp / meter ** 2'.format(rename_var(
-                'I'), rename_var('g'), gate_str)
-            values['erev'] = list(self.reversal_potentials[ion_channel].values())[0]
+            I = '{} = {}*{}*({} - v): amp / meter ** 2'.format(rename_var(
+                'I'), rename_var('g'), gate_str, rename_var('E'))
             str_list = [I] + str_list
-            str_list.append("{} : siemens/meter**2".format(rename_var('g')))
+            str_list.append("{} : siemens/meter**2 (constant)".format(rename_var('g')))
+            str_list.append("{} : volt (constant)".format(rename_var('E')))
             eq = Equations('\n'.join(str_list), **values)
 
         elif channel_type == 'ionChannelPassive':
             new_I = 'I_{}'.format(ion_channel)
             conductance = string_to_quantity(channel_obj.conductance)
 
-            if not self.reversal_potentials[ion_channel]:  # erev dict is empty
-                raise ValueError(
-                    "No erev corresponding to ion channel `{}` is present.".format(
-                        ion_channel))
+            erev = None
+            for properties in self.channel_properties.values():
+                erev_name = 'E_{}'.format(ion_channel)
+                if erev_name in properties:
+                    if erev is None:
+                        erev = properties[erev_name]
+                    elif erev != properties[erev_name]:
+                        raise NotImplementedError("Only a single value "
+                                                  "for reversal potential '{}' "
+                                                  "is supported.".format(erev_name))
+            if erev is None:
+                raise ValueError("No value for reversal potential '{}' "
+                                 "found.".format(erev_name))
 
-            # erev remains same across ion channel
-            erev = list(self.reversal_potentials[ion_channel].values())[0]
             eq = Equations('I = g/area*(erev - v) : amp/meter**2', I=new_I,
                            g=conductance, erev=erev)
 

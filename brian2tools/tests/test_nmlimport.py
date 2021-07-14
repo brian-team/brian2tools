@@ -93,12 +93,17 @@ def test_get_properties():
 def test_channel_properties():
     nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
 
-    # test cond density dict
-    assert_equal(nml_object.conductances['Ca_pyr'],
-                 {'soma_group': 10. * msiemens / cm2})
-    assert_equal(nml_object.conductances['Kahp_pyr'],
-                 {'soma_group': 25. * siemens /
-                                meter ** 2})
-    # test erev dict
-    assert_equal(nml_object.reversal_potentials['Ca_pyr'], {'soma_group': 80. * mvolt})
-    assert_equal(nml_object.reversal_potentials['Kahp_pyr'], {'soma_group': -75. * mvolt})
+    channel_properties = nml_object.channel_properties
+    print(channel_properties)
+    assert set(channel_properties.keys()) == {'soma_group', 'all'}
+    assert set(channel_properties['soma_group'].keys()) == {'g_Ca_pyr', 'E_Ca_pyr',
+                                                            'g_Kahp_pyr', 'E_Kahp_pyr',
+                                                            'g_Na_pyr', 'E_Na_pyr',
+                                                            'g_Kdr_pyr', 'E_Kdr_pyr'}
+    assert set(channel_properties['all'].keys()) == {'g_LeakConductance_pyr', 'E_LeakConductance_pyr'}
+
+    # Check a few values
+    assert channel_properties['soma_group']['g_Ca_pyr'] == 10. * msiemens / cm2
+    assert channel_properties['soma_group']['E_Ca_pyr'] == 80. * mvolt
+    assert channel_properties['soma_group']['g_Kahp_pyr'] == 25. * siemens / meter ** 2
+    assert channel_properties['soma_group']['E_Kahp_pyr'] == -75. * mvolt
