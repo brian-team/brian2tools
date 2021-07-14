@@ -1,13 +1,17 @@
 import re
-from os.path import abspath
+from os import getcwd
 from copy import deepcopy
+from os.path import abspath, dirname, join, exists
+import itertools
 
 import neuroml.loaders as loaders
 from neuroml.utils import validate_neuroml2
-from brian2 import Morphology
+from brian2 import Morphology, SpatialNeuron
 from brian2.utils.logger import get_logger
 from brian2.spatialneuron.morphology import Section
 from brian2.units import *
+from brian2.equations.equations import Equations
+from brian2tools.nmlutils.utils import string_to_quantity
 
 from .helper import *
 
@@ -36,16 +40,16 @@ def validate_morphology(segments):
         for segment in segments:
 
             if segment.parent is not None:
-                if segment.parent.fraction_along not in [0,1]:
+                if segment.parent.fraction_along not in [0, 1]:
                     raise NotImplementedError(
                         "{0} has fraction along value {1} which is not "
                         "supported!!".
-                        format(segment,segment.parent.fraction_along))
+                            format(segment, segment.parent.fraction_along))
             elif start_segment is not None:
                 raise ValidationException(
                     "Two segments with parent id as -1 (i.e no parent): "
                     "{0} and {1}".
-                    format(formatter(start_segment), formatter(segment)))
+                        format(formatter(start_segment), formatter(segment)))
             else:
                 start_segment = segment
                 logger.info(
@@ -91,10 +95,12 @@ class NMLMorphology(object):
             connected segments combines to form a section and naming
             convention sec{unique_integer} is followed.
         """
+        self.file_obj = file_obj
         self.name_heuristic = name_heuristic
         self.incremental_id = 0
-        self.doc = self._get_morphology_dict(file_obj)
-        self.morph = self.doc.cells[0].morphology
+        self.doc = self._get_nml_doc(self.file_obj)
+        cell = self.doc.cells[0]
+        self.morph = cell.morphology
         self.segments = self._adjust_morph_object(self.morph.segments)
 
         section = self.SectionObject()
@@ -102,9 +108,85 @@ class NMLMorphology(object):
         self.children = get_child_segments(self.segments)
         self.root = self._get_root_segment(self.segments)
         self.section = self._create_tree(section, self.root)
-        self.morphology_obj = self.build_morphology(self.section)
-        self.resolved_grp_ids = self.get_resolved_group_ids(self.morph)
+        self.morphology = self.build_morphology(self.section)
+        self.segment_groups = self.get_resolved_group_ids(self.morph)
 
+        # biophysical Properties
+        self.properties = self._get_properties(cell.biophysical_properties)
+        self.channel_properties = self._get_channel_props(
+            cell.biophysical_properties.membrane_properties.channel_densities)
+
+    def _get_nml_doc(self, file_obj):
+        """
+        Helper function to read .nml file and return document object.
+
+        Parameters
+        ----------
+        file_obj: str
+            File path or file object.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all the information extracted from the
+            given .nml file.
+
+        """
+
+        def merge_dicts(parent, child):
+            z = child.copy()
+            z.update(parent)
+            return z
+
+        def append_doc(doc, included_doc):
+            doc_vars = vars(doc)
+            for key, value in vars(included_doc).items():
+                if value:  # checks for empty list/dict
+                    if key not in doc_vars:
+                        updated_val = value
+                    else:
+                        if not doc_vars[key]:  # if list/dict in doc is empty
+                            updated_val = value
+                        elif isinstance(doc_vars[key], list):
+                            doc_vars[key] += value
+                            updated_val = doc_vars[key]
+                        elif isinstance(doc_vars[key], dict):
+                            doc_vars[key] = merge_dicts(doc_vars[key], value)
+                            updated_val = doc_vars[key]
+                        else:
+                            updated_val = doc_vars[key]
+                    setattr(doc, key, updated_val)
+
+        file_dir = getcwd()
+        if isinstance(file_obj, str):
+            file_dir = dirname(abspath(file_obj))
+
+        if isinstance(file_obj, str):
+            # Generate absolute path if not provided already
+            file_obj = abspath(file_obj)
+
+        # Validating NeuroML file
+        validate_neuroml2(deepcopy(file_obj))
+        logger.info("Validated provided .nml file")
+
+        # Load nml file
+        doc = loaders.NeuroMLLoader.load(file_obj)
+        logger.info("Loaded morphology")
+
+        if not doc.includes:
+            return doc
+        else:
+            for f in doc.includes:
+                file_path = join(file_dir, f.href)
+                if exists(file_path):
+                    included_doc = self._get_nml_doc(file_path)
+                    append_doc(doc, included_doc)
+                else:
+                    logger.warn(
+                        "Included file `{}` does not exist at path `{"
+                        "}`".format(f.href, file_path))
+
+        return doc
 
     def build_morphology(self, section, parent_section=None):
         """
@@ -176,11 +258,6 @@ class NMLMorphology(object):
         morphology) of all segments in each SegmentGroup present in given
         morphology object.
 
-        Parameters
-        ----------
-        m: Morphology
-            Morphology object whose resolved group ids we need.
-
         Returns
         -------
         dict
@@ -206,37 +283,6 @@ class NMLMorphology(object):
                                                grp_ids]))
         return resolved_ids
 
-
-    def _get_morphology_dict(self, file_obj):
-        """
-        Helper function to read .nml file and return document object.
-
-        Parameters
-        ----------
-        file_obj: str
-            File path or file object.
-
-        Returns
-        -------
-        dict
-            A dictionary containing all the information extracted from the
-            given .nml file.
-
-        """
-        if isinstance(file_obj, str):
-            # Generate absolute path if not provided already
-            file_obj = abspath(file_obj)
-
-        # Validating NeuroML file
-        validate_neuroml2(deepcopy(file_obj))
-        logger.info("Validated provided .nml file")
-
-        # Load nml file
-        doc = loaders.NeuroMLLoader.load(file_obj)
-        logger.info("Loaded morphology")
-        return doc
-
-
     def _is_heuristically_sep(self, section, seg_id):
         """
         Helper function that determines if the given segment belongs to the
@@ -260,7 +306,6 @@ class NMLMorphology(object):
         seg = self.seg_dict[self.children[seg_id][0]]
         return not seg.name.startswith(root_name)
 
-
     def _get_section_name(self, seg_id):
         """
         Helper function that generate the new section name based on whether
@@ -281,9 +326,6 @@ class NMLMorphology(object):
             return "sec" + str(self.incremental_id)
         return self.seg_dict[seg_id].name
 
-    '''
-    
-    '''
     def _create_tree(self, section, seg):
         """
         Helper function that creates a section tree where each section node can
@@ -295,7 +337,8 @@ class NMLMorphology(object):
         section: SectionObject
             Object of class SectionObject that contains information about
             segments belonging to same section.
-        seg: segment object. It belongs to the given section and its
+        seg: Segment
+            Segment object belongs to the given section and its
         children's are resolved to create further tree nodes.
 
         Returns
@@ -303,6 +346,7 @@ class NMLMorphology(object):
         SectionObject
             created section tree.
         """
+
         # abstracts the initialization step of a section
         def intialize_section(section, seg_id):
             sec = self.SectionObject()
@@ -331,10 +375,6 @@ class NMLMorphology(object):
                 self._create_tree(section,
                                   self.seg_dict[self.children[seg.id][0]])
         return section
-
-    '''
-    
-    '''
 
     def _build_section(self, section, section_parent):
         """
@@ -416,3 +456,228 @@ class NMLMorphology(object):
         print("section list: {}".format(section.sectionList))
         for sec in section.sectionList:
             self.printtree(sec)
+
+    def _get_properties(self, bio_prop):
+        """
+        Extract properties like threshold, refractory, Ri and Cm and returns
+        a dictionary of these properties.
+
+        Parameters
+        ----------
+        bio_prop: Biophysical_properties
+            Properties object obtained from given .nml file
+
+        Returns
+        -------
+        dict
+            Biophysical properties dictionary
+        """
+        prop = {}
+
+        def get_dict(obj_list):
+            d = {}
+            for o in obj_list:
+                d[o.segment_groups] = string_to_quantity(o.value)
+            return d
+
+        self.Ri = get_dict(bio_prop.intracellular_properties.resistivities)
+        self.Cm = get_dict(bio_prop.membrane_properties.specific_capacitances)
+        if len(bio_prop.membrane_properties.spike_threshes) == 1:
+            self.threshold = string_to_quantity(
+                bio_prop.membrane_properties.spike_threshes[0].value)
+            self.threshold_string = 'v > {}'.format(repr(self.threshold))
+            prop["threshold"] = self.threshold_string
+            prop["refractory"] = self.threshold_string
+        if len(self.Cm) == 1:
+            prop["Cm"] = self.Cm[list(self.Cm.keys())[0]]
+        if len(self.Ri) == 1:
+            prop["Ri"] = self.Ri[list(self.Ri.keys())[0]]
+
+        return prop
+
+    def set_neuron_properties(self, neuron, name, value_dict):
+        """
+        Method to apply properties present in given dictionary to the
+        spatialNeuron provided.
+
+        Parameters
+        ----------
+        neuron_prop: SpatialNeuron
+            SpatialNeuron object on which you want to apply these properties.
+        name : str
+            Name of the property that should be set.
+        value_dict: dict
+            Dictionary of properties to be applied.
+        """
+        for segment_group, value in value_dict.items():
+            ids = self.segment_groups[segment_group]
+            if len(ids):
+                getattr(neuron, name)[ids] = value
+
+    def _get_channel_props(self, channels):
+        """
+        Returns dictionaries mapping segment groups to `channel density` and
+        `erev` properties.
+
+        Parameters
+        ----------
+        channels: list
+            list of channels present in .nml file
+
+        Returns
+        -------
+        dict
+            Mapping from segment groups to g_... and E_... attributes of the
+            various channels
+        """
+        properties = defaultdict(dict)
+        for c in channels:
+            properties[c.segment_groups]['g_' + c.ion_channel] = string_to_quantity(
+                c.cond_density)
+            properties[c.segment_groups]['E_' + c.ion_channel] = string_to_quantity(
+                c.erev)
+        return dict(properties)
+
+    def get_channel_equations(self, ion_channel):
+        """
+        This method extracts information for the `ion_channel id` passed as
+        argument, convert required values to `quantity` objects and substitute
+        it in its corresponding template to generate ion channel equations.
+        Currently this method only support ion channels of type
+        `ionChannelHH` and `ionChannelPassive`.
+
+        Parameters
+        ----------
+        ion_channel: str
+            ion channel id.
+
+        Returns
+        -------
+        Equations
+            equation object for the given ion channel.
+        """
+        channel_obj = None
+        for c in itertools.chain(self.doc.ion_channel, self.doc.ion_channel_hhs):
+            if c.id == ion_channel:
+                channel_obj = c
+                break
+        if channel_obj is None:
+            err = ("ion channel `{}` not found. List of ion channel present "
+                   "here:\n {}").format(ion_channel,
+                                        [c.id for c in
+                                         itertools.chain(getattr(self.doc, 'ion_channel', []),
+                                                         getattr(self.doc, 'ion_channel_hhs', []))])
+            logger.error(err)
+            raise ValueError(err)
+
+        if channel_obj in getattr(self.doc, 'ion_channel', []):
+            channel_type = channel_obj.type
+        else:
+            if len(channel_obj.gates) == 0 and channel_obj.species is None:
+                channel_type = 'ionChannelPassive'
+            else:
+                channel_type = 'ionChannelHH'
+
+        if channel_type in ['ionChannelHH', 'ionChannel']:
+            values = {}
+
+            def rename_var(v):
+                return '{}_{}'.format(v, ion_channel)
+
+            def _gate_value_str(gate_list):
+                str_list = []
+                s = ''
+
+                for g in gate_list:
+                    renamed_gate = rename_var(g.id)
+                    if g.instances == 1:
+                        s += "*{}".format(renamed_gate)
+                    else:
+                        s += '*{}**{}'.format(renamed_gate, g.instances)
+
+                    # gating information
+                    str_list.append("d{0}/dt = alpha_{0}*(1-{0}) - beta_{0}*"
+                                    "{0} : 1".format(renamed_gate))
+
+                    for r in [g.forward_rate, g.reverse_rate]:
+                        mode = 'alpha' if r is g.forward_rate else 'beta'
+                        if r is None:
+                            raise NotImplementedError('Only gates defined with '
+                                                      'forward and reverse rates '
+                                                      'are supported at the moment.')
+                        if r.type == 'HHSigmoidRate':
+                            str_list.append(
+                                "{0}_{1} = rate_{0}_{1} / (1 + exp(0 "
+                                "- ("
+                                "v - midpoint_{0}_{1})/scale_{0}_{1})) : "
+                                "second**-1".format(mode, renamed_gate))
+
+                        elif r.type == 'HHExpRate':
+                            str_list.append(
+                                "{0}_{1} = rate_{0}_{1} * exp((v - "
+                                "midpoint_{0}_{1})/scale_{0}_{1}) : "
+                                "second**-1".format(mode, renamed_gate))
+
+                        elif r.type == 'HHExpLinearRate':
+                            str_list.append(
+                                "{0}_{1} = rate_{0}_{1} * (v - midpoint_{0}_{1}) / "
+                                "scale_{0}_{1} / (1 - exp(- (v - midpoint_{0}_{1}) / "
+                                "scale_{0}_{1})) : "
+                                "second**-1".format(mode, renamed_gate))
+                        else:
+                            raise NotImplementedError(
+                                "Rate of type `{}` is currently not supported. Supported "
+                                "rate types are: {}".format(r.type,
+                                                            ['HHSigmoidRate',
+                                                             'HHExpLinearRate',
+                                                             'HHExpRate']))
+
+                        # add values to dictionary
+                        values['rate_{0}_{1}'.format(mode, renamed_gate)] = \
+                            string_to_quantity(r.rate)
+                        values['midpoint_{0}_{1}'.format(mode, renamed_gate)] = \
+                            string_to_quantity(r.midpoint)
+                        values['scale_{0}_{1}'.format(mode, renamed_gate)] = \
+                            string_to_quantity(r.scale)
+
+                s = s[1:] if s.startswith('*') else s
+                return s, str_list
+
+            gate_str, str_list = _gate_value_str(itertools.chain(channel_obj.gates,
+                                                                 channel_obj.gate_hh_rates))
+
+            I = '{} = {}*{}*({} - v): amp / meter ** 2'.format(rename_var(
+                'I'), rename_var('g'), gate_str, rename_var('E'))
+            str_list = [I] + str_list
+            str_list.append("{} : siemens/meter**2 (constant)".format(rename_var('g')))
+            str_list.append("{} : volt (constant)".format(rename_var('E')))
+            eq = Equations('\n'.join(str_list), **values)
+
+        elif channel_type == 'ionChannelPassive':
+            new_I = 'I_{}'.format(ion_channel)
+            conductance = string_to_quantity(channel_obj.conductance)
+
+            erev = None
+            for properties in self.channel_properties.values():
+                erev_name = 'E_{}'.format(ion_channel)
+                if erev_name in properties:
+                    if erev is None:
+                        erev = properties[erev_name]
+                    elif erev != properties[erev_name]:
+                        raise NotImplementedError("Only a single value "
+                                                  "for reversal potential '{}' "
+                                                  "is supported.".format(erev_name))
+            if erev is None:
+                raise ValueError("No value for reversal potential '{}' "
+                                 "found.".format(erev_name))
+
+            eq = Equations('I = g/area*(erev - v) : amp/meter**2', I=new_I,
+                           g=conductance, erev=erev)
+
+        else:
+            raise NotImplementedError("Requested ion Channel is of type `{}`,"
+                                      " which is currently not supported. Currently this library "
+                                      "supports ion channels of type: `{}`".format(
+                channel_type, ['ionChannelPassive', 'ionChannelHH']))
+
+        return eq

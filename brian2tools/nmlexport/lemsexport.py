@@ -17,12 +17,6 @@ from .supporting import (read_nml_units, read_nml_dims, brian_unit_to_lems,
                          name_to_unit, NeuroMLSimulation, NeuroMLSimpleNetwork,
                          NeuroMLTarget, NeuroMLPoissonGenerator)
 
-# Make a "basestring class" for Python 3 that can be used with isinstance
-try:
-    basestring
-except NameError:
-    basestring = (str, bytes)
-
 __all__ = []
 
 logger = get_logger(__name__)
@@ -192,7 +186,7 @@ class NMLExporter(object):
     def add_neurongroup(self,neurongrp, index_neurongrp, initializers):
         """
         Add NeuronGroup to self._model
-    
+
         If number of elements is 1 it adds component of that type, if
         it's bigger, the network is created by calling:
         `make_multiinstantiate`.
@@ -372,7 +366,7 @@ class NMLExporter(object):
         name : str
             MultiInstantiate component name
         parameters : dict
-            all extra parameters 
+            all extra parameters
         N : int
             size of the population
         """
@@ -415,7 +409,7 @@ class NMLExporter(object):
                                      dimension=self._all_params_unit[sp], value="1"+i))
                         equation = re.sub(i, const_i, equation)
                 multi_ins.add(lems.Assign(property=sp, value=equation))
-   
+
         structure.add(multi_ins)
         multi_ct.structure = structure
         self._model.add(multi_ct)
@@ -655,7 +649,7 @@ class NMLExporter(object):
 
         #loop over components field of single_run
         for (obj_name, obj_list) in single_run['components'].items():
-            
+
             #check unsupported
             if obj_name == 'synapses':
                 raise NotImplementedError("Synapses are not supported yet")
@@ -665,12 +659,12 @@ class NMLExporter(object):
                 # loop over the statemonitors defined
                 for statemonitor in obj_list:
                     self.add_statemonitor(statemonitor, filename=recordingsname, outputfile=True)
-            
+
             # check whether SpikeMonitor
             if obj_name == 'spikemonitor':
                 for spikemonitor in obj_list:
                     self.add_spikemonitor(spikemonitor, filename=recordingsname)
-  
+
             # check whether EventMonitor
             # TODO: is this valid in NML/LEMS?
             if obj_name == 'eventmonitor':
