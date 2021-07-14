@@ -15,7 +15,7 @@ def readme():
 # figures out a version based on git tags
 setup(name='brian2tools',
       url='https://github.com/brian-team/brian2tools',
-      version='0.2.1.1',
+      version='0.3',
       packages=find_packages(),
       package_data={'brian2tools.nmlexport': ['LEMSUnitsConstants.xml',
                                               'NeuroMLCoreDimensions.xml'],
