@@ -3,8 +3,6 @@ Release procedure
 
 In `brian2tools` we use the `setuptools_scm package <https://pypi.python.org/pypi/setuptools_scm>`_ to set the package
 version information, the basic release procedure therefore consists of setting a git tag and pushing that tag to github.
-The test builds on `travis <https://travis-ci.org/brian-team/brian2tools>`_ will then automatically push the conda
-packages to `anaconda.org <https://anaconda.org/brian-team/brian2tools>`_.
 
 The ``dev/release/prepare_release.py`` script automates the tag creation and makes sure that no uncommited changes
 exist when doing do.

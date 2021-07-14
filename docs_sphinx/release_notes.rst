@@ -1,6 +1,36 @@
 Release notes
 =============
 
+brian2tools 0.3
+---------------
+This release adds a number of major new features to the package. In particular:
+
+* the ability to :doc:`import neuronal morphologies from NeuroML descriptions <user/nmlimport>`,
+  including information about channel types, channel densities, and general
+  biophysical properties. This feature has been developed by Kapil Kumar
+  (`@kapilkd13 <https://github.com/kapilkd13>`_) as part of the
+  `Google Summer of Code <https://summerofcode.withgoogle.com/>`_ 2018.
+* improved support for :doc:`exporting neuronal models to NeuroML <user/nmlexporter>,
+  and a new :doc:`general framework to export model descriptions <user/baseexporter>`.
+  As a demonstration of this framework, it is now possible to export a Brian model
+  description as :doc:`human-readable markdown <user/mdexporter>`. This feature has
+  been developed by Vigneswaran C (`@Vigneswaran-Chandrasekaran <https://github.com/Vigneswaran-Chandrasekaran>`_)
+  as part of 2020's Google Summer of Code.
+* improved support for :doc:`plotting morphologies <user/plotting>`. It is now possible to
+  plot a morphology and color code a value that varies across the neuron (e.g. the membrane
+  potential) on top of it. Thanks to `@mqcapelle <https://github.com/mqcapelle>`_ for
+  contributing this feature.
+
+Contributions
+~~~~~~~~~~~~~
+* Kapil Kumar (`@kapilkd13 <https://github.com/kapilkd13>`_)
+* Vigneswaran C (`@Vigneswaran-Chandrasekaran <https://github.com/Vigneswaran-Chandrasekaran>`_)
+* `@mqcapelle <https://github.com/mqcapelle>`_
+* Marcel Stimberg (`@mstimberg <https://github.com/mstimberg>`_)
+
+We also acknowledge the support of the `INCF <https://www.incf.org/>`_ in the organization of
+the Google Summer of Code internships.
+
 brian2tools 0.2.1.1
 -------------------
 A maintenance release that adds conda packages for Python 3.6. Also fixes a
