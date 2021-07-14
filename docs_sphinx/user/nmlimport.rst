@@ -39,7 +39,11 @@ segments combine to form a section with the name ``sec{unique_integer}``.
 
 .. code:: python
 
-    >>> morphology = nml_object.morphology_obj
+    >>> morphology = nml_object.morphology
+
+    |
+
+    With this
 
 |
 

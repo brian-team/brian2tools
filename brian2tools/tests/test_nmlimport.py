@@ -55,7 +55,7 @@ def test_section_child_segment_list():
 
 def test_load_morphology():
     nml_object = NMLMorphology(join(dirname(abspath(__file__)), SAMPLE))
-    morphology = nml_object.morphology_obj
+    morphology = nml_object.morphology
     assert_allclose(morphology.distance, [8.5] * um)
     assert_allclose(morphology.length, [17.] * um)
     assert_allclose(morphology.coordinates, [[0., 0., 0.], [0., 17., 0.]] * um)

@@ -108,7 +108,7 @@ class NMLMorphology(object):
         self.children = get_child_segments(self.segments)
         self.root = self._get_root_segment(self.segments)
         self.section = self._create_tree(section, self.root)
-        self.morphology_obj = self.build_morphology(self.section)
+        self.morphology = self.build_morphology(self.section)
         self.segment_groups = self.get_resolved_group_ids(self.morph)
 
         # biophysical Properties

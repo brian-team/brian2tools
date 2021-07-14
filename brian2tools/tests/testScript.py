@@ -31,7 +31,7 @@ def populate():
             dir, f)) and f.endswith('.nml')]
 
 def test_nml(f):
-    morph=NMLMorphology(f).morphology_obj
+    morph=NMLMorphology(f).morphology
     if not args.mute:
         if morph is None:
             logger.info("No morphology information in this file!!\n\n")
