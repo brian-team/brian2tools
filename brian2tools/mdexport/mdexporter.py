@@ -2,6 +2,7 @@ from brian2.devices.device import all_devices
 from brian2tools.baseexport.device import BaseExporter
 import os
 import inspect
+import subprocess
 from .expander import *
 
 
@@ -13,7 +14,7 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, expander=None,
-              filename=None):
+              filename=None, format=None):
         """
         Build the exporter
 
@@ -93,6 +94,37 @@ class MdExporter(BaseExporter):
             md_file = open(self.filename + '.md', "w")
             md_file.write(self.md_text)
             md_file.close()
+            source_file = self.filename + ".md"
+            tex_file = f"{source_file.split('.')[0]}.tex"
+            html_file = f"{source_file.split('.')[0]}.html"
+            pdf_file = f"{source_file.split('.')[0]}.pdf"
+            # Check if Pandoc is installed
+            try:
+                subprocess.check_call(["pandoc", "--version"])
+            except subprocess.CalledProcessError:
+                print("Pandoc is not installed. Please install Pandoc and try again.")
+                exit()
+            
+            # Convert to LaTeX
+            if(format == "latex" ):
+                subprocess.run(["pandoc", "--from", "markdown", "--to", "latex", "-o", tex_file, source_file])
+                print("Conversion complete! Files generated:", tex_file)
+            
+            # Convert to HTML (optional arguments for better HTML output) 
+            if(format == "html"):
+                subprocess.run(["pandoc", "--from", "markdown", "--to", "html", "-o", html_file, source_file])
+                print("Conversion complete! Files generated:", html_file)
+            
+            # Convert to Pdf
+            if(format == "pdf" ):
+                subprocess.run(["pandoc", "--from", "markdown", "--to", "pdf", "-o", pdf_file, source_file])   
+                print("Conversion complete! Files generated:", pdf_file)  
+           
+            if(format == "all"):
+                subprocess.run(["pandoc", "--from", "markdown", "--to", "latex", "-o", tex_file, source_file])
+                subprocess.run(["pandoc", "--from", "markdown", "--to", "html", "-o", html_file, source_file])
+                subprocess.run(["pandoc", "--from", "markdown", "--to", "pdf", "-o", pdf_file, source_file])   
+                print("Conversion complete! Files generated:", tex_file, html_file, pdf_file)
         else:
             pass  # do nothing
 
