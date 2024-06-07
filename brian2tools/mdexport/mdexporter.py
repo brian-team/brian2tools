@@ -91,13 +91,11 @@ class MdExporter(BaseExporter):
             print(self.md_text)
         elif self.filename:
             # start writing markdown text in file
-            md_file = open(self.filename + '.md', "w")
+            source_file = self.filename + ".md"
+            md_file = open(source_file, "w")
             md_file.write(self.md_text)
             md_file.close()
-            source_file = self.filename + ".md"
-            tex_file = f"{source_file.split('.')[0]}.tex"
-            html_file = f"{source_file.split('.')[0]}.html"
-            pdf_file = f"{source_file.split('.')[0]}.pdf"
+            
             # Check if Pandoc is installed
             try:
                 subprocess.check_call(["pandoc", "--version"])
@@ -105,26 +103,17 @@ class MdExporter(BaseExporter):
                 print("Pandoc is not installed. Please install Pandoc and try again.")
                 exit()
             
-            # Convert to LaTeX
-            if(format == "latex" ):
-                subprocess.run(["pandoc", "--from", "markdown", "--to", "latex", "-o", tex_file, source_file])
-                print("Conversion complete! Files generated:", tex_file)
+            formats_extensions = {'latex': '.tex', 'html': '.html', 'pdf': '.pdf'}
+            if format == "all":
+                formats = ['latex', 'html', 'pdf']
+            else:
+                formats = format
             
-            # Convert to HTML (optional arguments for better HTML output) 
-            if(format == "html"):
-                subprocess.run(["pandoc", "--from", "markdown", "--to", "html", "-o", html_file, source_file])
-                print("Conversion complete! Files generated:", html_file)
-            
-            # Convert to Pdf
-            if(format == "pdf" ):
-                subprocess.run(["pandoc", "--from", "markdown", "--to", "pdf", "-o", pdf_file, source_file])   
-                print("Conversion complete! Files generated:", pdf_file)  
+            for format in formats:
+                filename = self.filename + formats_extensions[format]
+                subprocess.run(["pandoc", "--from", "markdown", "--to", format, "-o", filename, source_file])
+                print("Conversion complete! Files generated:", filename)
            
-            if(format == "all"):
-                subprocess.run(["pandoc", "--from", "markdown", "--to", "latex", "-o", tex_file, source_file])
-                subprocess.run(["pandoc", "--from", "markdown", "--to", "html", "-o", html_file, source_file])
-                subprocess.run(["pandoc", "--from", "markdown", "--to", "pdf", "-o", pdf_file, source_file])   
-                print("Conversion complete! Files generated:", tex_file, html_file, pdf_file)
         else:
             pass  # do nothing
 
