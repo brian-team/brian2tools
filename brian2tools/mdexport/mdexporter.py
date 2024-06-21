@@ -14,7 +14,7 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, expander=None,
-              filename=None, format=None):
+              filename=None, format=None, template_type=None):
         """
         Build the exporter
 
@@ -71,7 +71,7 @@ class MdExporter(BaseExporter):
             self.expander = MdExpander()
 
         # start creating markdown descriptions using expander
-        self.md_text = self.expander.create_md_string(self.runs)
+        self.md_text = self.expander.create_md_string(self.runs, template_type)
 
         # check output filename
         if filename:

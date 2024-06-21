@@ -8,6 +8,8 @@ from sympy import Derivative, symbols
 from sympy.printing import latex
 from sympy.abc import *
 from markdown_strings import *
+from jinja2 import Template
+from .template import templates
 import numpy as np
 import re
 import inspect
@@ -284,7 +286,7 @@ class MdExpander():
         # to remove `$` (in most md compiler single $ is used)
         return rend_exp[1:][:-1]
 
-    def create_md_string(self, net_dict):
+    def create_md_string(self, net_dict, template_name):
         """
         Create markdown text by checking the standard dictionary and call
         required expand functions and arrange the descriptions
@@ -373,6 +375,8 @@ class MdExpander():
                                                              for connector in initializers_connectors
                                                              if connector['type'] == 'connect' and
                                                                 connector['synapses'] == obj_mem['name']]
+                                if obj_key == 'neurongroup' and current_order == 1:
+                                    obj_mem['template_name'] = template_name    
                             run_string += ('- ' +
                                            func_map[obj_key]['f'](obj_mem))
 
@@ -478,6 +482,7 @@ class MdExpander():
         neurongrp : dict
             Standard dictionary of NeuronGroup
         """
+        template_name = neurongrp['template_name']
         # start expanding
         md_str = ''
         # name and size
@@ -508,8 +513,18 @@ class MdExpander():
             self.check_plural(neurongrp['run_regularly']) + ': ' + endll)
             for run_reg in neurongrp['run_regularly']:
                 md_str += self.expand_runregularly(run_reg)
-
+        
+        # Create Jinja2 Template object
+        if template_name not in templates :
+            print(md_str)
+            return md_str
+        # Create Jinja2 Template object
+        template = Template(templates[template_name])
+        # # Render the template with the provided NeuronGroup dictionary
+        md_str = template.render(neurongrp=neurongrp)
+        print (md_str)
         return md_str
+        
 
     def expand_SpikeSource(self, source):
         """
