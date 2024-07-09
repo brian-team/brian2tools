@@ -35,6 +35,10 @@ class MdExporter(BaseExporter):
             If mentioned, the markdown text would be written in that
             particular filename. When empty string '' is passed the user file
             name would be taken
+
+
+        format : array
+                Array of string should be given as a input for this.    
         """
         # buil_on_run = True but called build() directly
         if self.build_on_run and direct_call:
@@ -98,21 +102,18 @@ class MdExporter(BaseExporter):
             
             # Check if Pandoc is installed
             try:
-                subprocess.check_call(["pandoc", "--version"])
+                subprocess.check_call(["pandoc"])
+                formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
+                if format == "all":
+                    formats = ['latex', 'html', 'pdf']
+                else:
+                    formats = format
+                for format_name in formats:
+                    filename = self.filename + formats_extensions[format_name]
+                    subprocess.run(["pandoc", "--from", "markdown", "--to", format_name, "-o", filename, source_file])
+                    print("Conversion complete! Files generated:", filename)   
             except subprocess.CalledProcessError:
-                print("Pandoc is not installed. Please install Pandoc and try again.")
-                exit()
-            
-            formats_extensions = {'latex': '.tex', 'html': '.html', 'pdf': '.pdf'}
-            if format == "all":
-                formats = ['latex', 'html', 'pdf']
-            else:
-                formats = format
-            
-            for format in formats:
-                filename = self.filename + formats_extensions[format]
-                subprocess.run(["pandoc", "--from", "markdown", "--to", format, "-o", filename, source_file])
-                print("Conversion complete! Files generated:", filename)
+                raise Exception("Pandoc is not installed. Please install Pandoc and try again.")
            
         else:
             pass  # do nothing
