@@ -1,7 +1,4 @@
-# Define the Jinja2 template string
-templates = {
-    'template_str' : """
-        ## Network details
+## Network details
 
         **Neuron population:**
         - Group {{ neurongrp.name }}, consisting of {{ neurongrp.N }} neurons.
@@ -50,5 +47,3 @@ templates = {
         - {{ run_reg }}
         {% endfor %}
         {% endif %}
-"""
-}

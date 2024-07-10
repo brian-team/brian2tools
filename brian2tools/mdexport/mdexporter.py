@@ -38,7 +38,11 @@ class MdExporter(BaseExporter):
 
 
         format : array
-                Array of string should be given as a input for this.    
+            Array of string should be given as a input for this.
+
+        template_type : str   
+            Based on your selected template, it will rendered otherwise
+            a default template will be used for rendering              
         """
         # buil_on_run = True but called build() directly
         if self.build_on_run and direct_call:

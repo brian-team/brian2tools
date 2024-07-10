@@ -9,12 +9,18 @@ from sympy.printing import latex
 from sympy.abc import *
 from markdown_strings import *
 from jinja2 import Template
-from .template import templates
 import numpy as np
 import re
 import inspect
 import datetime
 import brian2
+
+from jinja2 import Environment, PackageLoader, select_autoescape, TemplateNotFound
+
+env = Environment(
+    loader=PackageLoader("brian2tools"),
+    autoescape=select_autoescape()
+)
 
 # define variables for often used delimiters
 endll = '\n\n'
@@ -375,7 +381,7 @@ class MdExpander():
                                                              for connector in initializers_connectors
                                                              if connector['type'] == 'connect' and
                                                                 connector['synapses'] == obj_mem['name']]
-                                if obj_key == 'neurongroup' and current_order == 1:
+                                if (obj_key == 'neurongroup' and current_order == 1) or (obj_key == 'poissongroup' and current_order == 2):
                                     obj_mem['template_name'] = template_name    
                             run_string += ('- ' +
                                            func_map[obj_key]['f'](obj_mem))
@@ -485,45 +491,47 @@ class MdExpander():
         template_name = neurongrp['template_name']
         # start expanding
         md_str = ''
-        # name and size
-        md_str += ('Group ' + bold(neurongrp['name']) + ', consisting of ' +
-                   bold(neurongrp['N']) + ' neurons.' + endll)
-        # expand model equations
-        md_str += tab + bold('Model dynamics:') + endll
-        md_str += self.expand_equations(neurongrp['equations'])
-        if neurongrp['user_method']:
-            md_str += (tab + 'The equations are integrated with the \'' +
-                       neurongrp['user_method'] + '\' method.' + endll)
-        # expand associated events
-        if 'events' in neurongrp:
-            md_str += tab + bold('Events:') + endll
-            md_str += self.expand_events(neurongrp['events'])
-        # expand identifiers associated
-        if 'identifiers' in neurongrp:
-            md_str += tab + bold('Constants:') + ' '
-            md_str += self.expand_identifiers(neurongrp['identifiers']) + endll
-        if not self.keep_initializer_order and 'initializer' in neurongrp and len(neurongrp['initializer']):
-            md_str += tab + bold('Initial values:') + '\n'
-            for initializer in neurongrp['initializer']:
-                md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
-            md_str += '\n'
-        # expand run_regularly()
-        if 'run_regularly' in neurongrp:
-            md_str += (tab + bold('Run regularly') +
-            self.check_plural(neurongrp['run_regularly']) + ': ' + endll)
-            for run_reg in neurongrp['run_regularly']:
-                md_str += self.expand_runregularly(run_reg)
+        # # name and size
+        # md_str += ('Group ' + bold(neurongrp['name']) + ', consisting of ' +
+        #            bold(neurongrp['N']) + ' neurons.' + endll)
+        # # expand model equations
+        # md_str += tab + bold('Model dynamics:') + endll
+        # md_str += self.expand_equations(neurongrp['equations'])
+        # if neurongrp['user_method']:
+        #     md_str += (tab + 'The equations are integrated with the \'' +
+        #                neurongrp['user_method'] + '\' method.' + endll)
+        # # expand associated events
+        # if 'events' in neurongrp:
+        #     md_str += tab + bold('Events:') + endll
+        #     md_str += self.expand_events(neurongrp['events'])
+        # # expand identifiers associated
+        # if 'identifiers' in neurongrp:
+        #     md_str += tab + bold('Constants:') + ' '
+        #     md_str += self.expand_identifiers(neurongrp['identifiers']) + endll
+        # if not self.keep_initializer_order and 'initializer' in neurongrp and len(neurongrp['initializer']):
+        #     md_str += tab + bold('Initial values:') + '\n'
+        #     for initializer in neurongrp['initializer']:
+        #         md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
+        #     md_str += '\n'
+        # # expand run_regularly()
+        # if 'run_regularly' in neurongrp:
+        #     md_str += (tab + bold('Run regularly') +
+        #     self.check_plural(neurongrp['run_regularly']) + ': ' + endll)
+        #     for run_reg in neurongrp['run_regularly']:
+        #         md_str += self.expand_runregularly(run_reg)
         
         # Create Jinja2 Template object
-        if template_name not in templates :
-            print(md_str)
+        try:
+            template = env.get_template("NeuronGroup-{}.md".format(template_name))
+            # # Render the template with the provided NeuronGroup dictionary
+            md_str = template.render(neurongrp=neurongrp)
+        
+            print (md_str)
             return md_str
-        # Create Jinja2 Template object
-        template = Template(templates[template_name])
-        # # Render the template with the provided NeuronGroup dictionary
-        md_str = template.render(neurongrp=neurongrp)
-        print (md_str)
-        return md_str
+        except TemplateNotFound as e:
+            print("choose the correct template name")
+            return md_str
+        
         
 
     def expand_SpikeSource(self, source):
@@ -807,21 +815,21 @@ class MdExpander():
         poisngrp : dict
             Standard dictionary of PoissonGroup
         """
-
-        md_str = ''
-        md_str += (tab + 'Name ' + bold(poisngrp['name']) + ', with \
-                population size ' + bold(poisngrp['N']) +
-                ' and rate as ' + self.render_expression(poisngrp['rates']) +
-                '.' + endll)
-        if 'identifiers' in poisngrp:
-            md_str += tab + bold('Constants:') + endll
-            md_str += self.expand_identifiers(poisngrp['identifiers'])
-        if 'run_regularly' in poisngrp:
-            md_str += tab + bold('Run regularly: ') + endll
-            for run_reg in poisngrp['run_regularly']:
-                md_str += self.expand_runregularly(run_reg)
-
-        return md_str
+        # Render template
+        template_name = poisngrp["template_name"]
+        try:
+            template = env.get_template("PoissonGroup-{}.md".format(template_name))
+            # # Render the template with the provided NeuronGroup dictionary
+            md_str = template.render(poisngrp=poisngrp, render_expression=self.render_expression,
+                                expand_identifiers=self.expand_identifiers,
+                                expand_runregularly=self.expand_runregularly)
+        
+            print (md_str)
+            return md_str
+        except TemplateNotFound as e:
+            print("choose the correct template name")
+            return md_str
+       
 
     def expand_SpikeGeneratorGroup(self, spkgen):
         """
