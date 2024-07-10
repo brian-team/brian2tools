@@ -1,11 +1,11 @@
-Name {{ poisngrp['name'] }} with population size {{ poisngrp['N'] }} and rate as {{ render_expression(poisngrp['rates']) }}.
+Name {{ poissongrp['name'] }} with population size {{ poissongrp['N'] }} and rate as {{ render_expression(poissongrp['rates']) }}.
 
-        {% if poisngrp.get('identifiers', None) %}
+        {% if poissongrp.get('identifiers', None) %}
         Constants:
-        {{ expand_identifiers(poisngrp['identifiers']) }}
+        {{ expand_identifiers(poissongrp['identifiers']) }}
         {% endif %}
 
-        {% if poisngrp.get('run_regularly', None) %}
+        {% if poissongrp.get('run_regularly', None) %}
         Run regularly:
         {% for run_reg in poisngrp['run_regularly'] %}
         {{ expand_runregularly(run_reg) }}
