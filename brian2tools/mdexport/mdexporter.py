@@ -107,25 +107,25 @@ class MdExporter(BaseExporter):
             # Check if Pandoc is installed
             try:
                 subprocess.check_call(["pandoc", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
-                if type(Additionalformat) == str:
-                    if Additionalformat == "all":
-                        formats = ['latex', 'html', 'pdf']
-                    else:
-                        formats = [Additionalformat]
-                else:
-                    formats = Additionalformat if Additionalformat is not None else []
-                for format_name in formats:
-                    filename = self.filename + formats_extensions[format_name]
-                    subprocess.run(["pandoc", "--from", "markdown", "--to", format_name, "-o", filename, source_file])
-                    print("Conversion complete! Files generated:", filename) 
-                   
-            except subprocess.CalledProcessError:
+            except FileNotFoundError:
                 raise Exception("Pandoc is not installed. Please install Pandoc and try again.")
-            except FileNotFoundError as e:
-                raise Exception(f"Pandoc is not installed or not found in PATH: {e}")
-            except subprocess.SubprocessError as e:
-                raise Exception(f"An error occurred: {e}")
+            
+            formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
+            if type(Additionalformat) == str:
+                if Additionalformat == "all":
+                    formats = ['latex', 'html', 'pdf']
+                else:
+                    formats = [Additionalformat]
+            else:
+                formats = Additionalformat if Additionalformat is not None else []
+            for format_name in formats:
+                filename = self.filename + formats_extensions[format_name]
+                try:
+                    subprocess.run(["pandoc", "--from", "markdown", "--to", format_name, "-o", filename, source_file],
+                                   check=True)
+                    print("Conversion complete! Files generated:", filename) 
+                except subprocess.CalledProcessError as ex:
+                    print(f"Could not generate format '{format_name}': {str(ex)}")
         else:
             pass  # do nothing
 
