@@ -877,6 +877,7 @@ class MdExpander():
                 md_str += (', for member' +
                            self.check_plural(statemon['record']) +
                            ': ' +
+         
                            ','.join([str(ind) for ind in statemon['record']]))
         return md_str + endll
 
@@ -922,6 +923,7 @@ class MdExpander():
                     ','.join([str(ind) for ind in eventmon['record']]))
         md_str += (' when event ' + bold(eventmon['event']) +
                     ' is triggered')
+     
         return md_str + endll
 
     def expand_PopulationRateMonitor(self, popratemon):

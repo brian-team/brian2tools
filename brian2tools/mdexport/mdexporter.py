@@ -14,7 +14,7 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, expander=None,
-              filename=None, format=None, template_type=None):
+              filename=None, Additionalformat=None, template_type=None):
         """
         Build the exporter
 
@@ -36,9 +36,13 @@ class MdExporter(BaseExporter):
             particular filename. When empty string '' is passed the user file
             name would be taken
 
+        Additionalformat : str and list of str
+                If user wants to have the output file in Additionalformat they
+                can specify them under this variable which is latex, html & pdf.    
 
-        format : array
-                Array of string should be given as a input for this.    
+        template_type : str   
+            Based on your selected template, it will rendered otherwise
+            a default template will be used for rendering              
         """
         # buil_on_run = True but called build() directly
         if self.build_on_run and direct_call:
@@ -102,19 +106,26 @@ class MdExporter(BaseExporter):
             
             # Check if Pandoc is installed
             try:
-                subprocess.check_call(["pandoc"])
+                subprocess.check_call(["pandoc", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
-                if format == "all":
-                    formats = ['latex', 'html', 'pdf']
+                if type(Additionalformat) == str:
+                    if Additionalformat == "all":
+                        formats = ['latex', 'html', 'pdf']
+                    else:
+                        formats = [Additionalformat]
                 else:
-                    formats = format
+                    formats = Additionalformat if Additionalformat is not None else []
                 for format_name in formats:
                     filename = self.filename + formats_extensions[format_name]
                     subprocess.run(["pandoc", "--from", "markdown", "--to", format_name, "-o", filename, source_file])
-                    print("Conversion complete! Files generated:", filename)   
+                    print("Conversion complete! Files generated:", filename) 
+                   
             except subprocess.CalledProcessError:
                 raise Exception("Pandoc is not installed. Please install Pandoc and try again.")
-           
+            except FileNotFoundError as e:
+                raise Exception(f"Pandoc is not installed or not found in PATH: {e}")
+            except subprocess.SubprocessError as e:
+                raise Exception(f"An error occurred: {e}")
         else:
             pass  # do nothing
 
