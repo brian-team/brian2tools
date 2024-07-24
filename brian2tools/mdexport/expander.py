@@ -381,7 +381,7 @@ class MdExpander():
                                                              for connector in initializers_connectors
                                                              if connector['type'] == 'connect' and
                                                                 connector['synapses'] == obj_mem['name']]
-                                if (obj_key == 'neurongroup' and current_order == 1) or (obj_key == 'poissongroup' and current_order == 2):
+                                if (obj_key == 'neurongroup' and current_order == 1) or (obj_key == 'poissongroup' and current_order == 2) or (obj_key == 'synapses' and current_order == 3):
                                     obj_mem['template_name'] = template_name    
                             run_string += ('- ' +
                                            func_map[obj_key]['f'](obj_mem))
@@ -1022,47 +1022,58 @@ class MdExpander():
         synapse : dict
             Dictionary representation of `Synapses` object
         """
-        md_str = ''
-        md_str += (tab + 'Connections ' + bold(synapse['name']) + ', connecting ' +
-                   self.expand_SpikeSource(synapse['source']) +
-                   ' to ' + self.expand_SpikeSource(synapse['target'])
-                  )
-        # expand connectors
-        if not self.keep_initializer_order and 'connectors' in synapse:
-            if len(synapse['connectors']) > 1:
-                raise NotImplementedError('Only a single connect statement per Synapses object supported.')
-            if len(synapse['connectors']):
-                md_str += tab + self.expand_connector(synapse['connectors'][0])
-        else:
-            md_str += '.' + endll
-        # expand model equations
-        if 'equations' in synapse:
-            md_str += tab + bold('Model dynamics:') + endll
-            md_str += self.expand_equations(synapse['equations'])
-            if 'user_method' in synapse:
-                md_str += (tab + 'The equations are integrated with the \'' +
-                           synapse['user_method'] + '\' method.' + endll)
-        # expand pathways using `expand_pathways`
-        if 'pathways' in synapse:
-            md_str += self.expand_pathways(synapse['pathways'])
-            if 'equations' not in synapse and 'identifiers' in synapse:
-                # Put the external constants right here
-                md_str += tab + ', where ' + self.expand_identifiers(synapse['identifiers']) + '.'
-            md_str += endll
-        # expand summed_variables using `expand_summed_variables`
-        if 'summed_variables' in synapse:
-            md_str += tab + bold('Summed variables:') + endll
-            md_str += self.expand_summed_variables(synapse['summed_variables'])
-        # expand identifiers if defined
-        if 'identifiers' in synapse and 'equations' in synapse:
-            md_str += tab + bold('Constants:') + ' '
-            md_str += self.expand_identifiers(synapse['identifiers']) + endll
-        if not self.keep_initializer_order and 'initializer' in synapse and len(synapse['initializer']):
-            md_str += tab + bold('Initial values:') + '\n'
-            for initializer in synapse['initializer']:
-                md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
-            md_str += '\n'
-        return md_str
+        # md_str = ''
+        # md_str += (tab + 'Connections ' + bold(synapse['name']) + ', connecting ' +
+        #            self.expand_SpikeSource(synapse['source']) +
+        #            ' to ' + self.expand_SpikeSource(synapse['target'])
+        #           )
+        # # expand connectors
+        # if not self.keep_initializer_order and 'connectors' in synapse:
+        #     if len(synapse['connectors']) > 1:
+        #         raise NotImplementedError('Only a single connect statement per Synapses object supported.')
+        #     if len(synapse['connectors']):
+        #         md_str += tab + self.expand_connector(synapse['connectors'][0])
+        # else:
+        #     md_str += '.' + endll
+        # # expand model equations
+        # if 'equations' in synapse:
+        #     md_str += tab + bold('Model dynamics:') + endll
+        #     md_str += self.expand_equations(synapse['equations'])
+        #     if 'user_method' in synapse:
+        #         md_str += (tab + 'The equations are integrated with the \'' +
+        #                    synapse['user_method'] + '\' method.' + endll)
+        # # expand pathways using `expand_pathways`
+        # if 'pathways' in synapse:
+        #     md_str += self.expand_pathways(synapse['pathways'])
+        #     if 'equations' not in synapse and 'identifiers' in synapse:
+        #         # Put the external constants right here
+        #         md_str += tab + ', where ' + self.expand_identifiers(synapse['identifiers']) + '.'
+        #     md_str += endll
+        # # expand summed_variables using `expand_summed_variables`
+        # if 'summed_variables' in synapse:
+        #     md_str += tab + bold('Summed variables:') + endll
+        #     md_str += self.expand_summed_variables(synapse['summed_variables'])
+        # # expand identifiers if defined
+        # if 'identifiers' in synapse and 'equations' in synapse:
+        #     md_str += tab + bold('Constants:') + ' '
+        #     md_str += self.expand_identifiers(synapse['identifiers']) + endll
+        # if not self.keep_initializer_order and 'initializer' in synapse and len(synapse['initializer']):
+        #     md_str += tab + bold('Initial values:') + '\n'
+        #     for initializer in synapse['initializer']:
+        #         md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
+        #     md_str += '\n'
+        # return md_str
+        template_name = synapse["template_name"]
+        try:
+            template = env.get_template("Synapses-{}.md".format(template_name))
+            # # Render the template with the provided NeuronGroup dictionary
+            md_str = template.render(synapse=synapse,expand_SpikeSource=self.expand_SpikeSource)
+        
+           
+            return md_str
+        except TemplateNotFound as e:
+            print("choose the correct template name")
+            return md_str
 
     def expand_PoissonInput(self, poinp):
         """
