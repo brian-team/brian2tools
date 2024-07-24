@@ -111,7 +111,7 @@ class MdExporter(BaseExporter):
                 raise Exception("Pandoc is not installed. Please install Pandoc and try again.")
             
             formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
-            if type(Additionalformat) == str:
+            if isinstance(Additionalformat, str):
                 if Additionalformat == "all":
                     formats = ['latex', 'html', 'pdf']
                 else:
