@@ -14,7 +14,7 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, expander=None,
-              filename=None, additonal_formats=None, template_type=None):
+              filename=None, additional_formats=None, template_type=None):
         """
         Build the exporter
 
@@ -36,8 +36,8 @@ class MdExporter(BaseExporter):
             particular filename. When empty string '' is passed the user file
             name would be taken
 
-        additonal_formats : str or list of str or all
-                If user wants to have the output file in additonal_formats they
+        additional_formats : str or list of str or all
+                If user wants to have the output file in additional_formats they
                 can specify them under this variable and the options are pdf, 
                 latex, html and all.  
 
@@ -112,13 +112,13 @@ class MdExporter(BaseExporter):
                 raise Exception("Pandoc is not installed. Please install Pandoc and try again.")
             
             formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
-            if isinstance(additonal_formats, str):
-                if additonal_formats == "all":
+            if isinstance(additional_formats, str):
+                if additional_formats == "all":
                     formats = ['latex', 'html', 'pdf']
                 else:
-                    formats = [additonal_formats]
+                    formats = [additional_formats]
             else:
-                formats = additonal_formats if additonal_formats is not None else []
+                formats = additional_formats if additional_formats is not None else []
             for format_name in formats:
                 filename = self.filename + formats_extensions[format_name]
                 try:
