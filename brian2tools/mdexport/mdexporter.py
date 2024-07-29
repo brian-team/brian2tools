@@ -2,6 +2,7 @@ from brian2.devices.device import all_devices
 from brian2tools.baseexport.device import BaseExporter
 import os
 import inspect
+import subprocess
 from .expander import *
 
 
@@ -13,7 +14,7 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, expander=None,
-              filename=None):
+              filename=None, additional_formats=None, template_type=None):
         """
         Build the exporter
 
@@ -34,6 +35,15 @@ class MdExporter(BaseExporter):
             If mentioned, the markdown text would be written in that
             particular filename. When empty string '' is passed the user file
             name would be taken
+
+        additional_formats : str or list of str or all
+                If user wants to have the output file in additional_formats they
+                can specify them under this variable and the options are pdf, 
+                latex, html and all.  
+
+        template_type : str   
+            Based on your selected template, it will rendered otherwise
+            a default template will be used for rendering              
         """
         # buil_on_run = True but called build() directly
         if self.build_on_run and direct_call:
@@ -70,7 +80,7 @@ class MdExporter(BaseExporter):
             self.expander = MdExpander()
 
         # start creating markdown descriptions using expander
-        self.md_text = self.expander.create_md_string(self.runs)
+        self.md_text = self.expander.create_md_string(self.runs, template_type)
 
         # check output filename
         if filename:
@@ -90,9 +100,33 @@ class MdExporter(BaseExporter):
             print(self.md_text)
         elif self.filename:
             # start writing markdown text in file
-            md_file = open(self.filename + '.md', "w")
+            source_file = self.filename + ".md"
+            md_file = open(source_file, "w")
             md_file.write(self.md_text)
             md_file.close()
+            
+            # Check if Pandoc is installed
+            try:
+                subprocess.check_call(["pandoc", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except FileNotFoundError:
+                raise Exception("Pandoc is not installed. Please install Pandoc and try again.")
+            
+            formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
+            if isinstance(additional_formats, str):
+                if additional_formats == "all":
+                    formats = ['latex', 'html', 'pdf']
+                else:
+                    formats = [additional_formats]
+            else:
+                formats = additional_formats if additional_formats is not None else []
+            for format_name in formats:
+                filename = self.filename + formats_extensions[format_name]
+                try:
+                    subprocess.run(["pandoc", "--from", "markdown", "--to", format_name, "-o", filename, source_file],
+                                   check=True)
+                    print("Conversion complete! Files generated:", filename) 
+                except subprocess.CalledProcessError as ex:
+                    print(f"Could not generate format '{format_name}': {str(ex)}")
         else:
             pass  # do nothing
 
