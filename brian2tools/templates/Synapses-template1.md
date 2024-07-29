@@ -1,41 +1,30 @@
-Connections {{ synapse['name'] }}, connecting {{ self.expand_SpikeSource(synapse['source']) }} to {{ self.expand_SpikeSource(synapse['target']) }}
-{% if not self.keep_initializer_order and 'connectors' in synapse %}
-    {% if synapse['connectors']|length %}
-        {{ tab }}{{ self.expand_connector(synapse['connectors'][0]) }}
-    {% endif %}
-{% else %}
-    .{{ endll }}
+Connections {{ synapse['name'] }}, connecting {{ expander.expand_SpikeSource(synapse['source']) }} to {{ expander.expand_SpikeSource(synapse['target']) }}
+{% if not expander.keep_initializer_order and 'connectors' in synapse and synapse['connectors']|length -%}
+    {{ tab }}{{ expander.expand_connector(synapse['connectors'][0]) }}
 {% endif %}
-
-{% if 'equations' in synapse %}
-    {{ tab }}{{ bold('Model dynamics:') }}{{ endll }}
-    {{ self.expand_equations(synapse['equations']) }}
-    {% if 'user_method' in synapse %}
+{% if 'equations' in synapse -%}
+    {{ tab }}{{ bold('Model dynamics:') }}
+    {{ expander.expand_equations(synapse['equations']) }}
+    {% if 'user_method' in synapse -%}
         {{ tab }}The equations are integrated with the '{{ synapse['user_method'] }}' method.{{ endll }}
     {% endif %}
 {% endif %}
-
-{% if 'pathways' in synapse %}
-    {{ self.expand_pathways(synapse['pathways']) }}
-    {% if 'equations' not in synapse and 'identifiers' in synapse %}
-        {{ tab }}, where {{ self.expand_identifiers(synapse['identifiers']) }}.
+{% if 'pathways' in synapse -%}
+    {{ expander.expand_pathways(synapse['pathways']) }}
+    {% if 'equations' not in synapse and 'identifiers' in synapse -%}
+        {{ tab }}, where {{ expander.expand_identifiers(synapse['identifiers']) }}.
     {% endif %}
-    {{ endll }}
 {% endif %}
-
-{% if 'summed_variables' in synapse %}
-    {{ tab }}{{ bold('Summed variables:') }}{{ endll }}
-    {{ self.expand_summed_variables(synapse['summed_variables']) }}
+{% if 'summed_variables' in synapse -%}
+    {{ tab }}{{ bold('Summed variables:') }}
+    {{ expander.expand_summed_variables(synapse['summed_variables']) }}
 {% endif %}
-
-{% if 'identifiers' in synapse and 'equations' in synapse %}
-    {{ tab }}{{ bold('Constants:') }} {{ self.expand_identifiers(synapse['identifiers']) }}{{ endll }}
+{% if 'identifiers' in synapse and 'equations' in synapse -%}
+    {{ tab }}{{ bold('Constants:') }} {{ expander.expand_identifiers(synapse['identifiers']) }}
 {% endif %}
-
-{% if not self.keep_initializer_order and 'initializer' in synapse and synapse['initializer']|length %}
-    {{ tab }}{{ bold('Initial values:') }}\n
-    {% for initializer in synapse['initializer'] %}
-        {{ tab }}* {{ self.expand_initializer(initializer) }}\n
+{% if not expander.keep_initializer_order and 'initializer' in synapse and synapse['initializer']|length -%}
+    {{ tab }}{{ bold('Initial values:') }}
+    {% for initializer in synapse['initializer'] -%}
+        {{ tab }}* {{ expander.expand_initializer(initializer) }}
     {% endfor %}
-    \n
 {% endif %}

@@ -1,0 +1,9 @@
+|-------------------------------|------------------------------------------------|
+| **Connections**                | {{ synapse['name'] }}, connecting {{ expander.expand_SpikeSource(synapse['source']) }} to {{ expander.expand_SpikeSource(synapse['target']) }} |
+| **Connector** (if present)     | {% if not expander.keep_initializer_order and 'connectors' in synapse and synapse['connectors']|length %} {{ expander.expand_connector(synapse['connectors'][0]) }} {% endif %} |
+| **Model dynamics** (if present)| {% if 'equations' in synapse %} {% for key, eqn in synapse['equations'].items() %} $\frac{d}{d t} {{ key }}$ = {{ eqn.expr }}{% if eqn.unit %} [{{ eqn.unit }}]{% endif %} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
+| **Integration method** (if present) | {% if 'user_method' in synapse %} The equations are integrated with the '{{ synapse['user_method'] }}' method. {% endif %} |
+| **Pathways** (if present)      | {% if 'pathways' in synapse %} {{ expander.expand_pathways(synapse['pathways']) }} {% if 'equations' not in synapse and 'identifiers' in synapse %} , where {{ expander.expand_identifiers(synapse['identifiers']) }}. {% endif %} {% endif %} |
+| **Summed variables** (if present) | {% if 'summed_variables' in synapse %} {{ expander.expand_summed_variables(synapse['summed_variables']) }} {% endif %} |
+| **Constants** (if present)     | {% if 'identifiers' in synapse and 'equations' in synapse %} {% for identifier, value in synapse['identifiers'].items() %} {{ identifier }}: {{ value }} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
+| **Initial values** (if present) | {% if not expander.keep_initializer_order and 'initializer' in synapse and synapse['initializer']|length %} {% for initializer in synapse['initializer'] %} {{ initializer.variable }}: {{ initializer.value }}{% if initializer.unit %} [{{ initializer.unit }}]{% endif %} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |

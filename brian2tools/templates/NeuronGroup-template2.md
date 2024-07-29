@@ -1,8 +1,8 @@
 |-------------------------------|------------------------------------------------|
-| **Neuron population**          | Group {{ neurongrp.name }}, consisting of {{ neurongrp.N }} neurons. |
-| **Model dynamics**             | {% for key, eqn in neurongrp.equations.items() %} $\frac{d}{d t} {{ key }}$ = {{ eqn.expr }}{% if eqn.unit %} [{{ eqn.unit }}]{% endif %} {% if not loop.last %}\n{% endif %}{% endfor %} |
-| **Integration method**         | {% if neurongrp.user_method %} '{{ neurongrp.user_method }}' method {% endif %} |
-| **Events** (if present)        | {% if 'events' in neurongrp %} {% for event, details in neurongrp.events.items() %} If {{ details.threshold.code }}, a {{ event }} event is triggered and {{ details.reset.code }}. {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
-| **Constants** (if present)     | {% if 'identifiers' in neurongrp %} {% for identifier, value in neurongrp.identifiers.items() %} {{ identifier }}: {{ value }} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
-| **Initial values** (if present)| {% if 'initializer' in neurongrp and neurongrp['initializer'] %} {% for initializer in neurongrp['initializer'] %} {{ initializer.variable }}: {{ initializer.value }}{% if initializer.unit %} [{{ initializer.unit }}]{% endif %} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
-| **Run regularly** (if present) | {% if 'run_regularly' in neurongrp %} {% for run_reg in neurongrp['run_regularly'] %} {{ run_reg }} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
+| **Neuron population**         | Group {{ (neurongrp['name']) }}, consisting of {{ (neurongrp['N']) }} neurons. |
+| **Model dynamics**            | {{ expander.expand_equations(neurongrp['equations']) }} |
+| **Integration method**        | {% if neurongrp['user_method'] %} The equations are integrated with the '{{ neurongrp['user_method'] }}' method. {% endif %} |
+| **Events** (if present)       | {% if 'events' in neurongrp %} {{ expander.expand_events(neurongrp['events']) }} {% endif %} |
+| **Constants** (if present)    | {% if 'identifiers' in neurongrp %} {{ expander.expand_identifiers(neurongrp['identifiers']) }} {% endif %} |
+| **Initial values** (if present)| {% if not expander.keep_initializer_order and 'initializer' in neurongrp and neurongrp['initializer']|length %} {% for initializer in neurongrp['initializer'] %} {{ initializer.variable }}: {{ initializer.value }}{% if initializer.unit %} [{{ initializer.unit }}]{% endif %} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
+| **Run regularly** (if present)| {% if 'run_regularly' in neurongrp %} {% for run_reg in neurongrp['run_regularly'] %} {{ expander.expand_runregularly(run_reg) }} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
