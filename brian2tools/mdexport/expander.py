@@ -524,7 +524,7 @@ class MdExpander():
         try:
             template = env.get_template("NeuronGroup-{}.md".format(template_name))
             # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(neurongrp=neurongrp)
+            md_str = template.render(neurongrp=neurongrp,expander=self)
         
             print (md_str)
             return md_str
@@ -820,9 +820,7 @@ class MdExpander():
         try:
             template = env.get_template("PoissonGroup-{}.md".format(template_name))
             # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(poisngrp=poisngrp, render_expression=self.render_expression,
-                                expand_identifiers=self.expand_identifiers,
-                                expand_runregularly=self.expand_runregularly)
+            md_str = template.render(poisngrp=poisngrp, expander=self)
         
             print (md_str)
             return md_str
