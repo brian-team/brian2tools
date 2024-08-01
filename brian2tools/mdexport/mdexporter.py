@@ -14,7 +14,7 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, expander=None,
-              filename=None, format=None, template_type=None):
+              filename=None, additional_formats=None, template_type=None):
         """
         Build the exporter
 
@@ -36,9 +36,10 @@ class MdExporter(BaseExporter):
             particular filename. When empty string '' is passed the user file
             name would be taken
 
-
-        format : array
-            Array of string should be given as a input for this.
+        additional_formats : str or list of str or all
+                If user wants to have the output file in additional_formats they
+                can specify them under this variable and the options are pdf, 
+                latex, html and all.  
 
         template_type : str   
             Based on your selected template, it will rendered otherwise
@@ -106,19 +107,26 @@ class MdExporter(BaseExporter):
             
             # Check if Pandoc is installed
             try:
-                subprocess.check_call(["pandoc"])
-                formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
-                if format == "all":
+                subprocess.check_call(["pandoc", "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except FileNotFoundError:
+                raise Exception("Pandoc is not installed. Please install Pandoc and try again.")
+            
+            formats_extensions = {'latex':'.tex', 'html':'.html', 'pdf':'.pdf'}
+            if isinstance(additional_formats, str):
+                if additional_formats == "all":
                     formats = ['latex', 'html', 'pdf']
                 else:
-                    formats = format
-                for format_name in formats:
-                    filename = self.filename + formats_extensions[format_name]
-                    subprocess.run(["pandoc", "--from", "markdown", "--to", format_name, "-o", filename, source_file])
-                    print("Conversion complete! Files generated:", filename)   
-            except subprocess.CalledProcessError:
-                raise Exception("Pandoc is not installed. Please install Pandoc and try again.")
-           
+                    formats = [additional_formats]
+            else:
+                formats = additional_formats if additional_formats is not None else []
+            for format_name in formats:
+                filename = self.filename + formats_extensions[format_name]
+                try:
+                    subprocess.run(["pandoc", "--from", "markdown", "--to", format_name, "-o", filename, source_file],
+                                   check=True)
+                    print("Conversion complete! Files generated:", filename) 
+                except subprocess.CalledProcessError as ex:
+                    print(f"Could not generate format '{format_name}': {str(ex)}")
         else:
             pass  # do nothing
 
