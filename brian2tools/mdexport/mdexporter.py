@@ -14,7 +14,7 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, expander=None,
-              filename=None, format=None, template_type='default'):
+              filename=None, additional_formats=None, template_type='default'):
         """
         Build the exporter
 
