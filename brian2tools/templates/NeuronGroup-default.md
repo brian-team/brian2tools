@@ -1,27 +1,27 @@
 ## Network details
  **Neuron population:**
-Group {{ (neurongrp['name']) }}, consisting of {{ (neurongrp['N']) }} neurons.
+Group {{ (group['name']) }}, consisting of {{ (group['N']) }} neurons.
 {{ tab }}{{ ('Model dynamics:') }}
-{{ expander.expand_equations(neurongrp['equations']) }}
-{% if neurongrp['user_method'] %}
-    {{ tab }}The equations are integrated with the '{{ neurongrp['user_method'] }}' method.
+{{ expander.expand_equations(group['equations']) }}
+{% if group['user_method'] %}
+    {{ tab }}The equations are integrated with the '{{ group['user_method'] }}' method.
 {% endif %}
-{% if 'events' in neurongrp %}
+{% if 'events' in group %}
     {{ tab }}{{ ('Events:') }}
-    {{ expander.expand_events(neurongrp['events']) }}
+    {{ expander.expand_events(group['events']) }}
 {% endif %}
-{% if 'identifiers' in neurongrp %}
-    {{ tab }}{{ ('Constants:') }} {{ expander.expand_identifiers(neurongrp['identifiers']) }}
+{% if 'identifiers' in group %}
+    {{ tab }}{{ ('Constants:') }} {{ expander.expand_identifiers(group['identifiers']) }}
 {% endif %}
-{% if not expander.keep_initializer_order and 'initializer' in neurongrp and neurongrp['initializer']|length %}
+{% if not expander.keep_initializer_order and 'initializer' in group and group['initializer']|length %}
     {{ tab }}{{ ('Initial values:') }}
-    {% for initializer in neurongrp['initializer'] %}
+    {% for initializer in group['initializer'] %}
         {{ tab }}* {{ expander.expand_initializer(initializer) }}
     {% endfor %}
 {% endif %}
-{% if 'run_regularly' in neurongrp %}
-    {{ tab }}{{ ('Run regularly') }}{{ expander.check_plural(neurongrp['run_regularly']) }}:
-    {% for run_reg in neurongrp['run_regularly'] %}
+{% if 'run_regularly' in group %}
+    {{ tab }}{{ ('Run regularly') }}{{ expander.check_plural(group['run_regularly']) }}:
+    {% for run_reg in group['run_regularly'] %}
         {{ expander.expand_runregularly(run_reg) }}
     {% endfor %}
 {% endif %}

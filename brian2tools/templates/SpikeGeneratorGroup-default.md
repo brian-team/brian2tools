@@ -1,18 +1,18 @@
 {# Basic information about the SpikeGeneratorGroup #}
-{{ tab }}Name {{ (spkgen['name']) }},
-with population size {{ (spkgen['N']) }},
-has neuron{{ 's' if spkgen['indices']|length > 1 else '' }}: 
-{{ expander.prepare_array(spkgen['indices']) }}
+{{ tab }}Name {{ (group['name']) }},
+with population size {{ (group['N']) }},
+has neuron{{ 's' if group['indices']|length > 1 else '' }}: 
+{{ expander.prepare_array(group['indices']) }}
 that spike at times 
-{{ expander.prepare_array(spkgen['times']) }},
-with period {{ spkgen['period'] }}.
+{{ expander.prepare_array(group['times']) }},
+with period {{ group['period'] }}.
 {{ endll }}
 
 {# Check for the 'run_regularly' key and expand if it exists #}
-{% if 'run_regularly' in spkgen %}
+{% if 'run_regularly' in group %}
     {{ tab }}{{ ('Run regularly:') }}
     {{ endll }}
-    {% for run_reg in spkgen['run_regularly'] %}
+    {% for run_reg in group['run_regularly'] %}
         {{ expander.expand_runregularly(run_reg) }}
     {% endfor %}
 {% endif %}

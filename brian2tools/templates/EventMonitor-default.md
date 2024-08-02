@@ -1,21 +1,21 @@
 {# Jinja2 template for EventMonitor in a simple text format #}
 
-Monitors variable{{ expander.check_plural(eventmon['variables']) }}: {{ eventmon['variables'] | join(', ', expander.render_expression) }} of {{ expander.expand_SpikeSource(eventmon['source']) }}
+Monitors variable{{ expander.check_plural(group['variables']) }}: {{ group['variables'] | join(', ', expander.render_expression) }} of {{ expander.expand_SpikeSource(group['source']) }}
 
-{% if eventmon['record'] is boolean %}
-    {% if eventmon['record'] %}
+{% if group['record'] is boolean %}
+    {% if group['record'] %}
         for all members
     {% else %}
         for no member
     {% endif %}
 {% else %}
-    {% if eventmon['record']|length == 0 %}
+    {% if group['record']|length == 0 %}
         for no member
     {% else %}
-        for member{{ expander.check_plural(eventmon['record']) }}: {{ eventmon['record'] | join(', ') }}
+        for member{{ expander.check_plural(group['record']) }}: {{ group['record'] | join(', ') }}
     {% endif %}
 {% endif %}
 
-when event {{ eventmon['event'] }} is triggered
+when event {{ group['event'] }} is triggered
 
 {{ endll }}

@@ -297,6 +297,7 @@ class MdExpander():
         Create markdown text by checking the standard dictionary and call
         required expand functions and arrange the descriptions
         """
+        template_name = template_name
         # expand network header
         overall_string = self.expand_network_header(net_dict)
 
@@ -311,40 +312,49 @@ class MdExpander():
 
             # map expand functions for particular components
             # h: "general user" naming / 'hb': "Brian" user naming
-            func_map = {'neurongroup': {'f': self.expand_NeuronGroup,
-                                        'hb': 'NeuronGroup',
-                                        'h': 'Neuron population', 'order': 1},
-                       'poissongroup': {'f': self.expand_PoissonGroup,
-                                        'hb': 'PoissonGroup',
-                                        'h': 'Poisson spike source',
-                                        'order': 2},
-                       'spikegeneratorgroup':
-                                    {'f': self.expand_SpikeGeneratorGroup,
-                                     'hb': 'SpikeGeneratorGroup',
-                                     'h': 'Spike generating source',
-                                     'order': 2},
-                       'statemonitor': {'f': self.expand_StateMonitor,
-                                        'hb': 'StateMonitor',
-                                        'h': 'Activity recorder', 'order': 4},
-                       'spikemonitor': {'f': self.expand_SpikeMonitor,
-                                        'hb': 'SpikeMonitor',
-                                        'h': 'Spiking activity recorder',
-                                        'order': 4},
-                       'eventmonitor': {'f': self.expand_EventMonitor,
-                                        'hb': 'EventMonitor',
-                                        'h': 'Event activity recorder',
-                                        'order': 4},
-                       'populationratemonitor':
-                                    {'f': self.expand_PopulationRateMonitor,
-                                     'hb': 'PopulationRateMonitor',
-                                     'h': 'Population rate recorder',
-                                     'order': 4},
-                       'synapses': {'f': self.expand_Synapses,
-                                    'hb': 'Synapses',
-                                    'h': 'Synapse', 'order': 3},
-                       'poissoninput': {'f': self.expand_PoissonInput,
-                                         'hb': 'PoissonInput',
-                                         'h': 'Poisson input', 'order': 0}}
+            func_map = {
+                "neurongroup": {
+                    "hb": "NeuronGroup",
+                    "h": "Neuron population",
+                    "order": 1,
+                },
+                "poissongroup": {
+                    "hb": "PoissonGroup",
+                    "h": "Poisson spike source",
+                    "order": 2,
+                },
+                "spikegeneratorgroup": {
+                    "hb": "SpikeGeneratorGroup",
+                    "h": "Spike generating source",
+                    "order": 2,
+                },
+                "statemonitor": {
+                    "hb": "StateMonitor",
+                    "h": "Activity recorder",
+                    "order": 4,
+                },
+                "spikemonitor": {
+                    "hb": "SpikeMonitor",
+                    "h": "Spiking activity recorder",
+                    "order": 4,
+                },
+                "eventmonitor": {
+                    "hb": "EventMonitor",
+                    "h": "Event activity recorder",
+                    "order": 4,
+                },
+                "populationratemonitor": {
+                    "hb": "PopulationRateMonitor",
+                    "h": "Population rate recorder",
+                    "order": 4,
+                },
+                "synapses": {"hb": "Synapses", "h": "Synapse", "order": 3},
+                "poissoninput": {
+                    "hb": "PoissonInput",
+                    "h": "Poisson input",
+                    "order": 0,
+                },
+            }
             # loop over each order and expand the item
             # (same complexity as sorting the dict)
             order_list = [0, 1, 2, 3, 4]
@@ -381,10 +391,8 @@ class MdExpander():
                                                              for connector in initializers_connectors
                                                              if connector['type'] == 'connect' and
                                                                 connector['synapses'] == obj_mem['name']]
-                                if (obj_key == 'neurongroup' and current_order == 1) or (obj_key == 'poissongroup' and current_order == 2) or (obj_key == 'synapses' and current_order == 3) or (obj_key == 'poissoninput' and current_order == 0) or (obj_key == 'eventmonitor' and current_order == 4) or (obj_key == 'populationratemonitor' and current_order == 4) or (obj_key == 'statemonitor' and current_order == 4) :
-                                    obj_mem['template_name'] = template_name    
                             run_string += ('- ' +
-                                           func_map[obj_key]['f'](obj_mem))
+                                           self.expand_group(obj_mem, f"{func_map[obj_key]['hb']}-{template_name}.md"))
 
             if self.keep_initializer_order:
                 # differentiate connectors and initializers
@@ -488,7 +496,7 @@ class MdExpander():
         neurongrp : dict
             Standard dictionary of NeuronGroup
         """
-        template_name = neurongrp['template_name']
+        template_name = self.template_name
         # start expanding
         md_str = ''
         # # name and size
@@ -919,39 +927,15 @@ class MdExpander():
         eventmon : dict
             Standard dictionary of EventMonitor
         """
-        # md_str = ''
-        # md_str += (tab + 'Monitors variable' +
-        #         self.check_plural(eventmon['variables']) + ': ' +
-        #         ','.join(
-        #         [self.render_expression(var) for var in eventmon['variables']]
-        #             ) +
-        #         ' of ' + self.expand_SpikeSource(eventmon['source']))
-        # if isinstance(eventmon['record'], bool):
-        #     if eventmon['record']:
-        #         md_str += ' for all members'
-        # else:
-        #     if not eventmon['record'].size:
-        #         md_str += ' for no member'
-        #     else:
-        #         md_str += (
-        #             ', for member' + self.check_plural(eventmon['record']) +
-        #             ': ' +
-        #             ','.join([str(ind) for ind in eventmon['record']]))
-        # md_str += (' when event ' + bold(eventmon['event']) +
-        #             ' is triggered')
-        # return md_str + endll
-        template_name = eventmon["template_name"]
+        return self.expand_group(eventmon, f'EventMonitor-{self.template_name}.md')
+
+    def expand_group(self, group, template_name):
         try:
-            template = env.get_template("EventMonitor-{}.md".format(template_name))
-            # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(eventmon=eventmon,expander=self)
-            print (md_str)  
-            return md_str
+           template = env.get_template(template_name)
+           md_str = template.render(group=group, expander=self)
         except TemplateNotFound as e:
-           
-            raise Exception(f"choose the correct template name: {e}")
-
-
+            raise ValueError(f"Template '{template_name}' not found.")
+        return md_str
 
     def expand_PopulationRateMonitor(self, popratemon):
         """
@@ -1097,7 +1081,7 @@ class MdExpander():
         #         md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
         #     md_str += '\n'
         # return md_str
-        template_name = synapse["template_name"]
+        template_name = self.template_name
         try:
             template = env.get_template("Synapses-{}.md".format(template_name))
             # # Render the template with the provided NeuronGroup dictionary
