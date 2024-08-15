@@ -15,12 +15,9 @@ import inspect
 import datetime
 import brian2
 
-from jinja2 import Environment, PackageLoader, select_autoescape, TemplateNotFound
+from jinja2 import Environment, PackageLoader, ChoiceLoader, FileSystemLoader,  select_autoescape, TemplateNotFound
 
-env = Environment(
-    loader=PackageLoader("brian2tools"),
-    autoescape=select_autoescape()
-)
+
 
 # define variables for often used delimiters
 endll = '\n\n'
@@ -109,6 +106,12 @@ class MdExpander():
         self.user_file = user_file
         self.add_meta = add_meta
         self.github_md = github_md
+
+        def set_temp_dir_path(self, temp_dir_path):
+        self.env = Environment(
+            loader=ChoiceLoader([FileSystemLoader(temp_dir_path), PackageLoader("brian2tools")]),
+            autoescape=select_autoescape()
+        )
 
     def check_plural(self, iterable, singular_word=None,
                      allow_constants=True, is_int=False):
@@ -530,7 +533,7 @@ class MdExpander():
         
         # Create Jinja2 Template object
         try:
-            template = env.get_template("NeuronGroup-{}.md".format(template_name))
+            template = self.env.get_template("NeuronGroup-{}.md".format(template_name))
             # # Render the template with the provided NeuronGroup dictionary
             md_str = template.render(neurongrp=neurongrp,expander=self)
         
@@ -826,7 +829,7 @@ class MdExpander():
         # Render template
         template_name = poisngrp["template_name"]
         try:
-            template = env.get_template("PoissonGroup-{}.md".format(template_name))
+            template = self.env.get_template("PoissonGroup-{}.md".format(template_name))
             # # Render the template with the provided NeuronGroup dictionary
             md_str = template.render(poisngrp=poisngrp, expander=self)
         
@@ -895,7 +898,7 @@ class MdExpander():
         # return md_str + endll
         template_name = statemon["template_name"]
         try:
-            template = env.get_template("StateMonitor-{}.md".format(template_name))
+            template = self.env.get_template("StateMonitor-{}.md".format(template_name))
             # # Render the template with the provided NeuronGroup dictionary
             md_str = template.render(statemon=statemon, expander=self)
         
@@ -956,7 +959,7 @@ class MdExpander():
         # return md_str
         template_name = popratemon["template_name"]
         try:
-            template = env.get_template("PopulationRateMonitor-{}.md".format(template_name))
+            template = self.env.get_template("PopulationRateMonitor-{}.md".format(template_name))
             # # Render the template with the provided NeuronGroup dictionary
             md_str = template.render(popratemon=popratemon,expander=self)
          
@@ -1081,14 +1084,16 @@ class MdExpander():
         #         md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
         #     md_str += '\n'
         # return md_str
-        template_name = self.template_name
+        template_name = synapse["template_name"]
         try:
-            template = env.get_template("Synapses-{}.md".format(template_name))
+            template = self.env.get_template("Synapses-{}.md".format(template_name))
             # # Render the template with the provided NeuronGroup dictionary
             md_str = template.render(synapse=synapse,expander=self)
-            
+        
+            print (md_str)  
             return md_str
         except TemplateNotFound as e:
+           
             raise Exception(f"choose the correct template name: {e}")
             
 
