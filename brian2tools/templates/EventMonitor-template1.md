@@ -1,19 +1,10 @@
-{# Jinja2 template for EventMonitor in table format #}
-
-|-------------------------------|--------------------------------------------------|
-| **Monitored Variables**       | {{ eventmon['variables'] | join(', ', expander.render_expression) }} |
-| **Source**                    | {{ expander.expand_SpikeSource(eventmon['source']) }} |
-| **Recording**                 | {% if eventmon['record'] is boolean %}
-                                      {% if eventmon['record'] %}
-                                        for all members
-                                      {% else %}
-                                        for no member
-                                      {% endif %}
-                                    {% else %}
-                                      {% if eventmon['record']|length == 0 %}
-                                        for no member
-                                      {% else %}
-                                        for member{{ expander.check_plural(eventmon['record']) }}: {{ eventmon['record'] | join(', ') }}
-                                      {% endif %}
-                                    {% endif %}
-| **Event Trigger**             | {{ eventmon['event']}}                   |
+| **Monitors**    | **Variables**                                                                                               | **Source**                                           | **Record**                                                                                                 | **Event**                           |
+|-----------------|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|------------------------------------------------------------------------------------------------------------|-------------------------------------|
+| Monitors variable{{ expander.check_plural(group['variables']) }}: {%- for var in group['variables'] -%}
+    {{ expander.render_expression(var) }}{%- if not loop.last -%}, {%- endif -%}
+{%- endfor %} | of {{ expander.expand_SpikeSource(group['source']) }} | 
+    {%- if group['record'] is boolean -%}
+        {%- if group['record'] -%} for all members {%- else -%} for no member {%- endif -%}
+    {%- else -%}
+        {%- if group['record']|length == 0 -%} for no member {%- else -%} for member{{ expander.check_plural(group['record']) }}: {{ group['record'] | join(', ') }} {%- endif -%}
+    {%- endif -%} | when event **{{ group['event'] }}** is triggered |

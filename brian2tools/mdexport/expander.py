@@ -488,7 +488,28 @@ class MdExpander():
         md_str += endl
 
         return md_str
+    def expand_group(self, group, template_name):
+        """
+        Expand group() header
 
+        Parameters
+        ----------
+
+        group : groupname
+            ex : - neurongrp,poisongrp ....
+
+        template_name : string
+            full template name along with the group and template_type
+        """
+        try:
+           print (template_name)
+           template = self.env.get_template(template_name)
+           md_str = template.render(group=group, expander=self)
+           print (md_str)
+           return md_str
+        except TemplateNotFound as e:
+            raise ValueError(f"Template '{template_name}' not found.")
+        
     def expand_NeuronGroup(self, neurongrp):
         """
         Expand NeuronGroup from standard dictionary
@@ -532,15 +553,16 @@ class MdExpander():
         #         md_str += self.expand_runregularly(run_reg)
         
         # Create Jinja2 Template object
-        try:
-            template = self.env.get_template("NeuronGroup-{}.md".format(template_name))
-            # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(neurongrp=neurongrp,expander=self)
+        return self.expand_group(neurongrp, f'NeuronGroup-{self.template_name}.md')
+        # try:
+        #     template = self.env.get_template("NeuronGroup-{}.md".format(template_name))
+        #     # # Render the template with the provided NeuronGroup dictionary
+        #     md_str = template.render(neurongrp=neurongrp,expander=self)
         
-            print (md_str)
-            return md_str
-        except TemplateNotFound as e:
-            raise Exception(f"choose the correct template name: {e}")
+        #     print (md_str)
+        #     return md_str
+        # except TemplateNotFound as e:
+        #     raise Exception(f"choose the correct template name: {e}")
            
         
         
@@ -826,17 +848,18 @@ class MdExpander():
         poisngrp : dict
             Standard dictionary of PoissonGroup
         """
+        return self.expand_group(poisngrp, f'PoissonGroup-{self.template_name}.md')
         # Render template
-        template_name = poisngrp["template_name"]
-        try:
-            template = self.env.get_template("PoissonGroup-{}.md".format(template_name))
-            # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(poisngrp=poisngrp, expander=self)
+        # template_name = poisngrp["template_name"]
+        # try:
+        #     template = self.env.get_template("PoissonGroup-{}.md".format(template_name))
+        #     # # Render the template with the provided NeuronGroup dictionary
+        #     md_str = template.render(poisngrp=poisngrp, expander=self)
         
-            print (md_str)
-            return md_str
-        except TemplateNotFound as e:
-            raise Exception(f"choose the correct template name: {e}")
+        #     print (md_str)
+        #     return md_str
+        # except TemplateNotFound as e:
+        #     raise Exception(f"choose the correct template name: {e}")
             
        
 
@@ -850,21 +873,22 @@ class MdExpander():
         spkgen : dict
             Standard dictionary of SpikeGeneratorGroup
         """
-        md_str = ''
-        md_str += (tab + 'Name ' + bold(spkgen['name']) +
-                ', with population size ' + bold(spkgen['N']) +
-                ', has neuron' + self.check_plural(spkgen['indices']) + ': ' +
-                self.prepare_array(spkgen['indices']) +
-                ' that spike at times ' +
-                self.prepare_array(spkgen['times']) +
-                ', with period ' + str(spkgen['period']) +
-                '.' + endll)
-        if 'run_regularly' in spkgen:
-            md_str += tab + bold('Run regularly: ') + endll
-            for run_reg in spkgen['run_regularly']:
-                md_str += self.expand_runregularly(run_reg)
+        return self.expand_group(spkgen, f'SpikeGeneratorGroup-{self.template_name}.md')
+        # md_str = ''
+        # md_str += (tab + 'Name ' + bold(spkgen['name']) +
+        #         ', with population size ' + bold(spkgen['N']) +
+        #         ', has neuron' + self.check_plural(spkgen['indices']) + ': ' +
+        #         self.prepare_array(spkgen['indices']) +
+        #         ' that spike at times ' +
+        #         self.prepare_array(spkgen['times']) +
+        #         ', with period ' + str(spkgen['period']) +
+        #         '.' + endll)
+        # if 'run_regularly' in spkgen:
+        #     md_str += tab + bold('Run regularly: ') + endll
+        #     for run_reg in spkgen['run_regularly']:
+        #         md_str += self.expand_runregularly(run_reg)
 
-        return md_str
+        # return md_str
 
     def expand_StateMonitor(self, statemon):
         """
@@ -896,17 +920,18 @@ class MdExpander():
         #                    ': ' +
         #                    ','.join([str(ind) for ind in statemon['record']]))
         # return md_str + endll
-        template_name = statemon["template_name"]
-        try:
-            template = self.env.get_template("StateMonitor-{}.md".format(template_name))
-            # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(statemon=statemon, expander=self)
+        return self.expand_group(statemon, f'StateMonitor-{self.template_name}.md')
+        # template_name = statemon["template_name"]
+        # try:
+        #     template = self.env.get_template("StateMonitor-{}.md".format(template_name))
+        #     # # Render the template with the provided NeuronGroup dictionary
+        #     md_str = template.render(statemon=statemon, expander=self)
         
-            print (md_str)  
-            return md_str
-        except TemplateNotFound as e:
+        #     print (md_str)  
+        #     return md_str
+        # except TemplateNotFound as e:
            
-            raise Exception(f"choose the correct template name: {e}")
+        #     raise Exception(f"choose the correct template name: {e}")
 
     def expand_SpikeMonitor(self, spikemon):
         """
@@ -932,13 +957,7 @@ class MdExpander():
         """
         return self.expand_group(eventmon, f'EventMonitor-{self.template_name}.md')
 
-    def expand_group(self, group, template_name):
-        try:
-           template = env.get_template(template_name)
-           md_str = template.render(group=group, expander=self)
-        except TemplateNotFound as e:
-            raise ValueError(f"Template '{template_name}' not found.")
-        return md_str
+    
 
     def expand_PopulationRateMonitor(self, popratemon):
         """
@@ -957,17 +976,18 @@ class MdExpander():
         
         # print (md_str)
         # return md_str
-        template_name = popratemon["template_name"]
-        try:
-            template = self.env.get_template("PopulationRateMonitor-{}.md".format(template_name))
-            # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(popratemon=popratemon,expander=self)
+        return self.expand_group(popratemon, f'PopulationRateMonitor-{self.template_name}.md')
+        # template_name = popratemon["template_name"]
+        # try:
+        #     template = self.env.get_template("PopulationRateMonitor-{}.md".format(template_name))
+        #     # # Render the template with the provided NeuronGroup dictionary
+        #     md_str = template.render(popratemon=popratemon,expander=self)
          
-            print (md_str)  
-            return md_str
-        except TemplateNotFound as e:
+        #     print (md_str)  
+        #     return md_str
+        # except TemplateNotFound as e:
            
-            raise Exception(f"choose the correct template name: {e}")
+        #     raise Exception(f"choose the correct template name: {e}")
 
     def expand_pathway(self, pathway):
         """
@@ -1084,17 +1104,18 @@ class MdExpander():
         #         md_str += tab + '* ' + self.expand_initializer(initializer) + '\n'
         #     md_str += '\n'
         # return md_str
-        template_name = synapse["template_name"]
-        try:
-            template = self.env.get_template("Synapses-{}.md".format(template_name))
-            # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(synapse=synapse,expander=self)
+        return self.expand_group(synapse, f'Synapses-{self.template_name}.md')
+        # template_name = synapse["template_name"]
+        # try:
+        #     template = self.env.get_template("Synapses-{}.md".format(template_name))
+        #     # # Render the template with the provided NeuronGroup dictionary
+        #     md_str = template.render(synapse=synapse,expander=self)
         
-            print (md_str)  
-            return md_str
-        except TemplateNotFound as e:
+        #     print (md_str)  
+        #     return md_str
+        # except TemplateNotFound as e:
            
-            raise Exception(f"choose the correct template name: {e}")
+        #     raise Exception(f"choose the correct template name: {e}")
             
 
     def expand_PoissonInput(self, poinp):
@@ -1118,17 +1139,18 @@ class MdExpander():
         #     md_str += tab + bold('Constants:') + endll
         #     md_str += self.expand_identifiers(poinp['identifiers'])
         # return md_str
-        template_name = poinp["template_name"]
-        try:
-            template = env.get_template("PoissonInput-{}.md".format(template_name))
-            # # Render the template with the provided NeuronGroup dictionary
-            md_str = template.render(poinp=poinp,expander=self)
+        return self.expand_group(poinp, f'PoissonInput-{self.template_name}.md')
+        # template_name = poinp["template_name"]
+        # try:
+        #     template = env.get_template("PoissonInput-{}.md".format(template_name))
+        #     # # Render the template with the provided NeuronGroup dictionary
+        #     md_str = template.render(poinp=poinp,expander=self)
         
-            print (md_str)  
-            return md_str
-        except TemplateNotFound as e:
+        #     print (md_str)  
+        #     return md_str
+        # except TemplateNotFound as e:
            
-            raise Exception(f"choose the correct template name: {e}")
+        #     raise Exception(f"choose the correct template name: {e}")
 
     def expand_runregularly(self, run_reg):
         """

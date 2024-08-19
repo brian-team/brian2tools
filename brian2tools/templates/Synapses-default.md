@@ -28,3 +28,4 @@ Connections {{ group['name'] }}, connecting {{ expander.expand_SpikeSource(group
         {{ tab }}* {{ expander.expand_initializer(initializer) }}
     {% endfor %}
 {% endif %}
+
