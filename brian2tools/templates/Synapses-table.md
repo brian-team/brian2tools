@@ -1,0 +1,9 @@
+|-------------------------------|------------------------------------------------|
+| **Connections**                | {{ group['name'] }}, connecting {{ expander.expand_SpikeSource(group['source']) }} to {{ expander.expand_SpikeSource(group['target']) }} |
+| **Connector** (if present)     | {% if not expander.keep_initializer_order and 'connectors' in group and group['connectors']|length %} {{ expander.expand_connector(group['connectors'][0]) }} {% endif %} |
+| **Model dynamics** (if present)| {% if 'equations' in group %} {% for key, eqn in group['equations'].items() %} $\frac{d}{d t} {{ key }}$ = {{ eqn.expr }}{% if eqn.unit %} [{{ eqn.unit }}]{% endif %} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
+| **Integration method** (if present) | {% if 'user_method' in group %} The equations are integrated with the '{{ group['user_method'] }}' method. {% endif %} |
+| **Pathways** (if present)      | {% if 'pathways' in group %} {{ expander.expand_pathways(group['pathways']) }} {% if 'equations' not in group and 'identifiers' in group %} , where {{ expander.expand_identifiers(group['identifiers']) }}. {% endif %} {% endif %} |
+| **Summed variables** (if present) | {% if 'summed_variables' in group %} {{ expander.expand_summed_variables(group['summed_variables']) }} {% endif %} |
+| **Constants** (if present)     | {% if 'identifiers' in group and 'equations' in group %} {% for identifier, value in group['identifiers'].items() %} {{ identifier }}: {{ value }} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |
+| **Initial values** (if present) | {% if not expander.keep_initializer_order and 'initializer' in group and group['initializer']|length %} {% for initializer in group['initializer'] %} {{ initializer.variable }}: {{ initializer.value }}{% if initializer.unit %} [{{ initializer.unit }}]{% endif %} {% if not loop.last %}\n{% endif %}{% endfor %} {% endif %} |

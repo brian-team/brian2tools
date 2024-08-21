@@ -14,7 +14,7 @@ class MdExporter(BaseExporter):
     """
 
     def build(self, direct_call=True, debug=False, expander=None,
-              filename=None, additional_formats=None, template_type=None):
+              filename=None, additional_formats=None, template_name='default', template_dir=None):
         """
         Build the exporter
 
@@ -41,7 +41,7 @@ class MdExporter(BaseExporter):
                 can specify them under this variable and the options are pdf, 
                 latex, html and all.  
 
-        template_type : str   
+        template_name : str   
             Based on your selected template, it will rendered otherwise
             a default template will be used for rendering              
         """
@@ -79,8 +79,12 @@ class MdExporter(BaseExporter):
             # default standard md expander
             self.expander = MdExpander()
 
+        if template_dir is not None:
+            self.expander.set_temp_dir_path(template_dir)
+    
+
         # start creating markdown descriptions using expander
-        self.md_text = self.expander.create_md_string(self.runs, template_type)
+        self.md_text = self.expander.create_md_string(self.runs, template_name)
 
         # check output filename
         if filename:
