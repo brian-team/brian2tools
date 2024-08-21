@@ -1,1 +1,0 @@
-{%extends "EventMonitor-template1.md" %}
