@@ -1,1 +1,1 @@
-{%extends "EventMonitor-template1.md" %}
+{%extends "EventMonitor-table.md" %}
