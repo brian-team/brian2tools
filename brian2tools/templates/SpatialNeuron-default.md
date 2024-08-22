@@ -3,6 +3,19 @@
 Group {{ (group['name']) }}, consisting of {{ (group['N']) }} neurons.
 {{ tab }}{{ ('Model dynamics:') }}
 {{ expander.expand_equations(group['equations']) }}
+# **Morphology:**
+
+{% if 'area' in group['morphology'] %}
+    Area: {{ group['morphology']['area'] }}
+{% endif %}
+
+{% if 'total_sections' in group['morphology'] %}
+    Total Sections: {{ group['morphology']['total_sections'] }}
+{% endif %}
+
+{% if 'total_compartments' in group['morphology'] %}
+    Total Compartments: {{ group['morphology']['total_compartments'] }}
+{% endif %}
  {% if group['user_method'] %}
     {{ tab }}The equations are integrated with the '{{ group['user_method'] }}' method.
 {% endif %}
