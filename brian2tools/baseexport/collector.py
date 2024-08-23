@@ -97,13 +97,13 @@ def collect_NeuronGroup(group, run_namespace):
 def collect_SpatialNeuron(group, run_namespace):
 
     """
-    Collect information from `brian2.groups.neurongroup.NeuronGroup`
+    Collect information from `brian2.spatialneuron.spatialneuron.SpatialNeuron`
     and return them in a dictionary format
 
     Parameters
     ----------
-    group : brian2.groups.neurongroup.NeuronGroup
-        NeuronGroup object
+    group : brian2.spatialneuron.spatialneuron.SpatialNeuron
+    SpatialNeuron object
 
     run_namespace : dict
         Namespace dictionary
@@ -113,7 +113,7 @@ def collect_SpatialNeuron(group, run_namespace):
     neuron_dict : dict
         Dictionary with extracted information
     """
-    print("hello2")
+
     
     neuron_dict = {}
 
