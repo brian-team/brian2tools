@@ -94,6 +94,96 @@ def collect_NeuronGroup(group, run_namespace):
 
     return neuron_dict
 
+def collect_SpatialNeuron(group, run_namespace):
+
+    """
+    Collect information from `brian2.spatialneuron.spatialneuron.SpatialNeuron`
+    and return them in a dictionary format
+
+    Parameters
+    ----------
+    group : brian2.spatialneuron.spatialneuron.SpatialNeuron
+    SpatialNeuron object
+
+    run_namespace : dict
+        Namespace dictionary
+
+    Returns
+    -------
+    neuron_dict : dict
+        Dictionary with extracted information
+    """
+
+    
+    neuron_dict = {}
+
+    # identifiers belonging to the NeuronGroup
+    identifiers = set()
+
+    # get name
+    neuron_dict['name'] = group.name
+
+    # get size
+    neuron_dict['N'] = group._N
+
+    # get user defined stateupdation method
+    if isinstance(group.method_choice, str):
+        neuron_dict['user_method'] = group.method_choice
+    # if not specified by user
+    # TODO collect from run time
+    else:
+        neuron_dict['user_method'] = None
+
+    # get equations
+    neuron_dict['equations'] = collect_Equations(group.user_equations)
+    identifiers = identifiers | group.user_equations.identifiers
+
+    neuron_dict['morphology'] = {}
+    if group is not None and group.morphology is not None:
+        morphology = group.morphology
+        neuron_dict["morphology"]["total_compartments"] = group.N
+        area_variable = group.area.get_item(group)
+        if isinstance(area_variable, np.ndarray):
+            neuron_dict["morphology"]["area"] = np.sum(area_variable)
+        neuron_dict["morphology"]["total_sections"] = morphology.total_sections
+
+
+    # check spike event is defined
+    if group.events:
+        neuron_dict['events'], event_identifiers = collect_Events(group)
+        identifiers = identifiers | event_identifiers
+
+    # check any `run_regularly` / CodeRunner objects associated
+    for obj in group.contained_objects:
+        # Note: Thresholder, StateUpdater, Resetter are all derived from
+        # CodeRunner, so to identify `run_regularly` object we use type()
+        if type(obj) == CodeRunner:
+            if 'run_regularly' not in neuron_dict:
+                neuron_dict['run_regularly'] = []
+            neuron_dict['run_regularly'].append({
+                                            'name': obj.name,
+                                            'code': obj.abstract_code,
+                                            'dt': obj.clock.dt,
+                                            'when': obj.when,
+                                            'order': obj.order
+                                            })
+            identifiers = identifiers | get_identifiers(obj.abstract_code)
+
+        # check StateUpdater when/order and assign to group level
+        if isinstance(obj, StateUpdater):
+            neuron_dict['when'] = obj.when
+            neuron_dict['order'] = obj.order
+    
+    # resolve group-specific identifiers
+    identifiers = group.resolve_all(identifiers, run_namespace)
+    # with the identifiers connected to group, prune away unwanted
+    identifiers = _prepare_identifiers(identifiers)
+    # check the dictionary is not empty
+    if identifiers:
+        neuron_dict['identifiers'] = identifiers
+    
+    return neuron_dict
+
 
 def collect_Equations(equations):
     """

@@ -321,6 +321,11 @@ class MdExpander():
                     "h": "Neuron population",
                     "order": 1,
                 },
+                "spatialneuron": {
+                        "hb": "SpatialNeuron",
+                        "h": "Neuron population",
+                        "order": 1
+                }, 
                 "poissongroup": {
                     "hb": "PoissonGroup",
                     "h": "Poisson spike source",
