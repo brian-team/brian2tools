@@ -244,29 +244,33 @@ def collect_Events(group):
     event_dict = {}
     event_identifiers = set()
 
-    # loop over the thresholder to check `spike` or custom event
     for event in group.thresholder:
-        # for simplicity create subdict variable for particular event
         event_dict[event] = {}
         event_subdict = event_dict[event]
-        # add threshold
-        event_subdict['threshold'] = {'code': group.events[event],
-                                      'when': group.thresholder[event].when,
-                                      'order': group.thresholder[event].order,
-                                      'dt': group.thresholder[event].clock.dt}
+
+        # threshold info
+        event_subdict['threshold'] = {
+            'code': group.events[event],
+            'when': group.thresholder[event].when,
+            'order': group.thresholder[event].order,
+            'dt': group.thresholder[event].clock.dt
+        }
+
         event_identifiers |= get_identifiers(group.events[event])
 
-        # check reset is defined
+        # reset if exists
         if event in group.event_codes:
-            event_subdict['reset'] = {'code': group.event_codes[event],
-                                      'when': group.resetter[event].when,
-                                      'order': group.resetter[event].order,
-                                      'dt': group.resetter[event].clock.dt}
+            event_subdict['reset'] = {
+                'code': group.event_codes[event],
+                'when': group.resetter[event].when,
+                'order': group.resetter[event].order,
+                'dt': group.resetter[event].clock.dt
+            }
             event_identifiers |= get_identifiers(group.event_codes[event])
 
-    # check refractory is defined (only for spike event)
-    if event == 'spike' and group._refractory:
-        event_subdict['refractory'] = group._refractory
+       # ✅ move refractory here
+        if event == 'spike' and getattr(group, "_refractory", None):
+           event_subdict['refractory'] = group._refractory
 
     return event_dict, event_identifiers
 
