@@ -243,6 +243,7 @@ def collect_Events(group):
 
     event_dict = {}
     event_identifiers = set()
+    refractory = getattr(group, '_refractory', None)
 
     # loop over the thresholder to check `spike` or custom event
     for event in group.thresholder:
@@ -264,8 +265,8 @@ def collect_Events(group):
                                       'dt': group.resetter[event].clock.dt}
             event_identifiers |= get_identifiers(group.event_codes[event])
         # check refractory is defined (only for spike event)
-        if event == 'spike' and group._refractory:
-            event_subdict['refractory'] = group._refractory
+        if event == 'spike' and refractory:
+            event_subdict['refractory'] = refractory
 
     return event_dict, event_identifiers
 
