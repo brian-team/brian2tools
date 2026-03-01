@@ -263,10 +263,9 @@ def collect_Events(group):
                                       'order': group.resetter[event].order,
                                       'dt': group.resetter[event].clock.dt}
             event_identifiers |= get_identifiers(group.event_codes[event])
-
-    # check refractory is defined (only for spike event)
-    if event == 'spike' and group._refractory:
-        event_subdict['refractory'] = group._refractory
+        # check refractory is defined (only for spike event)
+        if event == 'spike' and group._refractory:
+            event_subdict['refractory'] = group._refractory
 
     return event_dict, event_identifiers
 
