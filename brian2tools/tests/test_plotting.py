@@ -185,6 +185,27 @@ def test_plot_morphology_values():
                         plot_3d=False)
 
 
+def test_plot_morphology_values_per_compartment_2d():
+    set_device('runtime')
+    morpho = Soma(diameter=20*um)
+    morpho.axon = Cylinder(diameter=2*um, n=3, length=30*um)
+    morpho = morpho.generate_coordinates()
+
+    # one value for the soma and three different values for the axon compartments
+    values = np.array([0., 1., 2., 3.])
+    ax = plot_morphology(morpho, values=values, plot_3d=False,
+                         show_compartments=False, show_diameter=False)
+
+    # For the axon (n=3) we expect one plotted line segment per compartment.
+    section_lines = [line for line in ax.lines if line.get_linewidth() == 2]
+    assert len(section_lines) == 3
+
+    # Compartment values differ, therefore at least two colors should differ.
+    section_colors = [tuple(line.get_color()) for line in section_lines]
+    assert len(set(section_colors)) > 1
+    plt.close()
+
+
 if __name__ == '__main__':
     test_plot_monitors()
     test_plot_synapses()
