@@ -8,9 +8,9 @@ from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
                     Quantity, PoissonInput)
 from brian2.utils.logger import get_logger
 from brian2.utils.stringtools import get_identifiers
-from .helper import _prepare_identifiers
+from helper import _prepare_identifiers
 import numpy as np
-from .collector import *
+from collector import *
 try:
     import pprint
     pprint_available = True

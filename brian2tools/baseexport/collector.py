@@ -14,7 +14,7 @@ from brian2.synapses.synapses import StateUpdater as synapse_stateupdater
 from brian2.units.fundamentalunits import Quantity
 from brian2 import second, Subgroup
 import numpy as np
-from .helper import _prepare_identifiers
+from helper import _prepare_identifiers
 
 
 def collect_NeuronGroup(group, run_namespace):

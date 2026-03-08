@@ -4,11 +4,11 @@ Tools for use with the Brian 2 simulator.
 import os
 import warnings
 
-from .plotting import *
-from .nmlexport import *
-from .tests import run as test
-from .baseexport import *
-from .mdexport import *
+from plotting import *
+#from nmlexport import *
+from tests import run as test
+from baseexport import *
+from mdexport import *
 
 from pkg_resources import get_distribution, DistributionNotFound
 try:
