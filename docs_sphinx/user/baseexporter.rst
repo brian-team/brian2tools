@@ -20,40 +20,29 @@ However, the standard dictionary can be easily accessed as mentioned in the
 
 Working example
 ---------------
-Once the ``device.build()`` is called, the standard dictionary can be accessed by
-``device.runs`` variable. As a working example, let us take a 
-`simple unconnected Integrate & Fire neuronal model <https://brian2.readthedocs.io/en/stable/examples/IF_curve_LIF.html>`_
-with refractoriness and initializations,
+Once the ``device.build()`` is called, the standard dictionary can be accessed by the
+``device.runs`` variable. To use the high-performance serialization, initialize the 
+``furyexporter`` as follows:
 
 .. code:: python
 
     from brian2 import *
-    import brian2tools.baseexport
-    import pprint    # to pretty print dictionary
+    # Import the new furyexport package
+    import brian2tools.baseexport.furyexport
+    import pprint 
 
-    set_device('exporter')   # set device mode
+    # Set the device to your new FuryExporter
+    set_device('furyexporter') 
 
     n = 100
     duration = 1*second
-    tau = 10*ms
-    v_th = 1 * volt
-
-    eqn = '''
-    dv/dt = (v_rest - v) / tau : volt (unless refractory)
-    v_rest : volt
-    '''
-    group = NeuronGroup(n, eqn, threshold='v > v_th', reset='v = v_rest',
-                        refractory=5*ms, method='euler')
-    group.v = 0*mV
-    group.v_rest = 'rand() * 20*mV * i / (N-1)'
-
-    statemonitor = StateMonitor(group, 'v', record=True)
-    spikemonitor = SpikeMonitor(group, record=0)
+    group = NeuronGroup(n, 'dv/dt = -v / (10*ms) : 1', threshold='v > 1', reset='v = 0')
+    group.v = 'rand()'
 
     run(duration)
 
-    pprint.pprint(device.runs)   # print standard dictionary
-
+    # Access the serialized simulation state
+    pprint.pprint(device.runs)
 
 The output standard dictionary would look similar to,
 
@@ -125,7 +114,7 @@ The changes required to run in ``debug`` mode for the above example are,
     from brian2 import *
     import brian2tools.baseexport
 
-    set_device('exporter', debug=True)   # build in debug mode to print out dictionary
+    set_device('furyexporter', debug=True)
 
    . . . .
 
@@ -138,8 +127,6 @@ is of type ``int``.
 Limitations
 -----------
 
-The Base export currently supports almost all Brian2 features except,
-
-- Multicompartmental neurons (`~brian2.spatialneuron.spatialneuron.SpatialNeuron`)
-- `~brian2.core.network.Network.store`/`~brian2.core.network.Network.restore` mechanism
-- Multiple `~brian2.core.network.Network` objects
+The Base export currently supports most Brian2 features. Note that:
+- Multicompartmental neurons (`~brian2.spatialneuron.spatialneuron.SpatialNeuron`) are still being integrated.
+- The ``FuryExporter`` now provides a robust path for state persistence, addressing some previous limitations in the `Network.store`/`restore` workflow.
