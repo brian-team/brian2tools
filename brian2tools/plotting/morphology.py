@@ -24,9 +24,7 @@ def _plot_morphology2D(morpho, axes, colors,
                        values, value_norm,
                        voltage_colormap,
                        show_diameter=False, show_compartments=True,
-                       color_counter=0, bounds=None):
-    if bounds is None:
-        bounds = {"xs": [], "ys": []}
+                       color_counter=0):
     if values is not None:
         # Determine colors based on compartment values
         normed_values = value_norm(values[morpho.indices[:]])
@@ -39,9 +37,7 @@ def _plot_morphology2D(morpho, axes, colors,
         x, y = morpho.x/um, morpho.y/um
         radius = morpho.diameter/um/2
         circle = Circle((x, y), radius=radius, color=color)
-        axes.add_artist(circle)
-        bounds["xs"].extend([x-radius, x+radius])
-        bounds["ys"].extend([y-radius, y+radius])
+        axes.add_patch(circle)
        
       
     else:
@@ -59,11 +55,7 @@ def _plot_morphology2D(morpho, axes, colors,
             points = np.vstack([coords_2d + orthogonal*radius[:, np.newaxis],
                                 (coords_2d - orthogonal*radius[:, np.newaxis])[::-1]])
             patch = Polygon(points, color=color)
-            axes.add_artist(patch)
-            if len(points) > 0:
-                bounds["xs"].extend(points[:,0])
-                bounds["ys"].extend(points[:,1])
-           
+            axes.add_patch(patch)
            
         else:
             axes.plot(coords[:, 0], coords[:, 1], color=color, lw=2)
@@ -81,7 +73,7 @@ def _plot_morphology2D(morpho, axes, colors,
                            voltage_colormap=voltage_colormap,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter,
-                           colors=colors, color_counter=color_counter+1,bounds=bounds)
+                           colors=colors, color_counter=color_counter+1)
     
 def _plot_morphology3D(morpho, figure, colors, values, value_norm,
                        value_colormap,
@@ -333,20 +325,11 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         axes.scene.disable_render = False
     else:
         axes = _setup_axes_matplotlib(axes)
-        bounds = {"xs": [], "ys": []}
         _plot_morphology2D(morphology, axes, colors,
-                           values, value_norm, value_colormap,
-                           show_compartments=show_compartments,
-                           show_diameter=show_diameter,bounds=bounds)
-        if bounds["xs"] and bounds["ys"]:
-           xmin, xmax = min(bounds["xs"]), max(bounds["xs"])
-           ymin, ymax = min(bounds["ys"]), max(bounds["ys"])
-
-           mx = (xmax - xmin) * 0.05 or 1
-           my = (ymax - ymin) * 0.05 or 1
-
-           axes.set_xlim(xmin - mx, xmax + mx)
-           axes.set_ylim(ymin - my, ymax + my)
+                   values, value_norm, value_colormap,
+                   show_compartments=show_compartments,
+                   show_diameter=show_diameter)
+        axes.autoscale_view()
 
         axes.set_xlabel('x (um)')
         axes.set_ylabel('y (um)')
