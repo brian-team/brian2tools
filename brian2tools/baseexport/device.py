@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from brian2.core.variables import DynamicArrayVariable
 from brian2.devices.device import RuntimeDevice, Device, all_devices
 from brian2.groups import NeuronGroup
@@ -372,49 +374,62 @@ class BaseExporter(RuntimeDevice):
         # synaptic variables
         synapses._connect_called = True
 
-    def build(self, direct_call=True, debug=False):
+    def build(self, direct_call=True, debug=False, **build_options):
         """
-        Collect all run information and export the standard
-        dictionary format
+        Collects model information and exports the architecture as a dictionary.
+        Optionally persists the output to a JSON file.
 
         Parameters
         ----------
         direct_call: bool, optional
-            To check the call to build() was made directly
-
+            Internal flag to verify if build was called manually.
         debug: bool, optional
-            To build the device in debug mode, which prints out the dictionary
-            information
+            If True, prints the generated model dictionary to the console.
+        build_options: dict
+            Supported options:
+            - output_file (str): Path to save the model description as a JSON file.
         """
-        # buil_on_run = True but called build() directly
+        # Logic to check if build has already run
         if self.build_on_run and direct_call:
             raise RuntimeError('You used set_device with build_on_run=True '
                                '(the default option), which will '
                                'automatically build the simulation at the '
                                'first encountered run call - do not call '
-                               'device.build manually in this case. If you '
-                               'want to call it manually, '
-                               'e.g. because you have multiple run calls, use'
-                               ' set_device with build_on_run=False.')
-        # if already built
+                               'device.build manually in this case.')
+        
         if self.has_been_run:
             raise RuntimeError('The network has already been built and run '
-                               'before. To build several simulations in '
-                               'the same script, call "device.reinit()" '
-                               'and "device.activate()". Note that you '
-                               'will have to set build options (e.g. the '
-                               'directory) and defaultclock.dt again.')
-        # change the flag
+                               'before. To build several simulations, '
+                               'call "device.reinit()" and "device.activate()".')
+
         self.has_been_run = True
-        # if to operate in debug mode
+
+        # --- NEW: File Persistence Logic ---
+        output_file = build_options.get('output_file', None)
+        
+        if output_file:
+            # Professional path resolution (no hard-coded paths)
+            target_path = Path(output_file).expanduser().resolve()
+            
+            # Ensure the target directory exists
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            try:
+                # We serialize self.runs, which contains the collected model data
+                with open(target_path, 'w', encoding='utf-8') as f:
+                    # Marcel requested human-readable; indent=4 provides that.
+                    json.dump(self.runs, f, indent=4)
+                logger.info(f"Model architecture successfully exported to {target_path}")
+            except Exception as e:
+                logger.error(f"Failed to export model description to file: {e}")
+
+        # --- Existing Debug Logic ---
         if debug:
             logger.debug("Building ExportDevice in debug mode")
-            # print dictionary format using pprint
             old_threshold = np.get_printoptions()['threshold']
             np.set_printoptions(threshold=10)
             if pprint_available:
                 pprint.pprint(self.runs)
-            # reset to avoid affecting overall remaining session
             np.set_printoptions(old_threshold)
 
 
