@@ -79,27 +79,68 @@ def brian_plot(brian_obj,
     if isinstance(brian_obj, SpikeMonitor):
         return plot_raster(brian_obj.i, brian_obj.t, axes=axes, **kwds)
     elif isinstance(brian_obj, StateMonitor):
-        if len(brian_obj.record_variables) != 1:
-            raise TypeError('brian_plot only works for a StateMonitor that '
-                            'records a single variable.')
-        values = getattr(brian_obj, brian_obj.record_variables[0]).T
-        if 'var_name' not in kwds:
-            kwds['var_name'] = brian_obj.record_variables[0]
-        if 'var_unit' not in kwds and isinstance(values, Quantity):
-            kwds['var_unit'] = _get_best_unit(values)
-        return plot_state(brian_obj.t, values, axes=axes, **kwds)
+        n_vars = len(brian_obj.record_variables)
+        if n_vars == 1:
+            var_name = brian_obj.record_variables[0]
+            values = getattr(brian_obj, var_name).T
+            if 'var_name' not in kwds:
+                kwds['var_name'] = var_name
+            if 'var_unit' not in kwds and isinstance(values, Quantity):
+                kwds['var_unit'] = _get_best_unit(values)
+            return plot_state(brian_obj.t, values, axes=axes, **kwds)
+        else:
+            if axes is None:
+                fig, axes_arr = plt.subplots(n_vars, 1, sharex=True)
+            else:
+                try:
+                    axes_arr = np.asarray(axes).ravel()
+                    assert len(axes_arr) == n_vars
+                except Exception:
+                    raise TypeError("If multiple variables are recorded, 'axes' must "
+                                    "be an iterable of matching length.")
+            ret_axes = []
+            for i, var_name in enumerate(brian_obj.record_variables):
+                values = getattr(brian_obj, var_name).T
+                kwds_var = kwds.copy()
+                if 'var_name' not in kwds_var:
+                    kwds_var['var_name'] = var_name
+                if 'var_unit' not in kwds_var and isinstance(values, Quantity):
+                    kwds_var['var_unit'] = _get_best_unit(values)
+                ax = plot_state(brian_obj.t, values, axes=axes_arr[i], **kwds_var)
+                ret_axes.append(ax)
+            return ret_axes
     elif isinstance(brian_obj, StateMonitorView):
         monitor = brian_obj.monitor
-        if len(monitor.record_variables) != 1:
-            raise TypeError('brian_plot only works for a StateMonitor that '
-                            'records a single variable.')
-        var_name = monitor.record_variables[0]
-        values = getattr(brian_obj, var_name).T
-        if 'var_name' not in kwds:
-            kwds['var_name'] = var_name
-        if 'var_unit' not in kwds and isinstance(values, Quantity):
-            kwds['var_unit'] = _get_best_unit(values)
-        return plot_state(brian_obj.t, values, axes=axes, **kwds)
+        n_vars = len(monitor.record_variables)
+        if n_vars == 1:
+            var_name = monitor.record_variables[0]
+            values = getattr(brian_obj, var_name).T
+            if 'var_name' not in kwds:
+                kwds['var_name'] = var_name
+            if 'var_unit' not in kwds and isinstance(values, Quantity):
+                kwds['var_unit'] = _get_best_unit(values)
+            return plot_state(brian_obj.t, values, axes=axes, **kwds)
+        else:
+            if axes is None:
+                fig, axes_arr = plt.subplots(n_vars, 1, sharex=True)
+            else:
+                try:
+                    axes_arr = np.asarray(axes).ravel()
+                    assert len(axes_arr) == n_vars
+                except Exception:
+                    raise TypeError("If multiple variables are recorded, 'axes' must "
+                                    "be an iterable of matching length.")
+            ret_axes = []
+            for i, var_name in enumerate(monitor.record_variables):
+                values = getattr(brian_obj, var_name).T
+                kwds_var = kwds.copy()
+                if 'var_name' not in kwds_var:
+                    kwds_var['var_name'] = var_name
+                if 'var_unit' not in kwds_var and isinstance(values, Quantity):
+                    kwds_var['var_unit'] = _get_best_unit(values)
+                ax = plot_state(brian_obj.t, values, axes=axes_arr[i], **kwds_var)
+                ret_axes.append(ax)
+            return ret_axes
     elif isinstance(brian_obj, PopulationRateMonitor):
         smooth_rate = brian_obj.smooth_rate(width=1*ms)
         if 'rate_unit' not in kwds:
