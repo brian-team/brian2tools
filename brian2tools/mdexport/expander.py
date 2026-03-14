@@ -692,6 +692,59 @@ class MdExpander():
             init_str += '= '
         init_str += self.render_expression(initializer['value'])
 
+        # Try to annotate rand() and randn()
+        try:
+            from brian2.equations.equations import str_to_sympy
+            import sympy
+            expr = str_to_sympy(str(initializer['value']))
+            funcs = expr.atoms(sympy.Function)
+            
+            rand_funcs = [f for f in funcs if f.func.__name__ == 'rand']
+            randn_funcs = [f for f in funcs if f.func.__name__ == 'randn']
+            
+            # Only annotate if there's exactly one rand() or one randn() and not both
+            if len(rand_funcs) == 1 and len(randn_funcs) == 0:
+                r = rand_funcs[0]
+                min_val = sympy.simplify(expr.subs(r, 0))
+                max_val = sympy.simplify(expr.subs(r, 1))
+                
+                # Format to LaTeX
+                min_tex = sympy.latex(min_val, mode='plain')
+                max_tex = sympy.latex(max_val, mode='plain')
+                var_tex = sympy.latex(str_to_sympy(str(initializer['variable'])), mode='plain')
+                
+                # e.g., v \in [min, max]
+                annot_tex = f"{var_tex} \\in [{min_tex}, {max_tex}]"
+                
+                if self.github_md:
+                    annot_str = f'<img src="https://render.githubusercontent.com/render/math?math={annot_tex}">'
+                else:
+                    annot_str = f"${annot_tex}$"
+                    
+                init_str += f' (implies {annot_str})'
+                
+            elif len(randn_funcs) == 1 and len(rand_funcs) == 0:
+                r2 = randn_funcs[0]
+                mean_val = sympy.simplify(expr.subs(r2, 0))
+                coeff = sympy.simplify(sympy.diff(expr, r2))
+                var_val = sympy.simplify(coeff**2)
+                
+                mean_tex = sympy.latex(mean_val, mode='plain')
+                var_tex = sympy.latex(var_val, mode='plain')
+                
+                annot_tex = f"\\mu={mean_tex}, \\sigma^2={var_tex}"
+                
+                if self.github_md:
+                    annot_str = f'<img src="https://render.githubusercontent.com/render/math?math={annot_tex}">'
+                else:
+                    annot_str = f"${annot_tex}$"
+                    
+                init_str += f' (implies {annot_str})'
+                
+        except Exception:
+            pass
+
+
         # not a good checking
         if (isinstance(initializer['index'], str) and
                 (initializer['index'] != 'True' and initializer['index'] != 'False')):
