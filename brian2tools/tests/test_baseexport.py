@@ -873,9 +873,18 @@ def test_ExportDevice_unsupported():
     g :1
     '''
     G = NeuronGroup(1, eqn)
-    _ = PoissonInput(G, 'g', 1, 1 * Hz, 1)
-    # with pytest.raises(NotImplementedError):
-    run(10 * ms)
+    run(1*ms)
+    
+    from brian2.core.base import BrianObject
+    class UnsupportedObject(BrianObject):
+        def __init__(self):
+            super().__init__(name='unsupported*')
+    
+    obj = UnsupportedObject()
+    net = Network(obj)
+    with pytest.raises(NotImplementedError):
+        net.run(10 * ms)
+    device.reinit()
 
 
 if __name__ == '__main__':
