@@ -3,6 +3,7 @@ Module to plot Brian `~brian2.spatialneuron.morphology.Morphology` objects.
 '''
 from typing import Mapping
 
+from matplotlib import colors
 import numpy as np
 
 from matplotlib.colors import colorConverter, Normalize
@@ -173,8 +174,10 @@ def _plot_morphology3D(morpho, figure, colors, values, value_norm,
                                        opacity=0.5,
                                        vmin=0, vmax=max(flat_morpho.depth))
         surf.module_manager.scalar_lut_manager.lut.number_of_colors = max_depth + start_idx
-        cmap = np.int_(np.round(255*colors[np.arange(max_depth + start_idx)%len(colors), :]))
-    surf.module_manager.scalar_lut_manager.lut.table = cmap
+    data_to_round = 255*colors[np.arange(max_depth + start_idx)%len(colors), :]
+    print(f"DEBUG: Original dtype would have been {np.int_}")
+   # Replace the line with this:
+    cmap = np.array(np.round(255*colors[np.arange(max_depth + start_idx)%len(colors), :]), dtype=np.int32)
     src.update()
     return surf
 
