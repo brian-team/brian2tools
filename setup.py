@@ -5,7 +5,8 @@ brian2tools setup script
 import os
 import sys
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 
 def readme():
     with open('README.rst') as f:
@@ -24,6 +25,7 @@ setup(name='brian2tools',
                         'brian2>=2.0',
                         'setuptools',
                         'setuptools_scm',
+                        'pkg_resources',
                         'pylems>=0.4.9',
                         'libNeuroML>=0.2.18',
                         'markdown_strings'],
