@@ -1,0 +1,68 @@
+[build-system]
+requires = [
+    "setuptools>=61",
+    "setuptools_scm[toml]>=6.2",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brian2tools"
+description = "Tools for the Brian 2 simulator"
+authors = [
+    { name = "Marcel Stimberg" },
+    { name = "Dan Goodman" },
+    { name = "Romain Brette" },
+]
+maintainers = [
+    { name = "Brian Team", email = "team@briansimulator.org" },
+]
+license = { text = "CeCILL-2.1" }
+keywords = ["visualization", "neuroscience"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+requires-python = ">=3.5"
+dependencies = [
+    "matplotlib>=1.3.1",
+    "brian2>=2.0",
+    "setuptools<82",
+    "setuptools_scm",
+    "pylems>=0.4.9",
+    "libNeuroML>=0.2.18",
+    "markdown_strings",
+]
+dynamic = ["version", "readme"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+docs = ["sphinx>=1.7"]
+
+[project.urls]
+Homepage = "https://github.com/brian-team/brian2tools"
+
+[tool.setuptools]
+provides = ["brian2tools"]
+
+[tool.setuptools.packages.find]
+include = ["brian2tools*"]
+
+[tool.setuptools.package-data]
+"brian2tools.nmlexport" = ["LEMSUnitsConstants.xml", "NeuroMLCoreDimensions.xml"]
+"brian2tools.tests" = ["samples/*.nml"]
+
+[tool.setuptools.dynamic]
+readme = { file = ["README.rst"], content-type = "text/x-rst" }
+
+[tool.setuptools_scm]
+version_scheme = 'post-release'
+local_scheme = 'no-local-version'
+write_to = 'brian2tools/_version.py'
+tag_regex = '^(?P<version>\d+(?:\.\d+){0,2}[^\+]*(?:\+.*)?)$'
+fallback_version = 'unknown'
