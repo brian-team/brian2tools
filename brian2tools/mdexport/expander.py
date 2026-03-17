@@ -106,6 +106,10 @@ class MdExpander():
         self.user_file = user_file
         self.add_meta = add_meta
         self.github_md = github_md
+        self.env = Environment(
+            loader=PackageLoader("brian2tools"),
+            autoescape=select_autoescape()
+        )
 
     def set_template_dir(self, template_dir):
         self.env = Environment(
