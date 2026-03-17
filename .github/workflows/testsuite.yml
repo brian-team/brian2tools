@@ -19,8 +19,7 @@ jobs:
     - name: Create venv and install dependencies
       run: |
         uv venv --python=3.14
-        uv pip install .
+        uv pip install .[test]
     - name: Test with pytest
       run: |
-        uv pip install pytest        
         MPLBACKEND=Agg uv run pytest
