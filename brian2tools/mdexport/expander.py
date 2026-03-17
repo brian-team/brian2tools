@@ -2,22 +2,27 @@
 Standard markdown expander class to expand Brian objects to
 markdown text using standard dictionary representation of baseexport
 """
+import datetime
+import inspect
+import re
+
+import brian2
+import numpy as np
 from brian2.equations.equations import str_to_sympy
 from brian2.units.fundamentalunits import DIMENSIONLESS, Quantity, get_dimensions
-from sympy import Derivative, symbols
-from sympy.printing import latex
-from sympy.abc import *
+from jinja2 import (
+    ChoiceLoader,
+    Environment,
+    FileSystemLoader,
+    PackageLoader,
+    Template,
+    TemplateNotFound,
+    select_autoescape,
+)
 from markdown_strings import *
-from jinja2 import Template
-import numpy as np
-import re
-import inspect
-import datetime
-import brian2
-
-from jinja2 import Environment, PackageLoader, ChoiceLoader, FileSystemLoader,  select_autoescape, TemplateNotFound
-
-
+from sympy import Derivative, symbols
+from sympy.abc import *
+from sympy.printing import latex
 
 # define variables for often used delimiters
 endll = '\n\n'
@@ -106,6 +111,10 @@ class MdExpander():
         self.user_file = user_file
         self.add_meta = add_meta
         self.github_md = github_md
+        self.env = Environment(
+            loader=PackageLoader("brian2tools"),
+            autoescape=select_autoescape()
+        )
 
     def set_template_dir(self, template_dir):
         self.env = Environment(
@@ -507,10 +516,8 @@ class MdExpander():
             full template name along with the group and template_type
         """
         try:
-           print (template_name)
            template = self.env.get_template(template_name)
            md_str = template.render(group=group, expander=self)
-           print (md_str)
            return md_str
         except TemplateNotFound as e:
             raise ValueError(f"Template '{template_name}' not found.")
