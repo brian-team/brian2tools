@@ -1,16 +1,25 @@
+import numpy as np
+from brian2 import (
+    EventMonitor,
+    PoissonInput,
+    PopulationRateMonitor,
+    Quantity,
+    SpikeMonitor,
+    StateMonitor,
+    Synapses,
+    get_local_namespace,
+)
 from brian2.core.variables import DynamicArrayVariable
-from brian2.devices.device import RuntimeDevice, Device, all_devices
+from brian2.devices.device import Device, RuntimeDevice, all_devices
 from brian2.groups import NeuronGroup
-from brian2.spatialneuron import SpatialNeuron
 from brian2.input import PoissonGroup, SpikeGeneratorGroup
-from brian2 import (get_local_namespace, StateMonitor, SpikeMonitor,
-                    EventMonitor, PopulationRateMonitor, Synapses,
-                    Quantity, PoissonInput)
+from brian2.spatialneuron import SpatialNeuron
 from brian2.utils.logger import get_logger
 from brian2.utils.stringtools import get_identifiers
-from .helper import _prepare_identifiers
-import numpy as np
+
 from .collector import *
+from .helper import _prepare_identifiers
+
 try:
     import pprint
     pprint_available = True
@@ -368,6 +377,12 @@ class BaseExporter(RuntimeDevice):
         if ident_dict:
             connect.update({'identifiers': ident_dict})
         self.initializers_connectors.append(connect)
+
+        # We do not know the number of synapses after the connect
+        # (note that this is not true for synapses created with arrays, but for
+        # simplicity we do not reproduce the full standalone caching logic here)
+        self.array_cache[synapses.variables["N"]] = None
+
         # update `_connect_called` to allow initialization on
         # synaptic variables
         synapses._connect_called = True
