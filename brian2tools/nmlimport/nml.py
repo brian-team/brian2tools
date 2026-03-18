@@ -102,7 +102,8 @@ class NMLMorphology(object):
         cell = self.doc.cells[0]
         self.morph = cell.morphology
         self.segments = self._adjust_morph_object(self.morph.segments)
-
+        validate_morphology(self.segments)
+        
         section = self.SectionObject()
         self.seg_dict = self._get_segment_dict(self.segments)
         self.children = get_child_segments(self.segments)
@@ -657,23 +658,23 @@ class NMLMorphology(object):
             new_I = 'I_{}'.format(ion_channel)
             conductance = string_to_quantity(channel_obj.conductance)
 
+            erev_name = 'E_{}'.format(ion_channel)  
             erev = None
             for properties in self.channel_properties.values():
-                erev_name = 'E_{}'.format(ion_channel)
                 if erev_name in properties:
-                    if erev is None:
-                        erev = properties[erev_name]
-                    elif erev != properties[erev_name]:
-                        raise NotImplementedError("Only a single value "
-                                                  "for reversal potential '{}' "
-                                                  "is supported.".format(erev_name))
+                   if erev is None:
+                       erev = properties[erev_name]
+                   elif erev != properties[erev_name]:
+                       raise NotImplementedError("Only a single value "
+                                      "for reversal potential '{}' "
+                                      "is supported.".format(erev_name))
             if erev is None:
                 raise ValueError("No value for reversal potential '{}' "
-                                 "found.".format(erev_name))
+                     "found.".format(erev_name))
 
             eq = Equations('I = g/area*(erev - v) : amp/meter**2', I=new_I,
                            g=conductance, erev=erev)
-
+ 
         else:
             raise NotImplementedError("Requested ion Channel is of type `{}`,"
                                       " which is currently not supported. Currently this library "
