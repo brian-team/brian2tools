@@ -182,7 +182,7 @@ class NMLMorphology(object):
                     included_doc = self._get_nml_doc(file_path)
                     append_doc(doc, included_doc)
                 else:
-                    logger.warn(
+                    logger.warning(
                         "Included file `{}` does not exist at path `{"
                         "}`".format(f.href, file_path))
 

@@ -50,12 +50,12 @@ def _plot_morphology2D(morpho, axes, colors,
         x, y = morpho.x/um, morpho.y/um
         radius = morpho.diameter/um/2
         circle = Circle((x, y), radius=radius, color=color)
-        axes.add_artist(circle)
-        # FIXME: Ugly workaround to make the auto-scaling work
-        axes.plot([x-radius, x, x+radius, x], [y, y-radius, y, y+radius],
-                  color='white', alpha=0.)
+        axes.add_patch(circle)
+       
+      
     else:
         coords = morpho.coordinates/um
+    
         if show_diameter:
             coords_2d = coords[:, :2]
             directions = np.diff(coords_2d, axis=0)
@@ -99,8 +99,7 @@ def _plot_morphology2D(morpho, axes, colors,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter,
                            colors=colors, color_counter=color_counter+1)
-
-
+    
 def _plot_morphology3D(morpho, figure, colors, values, value_norm,
                        value_colormap,
                        show_diameters=True,
@@ -351,11 +350,12 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
         axes.scene.disable_render = False
     else:
         axes = _setup_axes_matplotlib(axes)
-
         _plot_morphology2D(morphology, axes, colors,
-                           values, value_norm, value_colormap,
-                           show_compartments=show_compartments,
-                           show_diameter=show_diameter)
+                   values, value_norm, value_colormap,
+                   show_compartments=show_compartments,
+                   show_diameter=show_diameter)
+        axes.autoscale_view()
+
         axes.set_xlabel('x (um)')
         axes.set_ylabel('y (um)')
         axes.set_aspect('equal')
