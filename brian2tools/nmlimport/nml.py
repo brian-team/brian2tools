@@ -303,6 +303,8 @@ class NMLMorphology(object):
             to the provided section.
         """
         root_name = section.name.rstrip('0123456789_')
+        if not self.children[seg_id]:
+            return False
         seg = self.seg_dict[self.children[seg_id][0]]
         return not seg.name.startswith(root_name)
 
