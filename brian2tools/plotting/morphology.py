@@ -27,23 +27,19 @@ def _plot_morphology2D(morpho, axes, colors,
                        color_counter=0):
     compartment_count = len(morpho.x)
 
-    def _section_colors():
-        if values is None:
-            color = colors[color_counter % len(colors)]
-            return [color] * compartment_count
+    if values is None:
+        compartment_colors = [colors[color_counter % len(colors)]] * compartment_count
+    else:
         try:
             section_values = values[morpho.indices[:]]
-        except Exception:
+        except (IndexError, TypeError):
             # Keep scalar behavior: one value means one color everywhere.
             section_values = np.repeat(values, compartment_count)
         normed_values = value_norm(section_values)
-        section_colors = voltage_colormap(normed_values)
-        if section_colors.ndim == 1:
-            section_colors = np.repeat(section_colors[np.newaxis, :],
-                                       compartment_count, axis=0)
-        return section_colors
-
-    compartment_colors = _section_colors()
+        compartment_colors = voltage_colormap(normed_values)
+        if compartment_colors.ndim == 1:
+            compartment_colors = np.repeat(compartment_colors[np.newaxis, :],
+                                           compartment_count, axis=0)
     color = compartment_colors[0]
 
     if isinstance(morpho, Soma):
