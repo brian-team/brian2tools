@@ -243,7 +243,7 @@ def collect_Events(group):
 
     event_dict = {}
     event_identifiers = set()
-    refractory = getattr(group, '_refractory', None)
+    refractory = group._refractory
 
     # loop over the thresholder to check `spike` or custom event
     for event in group.thresholder:
