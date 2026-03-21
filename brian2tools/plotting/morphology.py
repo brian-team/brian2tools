@@ -34,15 +34,15 @@ def _plot_morphology2D(morpho, axes, colors,
         color = colors[color_counter % len(colors)]
 
     if isinstance(morpho, Soma):
-        x, y = morpho.x/um, morpho.y/um
-        radius = morpho.diameter/um/2
+        x, y = float(np.squeeze(morpho.x/um)), float(np.squeeze(morpho.y/um))
+        radius = float(np.squeeze(morpho.diameter/um/2))
         circle = Circle((x, y), radius=radius, color=color)
         axes.add_patch(circle)
-       
-      
+
+
     else:
         coords = morpho.coordinates/um
-    
+
         if show_diameter:
             coords_2d = coords[:, :2]
             directions = np.diff(coords_2d, axis=0)
@@ -56,7 +56,7 @@ def _plot_morphology2D(morpho, axes, colors,
                                 (coords_2d - orthogonal*radius[:, np.newaxis])[::-1]])
             patch = Polygon(points, color=color)
             axes.add_patch(patch)
-           
+
         else:
             axes.plot(coords[:, 0], coords[:, 1], color=color, lw=2)
         if show_compartments:
@@ -74,7 +74,7 @@ def _plot_morphology2D(morpho, axes, colors,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter,
                            colors=colors, color_counter=color_counter+1)
-    
+
 def _plot_morphology3D(morpho, figure, colors, values, value_norm,
                        value_colormap,
                        show_diameters=True,
