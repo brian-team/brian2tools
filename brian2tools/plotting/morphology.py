@@ -365,10 +365,12 @@ def plot_dendrogram(morphology, axes=None, **kwds):
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
         created for the plot.
-    kwds : dict, optional
-        Any additional keywords command will be handed over to matplotlib's
-        `~matplotlib.axes.Axes.plot` command. This can be used to set plot
-        properties such as the ``color``.
+    **kwds
+        Any additional keyword arguments are passed to matplotlib's
+        `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.vlines`, and
+        `~matplotlib.axes.Axes.hlines` calls. Only arguments accepted by all
+        three functions should be used (e.g. ``color``, ``alpha``,
+        ``linewidth``).
 
     Returns
     -------
