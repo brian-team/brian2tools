@@ -4,6 +4,7 @@ from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PopulationRateMonitor, EventMonitor, set_device,
                     run, device, Network, Synapses, PoissonInput, TimedArray,
                     Function)
+from brian2.core.base import BrianObject
 from brian2.core.namespace import get_local_namespace
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
@@ -898,14 +899,7 @@ def test_ExportDevice_unsupported():
     """
     start_scope()
     set_device('exporter')
-    eqn = '''
-    v = 1 :1
-    g :1
-    '''
-    G = NeuronGroup(1, eqn)
-    run(1*ms)
-    
-    from brian2.core.base import BrianObject
+
     class UnsupportedObject(BrianObject):
         def __init__(self):
             super().__init__(name='unsupported*')
@@ -935,7 +929,6 @@ if __name__ == '__main__':
     test_Synapses()
     test_ExportDevice_options()
     test_ExportDevice_basic()
-    test_ExportDevice_unsupported()  # TODO: not checking anything
     test_synapse_init()
     test_synapse_connect_cond()
     test_synapse_connect_generator()
