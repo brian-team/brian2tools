@@ -3,7 +3,7 @@ Connections {{ group['name'] }}, connecting {{ expander.expand_SpikeSource(group
     {{ tab }}{{ expander.expand_connector(group['connectors'][0]) }}
 {% endif %}
 {% if 'equations' in group -%}
-    {{ tab }}{{ bold('Model dynamics:') }}
+    {{ tab }}{{ ('Model dynamics:') }}
     {{ expander.expand_equations(group['equations']) }}
     {% if 'user_method' in group -%}
         {{ tab }}The equations are integrated with the '{{ group['user_method'] }}' method.{{ endll }}
@@ -16,14 +16,14 @@ Connections {{ group['name'] }}, connecting {{ expander.expand_SpikeSource(group
     {% endif %}
 {% endif %}
 {% if 'summed_variables' in group -%}
-    {{ tab }}{{ bold('Summed variables:') }}
+    {{ tab }}{{ ('Summed variables:') }}
     {{ expander.expand_summed_variables(group['summed_variables']) }}
 {% endif %}
 {% if 'identifiers' in group and 'equations' in group -%}
-    {{ tab }}{{ bold('Constants:') }} {{ expander.expand_identifiers(group['identifiers']) }}
+    {{ tab }}{{ ('Constants:') }} {{ expander.expand_identifiers(group['identifiers']) }}
 {% endif %}
 {% if not expander.keep_initializer_order and 'initializer' in group and group['initializer']|length -%}
-    {{ tab }}{{ bold('Initial values:') }}
+    {{ tab }}{{ ('Initial values:') }}
     {% for initializer in group['initializer'] -%}
         {{ tab }}* {{ expander.expand_initializer(initializer) }}
     {% endfor %}
