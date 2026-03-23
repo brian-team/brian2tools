@@ -80,7 +80,7 @@ class MdExporter(BaseExporter):
             self.expander = MdExpander()
 
         if template_dir is not None:
-            self.expander.set_temp_dir_path(template_dir)
+            self.expander.set_template_dir(template_dir)
     
 
         # start creating markdown descriptions using expander

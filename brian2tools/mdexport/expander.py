@@ -107,6 +107,12 @@ class MdExpander():
         self.add_meta = add_meta
         self.github_md = github_md
 
+        # Initialize default Jinja2 environment with built-in templates
+        self.env = Environment(
+            loader=PackageLoader("brian2tools"),
+            autoescape=select_autoescape()
+        )
+
     def set_template_dir(self, template_dir):
         self.env = Environment(
             loader=ChoiceLoader([FileSystemLoader(template_dir), PackageLoader("brian2tools")]),
