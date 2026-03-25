@@ -631,8 +631,11 @@ def collect_Synapses(synapses, run_namespace):
                     'dt': obj.clock.dt, 'order': obj.order,
                     'when': obj.when
                    }
-            # serialise delay: scalar (single value) or per-synapse array
-            path.update({'delay': obj.delay[:]})
+            # only capture scalar (homogeneous) delays here; per-synapse
+            # heterogeneous delays are already recorded via the generic
+            # initializer mechanism in initializers_connectors
+            if obj.variables['delay'].scalar:
+                path.update({'delay': obj.delay[:]})
             pathways.append(path)
             # check any identifiers specific to pathway expression
             _, _, unknown = analyse_identifiers(obj.code, obj.variables)

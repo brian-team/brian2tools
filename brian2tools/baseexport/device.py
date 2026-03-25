@@ -9,7 +9,7 @@ from brian2 import (
     Synapses,
     get_local_namespace,
 )
-from brian2.core.magic import NetworkOperation
+from brian2.core.operations import NetworkOperation
 from brian2.core.variables import DynamicArrayVariable
 from brian2.devices.device import Device, RuntimeDevice, all_devices
 from brian2.groups import NeuronGroup
