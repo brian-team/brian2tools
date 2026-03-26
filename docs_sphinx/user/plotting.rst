@@ -228,11 +228,19 @@ dendogram::
 
 .. image:: ../images/plot_dendrogram.svg
 
-The `~brian2tools.plotting.morphology.plot_dendrogram` function does the same thing, but also accepts additional
-keyword arguments (e.g. ``color``, ``alpha``, ``linewidth``) that are forwarded to the underlying
-`~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.vlines`, and `~matplotlib.axes.Axes.hlines` calls::
+The `~brian2tools.plotting.morphology.plot_dendrogram` function does the same thing, but in contrast to the other
+plot functions it does not allow any customization that is not also available via
+`~brian2tools.plotting.base.brian_plot`. Both functions accept additional keyword arguments (e.g. ``color``,
+``alpha``, ``linewidth``) that are forwarded to the underlying `~matplotlib.axes.Axes.plot`,
+`~matplotlib.axes.Axes.vlines`, and `~matplotlib.axes.Axes.hlines` calls::
 
     plot_dendrogram(morpho, color='red', alpha=0.7)
+
+.. image:: ../images/plot_dendrogram_custom.svg
+
+The same customization is also possible via `~brian2tools.plotting.base.brian_plot`::
+
+    brian_plot(morpho, color='red', alpha=0.7)
 
 .. _plotting_morphologies:
 
