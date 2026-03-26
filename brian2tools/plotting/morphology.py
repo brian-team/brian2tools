@@ -34,8 +34,8 @@ def _plot_morphology2D(morpho, axes, colors,
         color = colors[color_counter % len(colors)]
 
     if isinstance(morpho, Soma):
-        x, y = float(np.squeeze(morpho.x/um)), float(np.squeeze(morpho.y/um))
-        radius = float(np.squeeze(morpho.diameter/um/2))
+        x, y = float(morpho.x[0]/um), float(morpho.y[0]/um)
+        radius = float(morpho.diameter[0]/um/2)
         circle = Circle((x, y), radius=radius, color=color)
         axes.add_patch(circle)
 
