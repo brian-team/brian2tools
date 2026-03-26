@@ -20,7 +20,7 @@ from jinja2 import (
     select_autoescape,
 )
 from markdown_strings import *
-from sympy import Derivative, symbols
+from sympy import Derivative, Symbol, symbols
 from sympy.abc import *
 from sympy.printing import latex
 
@@ -303,6 +303,35 @@ class MdExpander():
             return git_rend_exp
         # to remove `$` (in most md compiler single $ is used)
         return rend_exp[1:][:-1]
+
+    def _rand_uniform_annotation(self, expression):
+        """
+        Return a simple Uniform(lower, upper) annotation for expressions
+        containing exactly one rand() call. Otherwise return None.
+        """
+        if not isinstance(expression, str):
+            return None
+
+        if expression.count('rand()') != 1:
+            return None
+
+        if 'randn()' in expression:
+            return None
+
+        try:
+            expr_str = expression.replace('rand()', 'RANDX')
+            sym_expr = str_to_sympy(expr_str)
+            rand_sym = Symbol('RANDX')
+
+            lower = sym_expr.subs(rand_sym, 0)
+            upper = sym_expr.subs(rand_sym, 1)
+
+            lower_str = self.render_expression(str(lower))
+            upper_str = self.render_expression(str(upper))
+
+            return f' (approximately Uniform({lower_str}, {upper_str}))'
+        except Exception:
+            return None
 
     def create_md_string(self, net_dict, template_name):
         """
@@ -697,7 +726,12 @@ class MdExpander():
                      ' initialized with ')
         else:
             init_str += '= '
-        init_str += self.render_expression(initializer['value'])
+        rendered_value = self.render_expression(initializer['value'])
+        init_str += rendered_value
+
+        annotation = self._rand_uniform_annotation(initializer['value'])
+        if annotation is not None:
+            init_str += annotation
 
         # not a good checking
         index_value = initializer['index']
