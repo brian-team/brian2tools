@@ -700,24 +700,27 @@ class MdExpander():
         init_str += self.render_expression(initializer['value'])
 
         # not a good checking
-        if (isinstance(initializer['index'], str) and
-                (initializer['index'] != 'True' and initializer['index'] != 'False')):
-            init_str += ' if ' + self.render_expression(initializer['index'])
-        elif (isinstance(initializer['index'], bool) or
-            (initializer['index'] == 'True' or
-             initializer['index'] == 'False')):
-            if initializer['index'] is True or initializer['index'] == 'True':
+        index_value = initializer['index']
+        if isinstance(index_value, str):
+            if index_value not in ('True', 'False'):
+                init_str += ' if ' + self.render_expression(index_value)
+            elif index_value == 'True':
+                init_str += ''  # "to all members" implied
+            else:
+                raise AssertionError('Initialization with \'False\' as index?')
+        elif isinstance(index_value, bool):
+            if index_value:
                 init_str += ''  # "to all members" implied
             else:
                 raise AssertionError('Initialization with \'False\' as index?')
         else:
             init_str += (' to member' +
-                         self.check_plural(initializer['index']) + ' ')
-            if not hasattr(initializer['index'], '__iter___'):
-                init_str += str(initializer['index'])
+                         self.check_plural(index_value) + ' ')
+            if not hasattr(index_value, '__iter___'):
+                init_str += str(index_value)
             else:
                 init_str += ','.join(
-                    [str(ind) for ind in initializer['index']]
+                    [str(ind) for ind in index_value]
                                     )
         if 'identifiers' in initializer:
             init_str += (', where ' + self.expand_identifiers(initializer['identifiers']) + '.')
