@@ -704,8 +704,9 @@ class MdExpander():
                 (initializer['index'] != 'True' and initializer['index'] != 'False')):
             init_str += ' if ' + self.render_expression(initializer['index'])
         elif (isinstance(initializer['index'], bool) or
-            (initializer['index'] == 'True' or
-             initializer['index'] == 'False')):
+            (isinstance(initializer['index'], str) and
+             (initializer['index'] == 'True' or
+              initializer['index'] == 'False'))):
             if initializer['index'] is True or initializer['index'] == 'True':
                 init_str += ''  # "to all members" implied
             else:
@@ -796,10 +797,10 @@ class MdExpander():
                         self.expand_identifiers(connector['identifiers']))
         return con_str + '.' + endll
 
-    
-       
 
-  
+
+
+
     def expand_pathway(self, pathway):
         """
         Expand `SynapticPathway`
@@ -864,7 +865,7 @@ class MdExpander():
             sum_var_str += self.expand_summed_variable(sum_var)
         return sum_var_str
 
-   
+
 
     def expand_runregularly(self, run_reg):
         """
