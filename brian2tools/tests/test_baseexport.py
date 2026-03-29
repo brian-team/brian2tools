@@ -4,6 +4,7 @@ from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PopulationRateMonitor, EventMonitor, set_device,
                     run, device, Network, Synapses, PoissonInput, TimedArray,
                     Function)
+from brian2.core.base import BrianObject
 from brian2.core.namespace import get_local_namespace
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
@@ -236,7 +237,7 @@ def test_spikegenerator():
     assert spike_gen_dict['indices'] == [0]
     assert spike_gen_dict['indices'].dtype == int
 
-    assert float(spike_gen_dict['times']) == float(time)
+    assert float(spike_gen_dict['times'][0]) == float(time[0])
     assert spike_gen_dict['times'][:].dimensions == second
     assert spike_gen_dict['times'].dtype == float
 
@@ -629,6 +630,36 @@ def test_Synapses():
     assert syn_dict['identifiers']['postki'] == -0.01
 
 
+def test_refractory_handling():
+    """
+    Test that refractory period is correctly collected from NeuronGroup
+    """
+    # Case 1: refractory set as a Quantity
+    start_scope()
+    eqn = 'dv/dt = (1 - v) / tau : volt'
+    tau = 10 * ms
+    grp = NeuronGroup(10, eqn, threshold='v > 0.5*mV',
+                      reset='v = 0*mV', refractory=5 * ms)
+    neuron_dict = collect_NeuronGroup(grp, get_local_namespace(0))
+    assert neuron_dict['events']['spike']['refractory'] == Quantity(5 * ms)
+
+    # Case 2: refractory set as a string expression
+    start_scope()
+    grp2 = NeuronGroup(10, eqn, threshold='v > 0.5*mV',
+                       reset='v = 0*mV', refractory='(1 + 1)*ms')
+    tau = 10 * ms
+    neuron_dict2 = collect_NeuronGroup(grp2, get_local_namespace(0))
+    assert neuron_dict2['events']['spike']['refractory'] == '(1 + 1)*ms'
+
+    # Case 3: no refractory set (default is False)
+    start_scope()
+    tau = 10 * ms
+    grp3 = NeuronGroup(10, eqn, threshold='v > 0.5*mV',
+                       reset='v = 0*mV')
+    neuron_dict3 = collect_NeuronGroup(grp3, get_local_namespace(0))
+    assert 'refractory' not in neuron_dict3['events']['spike']
+
+
 def test_ExportDevice_options():
     """
     Test the run and build options of ExportDevice
@@ -868,14 +899,16 @@ def test_ExportDevice_unsupported():
     """
     start_scope()
     set_device('exporter')
-    eqn = '''
-    v = 1 :1
-    g :1
-    '''
-    G = NeuronGroup(1, eqn)
-    _ = PoissonInput(G, 'g', 1, 1 * Hz, 1)
-    # with pytest.raises(NotImplementedError):
-    run(10 * ms)
+
+    class UnsupportedObject(BrianObject):
+        def __init__(self):
+            super().__init__(name='unsupported*')
+
+    obj = UnsupportedObject()
+    net = Network(obj)
+    with pytest.raises(NotImplementedError):
+        net.run(10 * ms)
+    device.reinit()
 
 
 if __name__ == '__main__':
@@ -892,10 +925,11 @@ if __name__ == '__main__':
     test_EventMonitor()
     test_timedarray_customfunc()
     test_custom_events_neurongroup()
+    test_refractory_handling()
     test_Synapses()
     test_ExportDevice_options()
     test_ExportDevice_basic()
-    test_ExportDevice_unsupported()  # TODO: not checking anything
+    test_ExportDevice_unsupported()
     test_synapse_init()
     test_synapse_connect_cond()
     test_synapse_connect_generator()

@@ -13,6 +13,12 @@ import mayavi.mlab as mayavi
 brian_plot(morpho)
 savefig(os.path.join(fig_dir, 'plot_dendrogram.svg'))
 close()
+
+figure()
+plot_dendrogram(morpho, color='red', alpha=0.7)
+savefig(os.path.join(fig_dir, 'plot_dendrogram_custom.svg'))
+close()
+
 plot_morphology(morpho)  # 3d plot
 mayavi.show()
 figure()

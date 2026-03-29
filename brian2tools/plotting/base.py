@@ -147,10 +147,7 @@ def brian_plot(brian_obj,
             kwds['rate_unit'] = _get_best_unit(smooth_rate)
         return plot_rate(brian_obj.t, smooth_rate, axes=axes, **kwds)
     elif isinstance(brian_obj, Morphology):
-        if kwds:
-            logger.warn('plot_dendrogram does not take any additional keyword '
-                        'arguments, ignoring them.')
-        return plot_dendrogram(brian_obj, axes=axes)
+        return plot_dendrogram(brian_obj, axes=axes, **kwds)
     elif isinstance(brian_obj, Synapses):
         if len(brian_obj) == 0:
             raise TypeError('Synapses object does not have any synapses.')

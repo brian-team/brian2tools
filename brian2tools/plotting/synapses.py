@@ -73,7 +73,7 @@ def _float_connection_matrix(sources, targets, values):
 
 
 def _discrete_color_mapping(user_cmap, n_synapses):
-    cmap = mpl.cm.get_cmap(user_cmap, np.max(n_synapses))
+    cmap = plt.get_cmap(user_cmap, np.max(n_synapses))
     bounds = np.arange(np.max(n_synapses) + 1) + 0.5
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
     return bounds, cmap, norm
