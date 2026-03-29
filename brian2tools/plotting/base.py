@@ -23,6 +23,71 @@ __all__ = ['brian_plot', 'add_background_pattern']
 logger = get_logger(__name__)
 
 
+def _resolve_var_kwds(kwds, var_name, values):
+    '''
+    Build a per-variable keyword dict, resolving ``var_name`` and ``var_unit``
+    that may be plain values (applied to every variable) or dicts keyed by
+    variable name.
+    '''
+    kwds_var = {k: v for k, v in kwds.items()
+                if k not in ('var_name', 'var_unit')}
+
+    vn = kwds.get('var_name')
+    if isinstance(vn, dict):
+        kwds_var['var_name'] = vn.get(var_name, var_name)
+    elif vn is not None:
+        kwds_var['var_name'] = vn
+    else:
+        kwds_var['var_name'] = var_name
+
+    vu = kwds.get('var_unit')
+    if isinstance(vu, dict):
+        unit = vu.get(var_name)
+        if unit is not None:
+            kwds_var['var_unit'] = unit
+        elif isinstance(values, Quantity):
+            kwds_var['var_unit'] = _get_best_unit(values)
+    elif vu is not None:
+        kwds_var['var_unit'] = vu
+    elif isinstance(values, Quantity):
+        kwds_var['var_unit'] = _get_best_unit(values)
+
+    return kwds_var
+
+
+def _plot_state_variables(brian_obj, record_variables, axes, **kwds):
+    '''
+    Plot one or more recorded state variables.  When more than one variable
+    is present a column of subplots sharing the time axis is created
+    automatically (unless the caller supplies a matching array of axes).
+    '''
+    n_vars = len(record_variables)
+
+    if n_vars == 1:
+        var_name = record_variables[0]
+        values = getattr(brian_obj, var_name).T
+        kwds_var = _resolve_var_kwds(kwds, var_name, values)
+        return plot_state(brian_obj.t, values, axes=axes, **kwds_var)
+
+    if axes is None:
+        fig, axes_arr = plt.subplots(n_vars, 1, sharex=True)
+    else:
+        axes_arr = np.asarray(axes).ravel()
+        if len(axes_arr) != n_vars:
+            raise TypeError(
+                "If multiple variables are recorded, 'axes' must be an "
+                "array-like of Axes with length %d (got %d)."
+                % (n_vars, len(axes_arr)))
+
+    ret_axes = []
+    for i, var_name in enumerate(record_variables):
+        values = getattr(brian_obj, var_name).T
+        kwds_var = _resolve_var_kwds(kwds, var_name, values)
+        ret_axes.append(
+            plot_state(brian_obj.t, values, axes=axes_arr[i], **kwds_var))
+    return ret_axes
+
+
 def _setup_axes_matplotlib(axes):
     '''
     Helper function to create new figures/axes for matplotlib, depending on
@@ -56,91 +121,46 @@ def brian_plot(brian_obj,
     change. This function is therefore mostly meant as a quick and easy way to
     plot an object, for full control use one of the specific plotting functions.
 
+    When a `~brian2.monitors.statemonitor.StateMonitor` that records several
+    variables is given, a column of subplots sharing the time axis is created
+    automatically.
+
     Parameters
     ----------
     brian_obj : object
         The Brian object to plot.
-    axes : `~matplotlib.axes.Axes`, optional
+    axes : `~matplotlib.axes.Axes` or array-like of Axes, optional
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
-        created for the plot.
+        created for the plot. For a multi-variable
+        `~brian2.monitors.statemonitor.StateMonitor`, pass an array-like of
+        `~matplotlib.axes.Axes` with one entry per recorded variable.
     kwds : dict, optional
         Any additional keywords command will be handed over to matplotlib's
         `~matplotlib.axes.Axes.plot` command. This can be used to set plot
         properties such as the ``color``.
 
+        For multi-variable `~brian2.monitors.statemonitor.StateMonitor`
+        objects, ``var_name`` and ``var_unit`` may be dictionaries keyed by
+        variable name, e.g.
+        ``var_name={'v': 'membrane potential', 'I': 'input current'}``.
+
     Returns
     -------
-    axes : `~matplotlib.axes.Axes`
-        The `~matplotlib.axes.Axes` instance that was used for plotting. This
-        object allows to modify the plot further, e.g. by setting the plotted
-        range, the axis labels, the plot title, etc.
+    axes : `~matplotlib.axes.Axes` or list of `~matplotlib.axes.Axes`
+        The `~matplotlib.axes.Axes` instance(s) used for plotting. A list is
+        returned when multiple state variables are plotted.
     '''
     if isinstance(brian_obj, SpikeMonitor):
         return plot_raster(brian_obj.i, brian_obj.t, axes=axes, **kwds)
     elif isinstance(brian_obj, StateMonitor):
-        n_vars = len(brian_obj.record_variables)
-        if n_vars == 1:
-            var_name = brian_obj.record_variables[0]
-            values = getattr(brian_obj, var_name).T
-            if 'var_name' not in kwds:
-                kwds['var_name'] = var_name
-            if 'var_unit' not in kwds and isinstance(values, Quantity):
-                kwds['var_unit'] = _get_best_unit(values)
-            return plot_state(brian_obj.t, values, axes=axes, **kwds)
-        else:
-            if axes is None:
-                fig, axes_arr = plt.subplots(n_vars, 1, sharex=True)
-            else:
-                try:
-                    axes_arr = np.asarray(axes).ravel()
-                    assert len(axes_arr) == n_vars
-                except Exception:
-                    raise TypeError("If multiple variables are recorded, 'axes' must "
-                                    "be an iterable of matching length.")
-            ret_axes = []
-            for i, var_name in enumerate(brian_obj.record_variables):
-                values = getattr(brian_obj, var_name).T
-                kwds_var = kwds.copy()
-                if 'var_name' not in kwds_var:
-                    kwds_var['var_name'] = var_name
-                if 'var_unit' not in kwds_var and isinstance(values, Quantity):
-                    kwds_var['var_unit'] = _get_best_unit(values)
-                ax = plot_state(brian_obj.t, values, axes=axes_arr[i], **kwds_var)
-                ret_axes.append(ax)
-            return ret_axes
+        return _plot_state_variables(brian_obj,
+                                     brian_obj.record_variables,
+                                     axes, **kwds)
     elif isinstance(brian_obj, StateMonitorView):
-        monitor = brian_obj.monitor
-        n_vars = len(monitor.record_variables)
-        if n_vars == 1:
-            var_name = monitor.record_variables[0]
-            values = getattr(brian_obj, var_name).T
-            if 'var_name' not in kwds:
-                kwds['var_name'] = var_name
-            if 'var_unit' not in kwds and isinstance(values, Quantity):
-                kwds['var_unit'] = _get_best_unit(values)
-            return plot_state(brian_obj.t, values, axes=axes, **kwds)
-        else:
-            if axes is None:
-                fig, axes_arr = plt.subplots(n_vars, 1, sharex=True)
-            else:
-                try:
-                    axes_arr = np.asarray(axes).ravel()
-                    assert len(axes_arr) == n_vars
-                except Exception:
-                    raise TypeError("If multiple variables are recorded, 'axes' must "
-                                    "be an iterable of matching length.")
-            ret_axes = []
-            for i, var_name in enumerate(monitor.record_variables):
-                values = getattr(brian_obj, var_name).T
-                kwds_var = kwds.copy()
-                if 'var_name' not in kwds_var:
-                    kwds_var['var_name'] = var_name
-                if 'var_unit' not in kwds_var and isinstance(values, Quantity):
-                    kwds_var['var_unit'] = _get_best_unit(values)
-                ax = plot_state(brian_obj.t, values, axes=axes_arr[i], **kwds_var)
-                ret_axes.append(ax)
-            return ret_axes
+        return _plot_state_variables(brian_obj,
+                                     brian_obj.monitor.record_variables,
+                                     axes, **kwds)
     elif isinstance(brian_obj, PopulationRateMonitor):
         smooth_rate = brian_obj.smooth_rate(width=1*ms)
         if 'rate_unit' not in kwds:

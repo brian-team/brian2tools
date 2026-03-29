@@ -119,6 +119,28 @@ demonstrate the use of the returned `~matplotlib.axes.Axes` object to add a lege
 
 .. image:: ../images/plot_state.svg
 
+Multiple state variables
+~~~~~~~~~~~~~~~~~~~~~~~~
+If the `~brian2.monitors.statemonitor.StateMonitor` records several variables,
+`~brian2tools.plotting.base.brian_plot` automatically creates stacked subplots sharing the time axis.
+Using the same CUBA model as above, but recording all three state variables::
+
+    multi_mon = StateMonitor(P, ['v', 'ge', 'gi'], record=[0, 100, 1000])
+    run(1 * second)
+    brian_plot(multi_mon)
+
+Custom display names and units can be provided per variable via dictionaries::
+
+    brian_plot(multi_mon,
+              var_name={'v': 'membrane potential',
+                        'ge': 'excitatory input',
+                        'gi': 'inhibitory input'})
+
+You can also supply your own pre-created axes (one per variable)::
+
+    fig, axes = plt.subplots(3, 1, sharex=True)
+    brian_plot(multi_mon, axes=axes)
+
 Plotting synaptic connections and variables
 -------------------------------------------
 For the following examples, we create synapses and synaptic weights according to "distances" (differences between the
