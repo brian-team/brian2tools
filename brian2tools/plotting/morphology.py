@@ -43,15 +43,15 @@ def _plot_morphology2D(morpho, axes, colors,
     color = compartment_colors[0]
 
     if isinstance(morpho, Soma):
-        x, y = morpho.x/um, morpho.y/um
-        radius = morpho.diameter/um/2
+        x, y = float(morpho.x[0]/um), float(morpho.y[0]/um)
+        radius = float(morpho.diameter[0]/um/2)
         circle = Circle((x, y), radius=radius, color=color)
         axes.add_patch(circle)
-       
-      
+
+
     else:
         coords = morpho.coordinates/um
-    
+
         if show_diameter:
             coords_2d = coords[:, :2]
             directions = np.diff(coords_2d, axis=0)
@@ -95,7 +95,7 @@ def _plot_morphology2D(morpho, axes, colors,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter,
                            colors=colors, color_counter=color_counter+1)
-    
+
 def _plot_morphology3D(morpho, figure, colors, values, value_norm,
                        value_colormap,
                        show_diameters=True,
@@ -373,7 +373,7 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
     return axes
 
 
-def plot_dendrogram(morphology, axes=None):
+def plot_dendrogram(morphology, axes=None, **kwds):
     '''
     Plot a "dendrogram" of a morphology, i.e. an abstract representation which
     visualizes the branching structure and the length of each section.
@@ -386,6 +386,12 @@ def plot_dendrogram(morphology, axes=None):
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
         created for the plot.
+    **kwds
+        Any additional keyword arguments are passed to matplotlib's
+        `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.vlines`, and
+        `~matplotlib.axes.Axes.hlines` calls. Only arguments accepted by all
+        three functions should be used (e.g. ``color``, ``alpha``,
+        ``linewidth``).
 
     Returns
     -------
@@ -445,9 +451,12 @@ def plot_dendrogram(morphology, axes=None):
 
     x_values = (np.array(min_index) + np.array(max_index)) / 2.0
 
+    clip_on = kwds.pop('clip_on', False)
+    lw = kwds.pop('lw', kwds.pop('linewidth', 2))
+
     # Plot the dendogram with lengths of the vertical lines representing the
     # total distance to the root
-    plt.plot(x_values[0], length_metric[0], 'ko', clip_on=False)
+    plt.plot(x_values[0], length_metric[0], marker='o', clip_on=clip_on, **kwds)
     for sec, (x, depth) in enumerate(zip(x_values, length_metric)):
         child_start_idx = (sec+1)*max_children
         num_children = flat_morpho.morph_children_num[sec+1]
@@ -455,8 +464,8 @@ def plot_dendrogram(morphology, axes=None):
             child_indices = children[child_start_idx:child_start_idx+num_children]
             child_depth = length_metric[child_indices-1]
             child_x = x_values[child_indices-1]
-            axes.vlines(child_x, depth, child_depth, clip_on=False, lw=2)
-            axes.hlines(depth, min(child_x), max(child_x), lw=2)
+            axes.vlines(child_x, depth, child_depth, clip_on=clip_on, lw=lw, **kwds)
+            axes.hlines(depth, min(child_x), max(child_x), lw=lw, **kwds)
     axes.set_xticks([])
     axes.set_ylabel('distance from root (um)')
     axes.set_xlim(-1, terminal_counter)
