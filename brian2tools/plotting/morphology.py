@@ -69,9 +69,7 @@ def _plot_morphology2D(morpho, axes, colors,
                                     end_point - ortho*end_radius[idx],
                                     start_point - ortho*start_radius[idx]])
                 patch = Polygon(points, color=color)
-                axes.add_artist(patch)
-                # FIXME: Ugly workaround to make the auto-scaling work
-                axes.plot(points[:, 0], points[:, 1], color='white', alpha=0.)
+                axes.add_patch(patch)
         else:
             for idx, color in enumerate(compartment_colors):
                 axes.plot(coords[idx:idx + 2, 0], coords[idx:idx + 2, 1],
