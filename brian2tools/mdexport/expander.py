@@ -750,12 +750,12 @@ class MdExpander():
         else:
             init_str += (' to member' +
                          self.check_plural(index_value) + ' ')
-            if not hasattr(index_value, '__iter___'):
+            if not hasattr(index_value, '__iter__'):
                 init_str += str(index_value)
             else:
                 init_str += ','.join(
                     [str(ind) for ind in index_value]
-                                    )
+                )
         if 'identifiers' in initializer:
             init_str += (', where ' + self.expand_identifiers(initializer['identifiers']) + '.')
         # pad new line if ordered in list
@@ -833,10 +833,10 @@ class MdExpander():
                         self.expand_identifiers(connector['identifiers']))
         return con_str + '.' + endll
 
-    
-       
 
-  
+
+
+
     def expand_pathway(self, pathway):
         """
         Expand `SynapticPathway`
@@ -901,7 +901,7 @@ class MdExpander():
             sum_var_str += self.expand_summed_variable(sum_var)
         return sum_var_str
 
-   
+
 
     def expand_runregularly(self, run_reg):
         """
