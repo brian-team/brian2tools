@@ -37,9 +37,6 @@ def _plot_morphology2D(morpho, axes, colors,
             section_values = np.repeat(values, compartment_count)
         normed_values = value_norm(section_values)
         compartment_colors = voltage_colormap(normed_values)
-        if compartment_colors.ndim == 1:
-            compartment_colors = np.repeat(compartment_colors[np.newaxis, :],
-                                           compartment_count, axis=0)
     color = compartment_colors[0]
 
     if isinstance(morpho, Soma):
