@@ -25,46 +25,62 @@ def _plot_morphology2D(morpho, axes, colors,
                        voltage_colormap,
                        show_diameter=False, show_compartments=True,
                        color_counter=0):
-    if values is not None:
-        # Determine colors based on compartment values
-        normed_values = value_norm(values[morpho.indices[:]])
-        colors = voltage_colormap(normed_values)
-        color = colors[0]
+    compartment_count = len(morpho.x)
+
+    if values is None:
+        compartment_colors = [colors[color_counter % len(colors)]] * compartment_count
     else:
-        color = colors[color_counter % len(colors)]
+        try:
+            section_values = values[morpho.indices[:]]
+        except (IndexError, TypeError):
+            # Keep scalar behavior: one value means one color everywhere.
+            section_values = np.repeat(values, compartment_count)
+        normed_values = value_norm(section_values)
+        compartment_colors = voltage_colormap(normed_values)
+    color = compartment_colors[0]
 
     if isinstance(morpho, Soma):
-        x, y = morpho.x/um, morpho.y/um
-        radius = morpho.diameter/um/2
+        x, y = float(morpho.x[0]/um), float(morpho.y[0]/um)
+        radius = float(morpho.diameter[0]/um/2)
         circle = Circle((x, y), radius=radius, color=color)
         axes.add_patch(circle)
-       
-      
+
+
     else:
         coords = morpho.coordinates/um
-    
+
         if show_diameter:
             coords_2d = coords[:, :2]
             directions = np.diff(coords_2d, axis=0)
-            orthogonal = np.vstack([-directions[:, 1], directions[:, 0]])
-            orthogonal = np.vstack([orthogonal.T, orthogonal[:, -1:].T])
-            radius = np.hstack([morpho.start_diameter[0]/um/2,
-                                morpho.end_diameter/um/2])
+            orthogonal = np.vstack([-directions[:, 1], directions[:, 0]]).T
             orthogonal /= np.sqrt(np.sum(orthogonal**2, axis=1))[:, np.newaxis]
 
-            points = np.vstack([coords_2d + orthogonal*radius[:, np.newaxis],
-                                (coords_2d - orthogonal*radius[:, np.newaxis])[::-1]])
-            patch = Polygon(points, color=color)
-            axes.add_patch(patch)
-           
+            start_radius = morpho.start_diameter/um/2
+            end_radius = morpho.end_diameter/um/2
+            for idx, color in enumerate(compartment_colors):
+                start_point = coords_2d[idx]
+                end_point = coords_2d[idx + 1]
+                ortho = orthogonal[idx]
+                points = np.vstack([start_point + ortho*start_radius[idx],
+                                    end_point + ortho*end_radius[idx],
+                                    end_point - ortho*end_radius[idx],
+                                    start_point - ortho*start_radius[idx]])
+                patch = Polygon(points, color=color)
+                axes.add_patch(patch)
         else:
-            axes.plot(coords[:, 0], coords[:, 1], color=color, lw=2)
+            for idx, color in enumerate(compartment_colors):
+                axes.plot(coords[idx:idx + 2, 0], coords[idx:idx + 2, 1],
+                          color=color, lw=2)
         if show_compartments:
             # dots at the center of the compartments
             if show_diameter:
                 color = 'black'
-            axes.plot(morpho.x/um, morpho.y/um, '.', color=color,
-                      mec='none', alpha=0.75)
+                axes.plot(morpho.x/um, morpho.y/um, '.', color=color,
+                          mec='none', alpha=0.75)
+            else:
+                axes.scatter(morpho.x/um, morpho.y/um,
+                             c=compartment_colors,
+                             marker='.', edgecolors='none', alpha=0.75)
 
     for child in morpho.children:
         _plot_morphology2D(child, axes=axes,
@@ -74,7 +90,7 @@ def _plot_morphology2D(morpho, axes, colors,
                            show_compartments=show_compartments,
                            show_diameter=show_diameter,
                            colors=colors, color_counter=color_counter+1)
-    
+
 def _plot_morphology3D(morpho, figure, colors, values, value_norm,
                        value_colormap,
                        show_diameters=True,
@@ -352,7 +368,7 @@ def plot_morphology(morphology, plot_3d=None, show_compartments=False,
     return axes
 
 
-def plot_dendrogram(morphology, axes=None):
+def plot_dendrogram(morphology, axes=None, **kwds):
     '''
     Plot a "dendrogram" of a morphology, i.e. an abstract representation which
     visualizes the branching structure and the length of each section.
@@ -365,6 +381,12 @@ def plot_dendrogram(morphology, axes=None):
         The `~matplotlib.axes.Axes` instance used for plotting. Defaults to
         ``None`` which means that a new `~matplotlib.axes.Axes` will be
         created for the plot.
+    **kwds
+        Any additional keyword arguments are passed to matplotlib's
+        `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.vlines`, and
+        `~matplotlib.axes.Axes.hlines` calls. Only arguments accepted by all
+        three functions should be used (e.g. ``color``, ``alpha``,
+        ``linewidth``).
 
     Returns
     -------
@@ -424,9 +446,12 @@ def plot_dendrogram(morphology, axes=None):
 
     x_values = (np.array(min_index) + np.array(max_index)) / 2.0
 
+    clip_on = kwds.pop('clip_on', False)
+    lw = kwds.pop('lw', kwds.pop('linewidth', 2))
+
     # Plot the dendogram with lengths of the vertical lines representing the
     # total distance to the root
-    plt.plot(x_values[0], length_metric[0], 'ko', clip_on=False)
+    plt.plot(x_values[0], length_metric[0], marker='o', clip_on=clip_on, **kwds)
     for sec, (x, depth) in enumerate(zip(x_values, length_metric)):
         child_start_idx = (sec+1)*max_children
         num_children = flat_morpho.morph_children_num[sec+1]
@@ -434,8 +459,8 @@ def plot_dendrogram(morphology, axes=None):
             child_indices = children[child_start_idx:child_start_idx+num_children]
             child_depth = length_metric[child_indices-1]
             child_x = x_values[child_indices-1]
-            axes.vlines(child_x, depth, child_depth, clip_on=False, lw=2)
-            axes.hlines(depth, min(child_x), max(child_x), lw=2)
+            axes.vlines(child_x, depth, child_depth, clip_on=clip_on, lw=lw, **kwds)
+            axes.hlines(depth, min(child_x), max(child_x), lw=lw, **kwds)
     axes.set_xticks([])
     axes.set_ylabel('distance from root (um)')
     axes.set_xlim(-1, terminal_counter)

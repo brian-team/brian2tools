@@ -4,6 +4,7 @@ from brian2 import (NeuronGroup, SpikeGeneratorGroup,
                     PopulationRateMonitor, EventMonitor, set_device,
                     run, device, Network, Synapses, PoissonInput, TimedArray,
                     Function)
+from brian2.core.base import BrianObject
 from brian2.core.namespace import get_local_namespace
 from brian2.equations.equations import (DIFFERENTIAL_EQUATION,
                                         FLOAT, SUBEXPRESSION,
@@ -236,7 +237,7 @@ def test_spikegenerator():
     assert spike_gen_dict['indices'] == [0]
     assert spike_gen_dict['indices'].dtype == int
 
-    assert float(spike_gen_dict['times']) == float(time)
+    assert float(spike_gen_dict['times'][0]) == float(time[0])
     assert spike_gen_dict['times'][:].dimensions == second
     assert spike_gen_dict['times'].dtype == float
 
@@ -898,14 +899,16 @@ def test_ExportDevice_unsupported():
     """
     start_scope()
     set_device('exporter')
-    eqn = '''
-    v = 1 :1
-    g :1
-    '''
-    G = NeuronGroup(1, eqn)
-    _ = PoissonInput(G, 'g', 1, 1 * Hz, 1)
-    # with pytest.raises(NotImplementedError):
-    run(10 * ms)
+
+    class UnsupportedObject(BrianObject):
+        def __init__(self):
+            super().__init__(name='unsupported*')
+
+    obj = UnsupportedObject()
+    net = Network(obj)
+    with pytest.raises(NotImplementedError):
+        net.run(10 * ms)
+    device.reinit()
 
 
 if __name__ == '__main__':
@@ -926,7 +929,7 @@ if __name__ == '__main__':
     test_Synapses()
     test_ExportDevice_options()
     test_ExportDevice_basic()
-    test_ExportDevice_unsupported()  # TODO: not checking anything
+    test_ExportDevice_unsupported()
     test_synapse_init()
     test_synapse_connect_cond()
     test_synapse_connect_generator()
