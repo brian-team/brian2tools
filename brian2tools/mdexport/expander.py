@@ -321,13 +321,18 @@ class MdExpander():
         try:
             expr_str = expression.replace('rand()', 'RANDX')
             sym_expr = str_to_sympy(expr_str)
-            rand_sym = Symbol('RANDX')
 
+            rand_symbols = [symbol for symbol in sym_expr.free_symbols
+                            if str(symbol) == 'RANDX']
+            if len(rand_symbols) != 1:
+                return None
+
+            rand_sym = rand_symbols[0]
             lower = sym_expr.subs(rand_sym, 0)
             upper = sym_expr.subs(rand_sym, 1)
 
-            lower_str = self.render_expression(str(lower))
-            upper_str = self.render_expression(str(upper))
+            lower_str = self.render_expression(lower)
+            upper_str = self.render_expression(upper)
 
             return f' (approximately Uniform({lower_str}, {upper_str}))'
         except Exception:
