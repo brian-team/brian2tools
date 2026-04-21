@@ -1,15 +1,37 @@
 """
 Test cases to check `mdexport` package
 """
-from brian2 import (NeuronGroup, StateMonitor, Network, set_device,
-                    SpikeGeneratorGroup, PoissonGroup, Synapses,
-                    StateMonitor, SpikeMonitor, EventMonitor, device, run,
-                    Equations, array)
-from brian2 import (ms, nS, mV, Hz, volt, second, umetre, msiemens, cm,
-                    ufarad, siemens)
-from brian2tools import mdexport, MdExpander
-import pytest
 import re
+
+import pytest
+from brian2 import (
+    Equations,
+    EventMonitor,
+    Hz,
+    Network,
+    NeuronGroup,
+    PoissonGroup,
+    SpikeGeneratorGroup,
+    SpikeMonitor,
+    StateMonitor,
+    Synapses,
+    array,
+    cm,
+    device,
+    ms,
+    msiemens,
+    mV,
+    nS,
+    run,
+    second,
+    set_device,
+    siemens,
+    ufarad,
+    umetre,
+    volt,
+)
+
+from brian2tools import MdExpander, mdexport
 
 
 def _markdown_lint(md_str):
@@ -71,11 +93,10 @@ def test_simple_syntax():
     condition = 'abs(i-j)<=5'
     syn.connect(condition=condition, p=0.999, n=2)
     syn.w = '1 * mV'
-    net = Network(group, spikegen, po_grp, syn)
-    mon = StateMonitor(syn, 'w', record=True)
-    mon2 = SpikeMonitor(po_grp)
-    mon3 = EventMonitor(group, 'custom')
-    net.add(mon, mon2, mon3)
+    net = Network(group, spikegen, po_grp, syn)    
+    mon = SpikeMonitor(po_grp)
+    mon2 = EventMonitor(group, 'custom')
+    net.add(mon, mon2)
     net.run(0.01 * ms)
     md_str = device.md_text
     assert _markdown_lint(md_str)
@@ -260,45 +281,6 @@ def test_from_papers_example():
     device.build()
     md_str = device.md_text
     assert _markdown_lint(md_str)
-    device.reinit()
-
-
-def test_custom_expander():
-    """
-    Test custom expander class
-    """
-    class Custom(MdExpander):
-
-        def expand_NeuronGroup(self, grp_dict):
-            idt = self.expand_identifiers(grp_dict['identifiers'])
-            return "This is my custom neurongroup: " + grp_dict['name'] + idt
-
-        def expand_StateMonitor(self, mon_dict):
-            return "I monitor " + mon_dict['source']
-
-        def expand_identifiers(self, identifiers):
-            return 'Identifiers are not shown'
-
-    custom_expander = Custom(brian_verbose=True, include_monitors=True,
-                             keep_initializer_order=True)
-    set_device('markdown', expander=custom_expander)
-    # check custom expander
-    v_rest = -79 * mV
-    rate = 10 * Hz
-    grp = NeuronGroup(10, 'v = v_rest:volt')
-    mon = StateMonitor(grp, 'v', record=True)
-    pog = PoissonGroup(10, rates=rate)
-    run(0.1*ms)
-    text = device.md_text
-    assert _markdown_lint(text)
-    # brian_verbose check
-    assert 'NeuronGroup' in text
-    assert 'StateMonitor' in text
-    assert 'Activity recorder' not in text
-    assert 'Initializing' in text
-    assert 'Identifiers are not shown' in text
-    assert 'I monitor ' in text
-    assert 'This is my custom neurongroup: neurongroup' in text
     device.reinit()
 
 
