@@ -679,6 +679,73 @@ class MdExpander():
             rend_eqns += self.expand_equation(var, equation)
         return rend_eqns
 
+    def _annotate_random_expr(self, value_str, variable_str):
+        """
+        Attempt to annotate an initializer expression that contains a single
+        ``rand()`` or ``randn()`` call with human-readable bounds or
+        distribution parameters.
+
+        For a single ``rand()`` call the expression is evaluated at 0 and 1 to
+        produce lower/upper bounds:  ``variable ∈ [lower, upper]``.
+
+        For a single ``randn()`` call the coefficient is recovered via
+        substitution (works for linear expressions) and the mean/variance of
+        the implied normal distribution are shown:  ``μ=…, σ²=…``.
+
+        Returns an annotation string (already wrapped in ``$…$`` or an img
+        tag) or an empty string when no annotation can be produced.
+        """
+        try:
+            import sympy
+            # Count occurrences in the raw string first: sympy deduplicates
+            # identical function calls (both rand() share the same placeholder
+            # argument), so expr.atoms() alone cannot distinguish one rand()
+            # from two rand() calls.
+            # Use a negative lookahead so that randn() is not counted as rand().
+            n_rand = len(re.findall(r'\brand(?!n)\s*\(', value_str))
+            n_randn = len(re.findall(r'\brandn\s*\(', value_str))
+
+            expr = str_to_sympy(value_str)
+            funcs = expr.atoms(sympy.Function)
+
+            rand_funcs = [f for f in funcs if f.func.__name__ == 'rand']
+            randn_funcs = [f for f in funcs if f.func.__name__ == 'randn']
+
+            if n_rand == 1 and n_randn == 0 and len(rand_funcs) == 1:
+                r = rand_funcs[0]
+                min_val = sympy.simplify(expr.subs(r, 0))
+                max_val = sympy.simplify(expr.subs(r, 1))
+
+                var_tex = sympy.latex(str_to_sympy(variable_str), mode='plain')
+                min_tex = sympy.latex(min_val, mode='plain')
+                max_tex = sympy.latex(max_val, mode='plain')
+                annot_tex = fr"{var_tex} \in [{min_tex}, {max_tex}]"
+
+            elif n_randn == 1 and n_rand == 0 and len(randn_funcs) == 1:
+                r = randn_funcs[0]
+                # Use substitution rather than sympy.diff, which cannot
+                # differentiate w.r.t. a Function application reliably.
+                mean_val = sympy.simplify(expr.subs(r, 0))
+                # For a linear expression f(randn()) = a*randn() + b the
+                # coefficient 'a' equals f(1) − f(0), i.e. the std deviation.
+                coeff = sympy.simplify(expr.subs(r, 1) - expr.subs(r, 0))
+                var_val = sympy.simplify(coeff ** 2)
+
+                mean_tex = sympy.latex(mean_val, mode='plain')
+                var_tex = sympy.latex(var_val, mode='plain')
+                annot_tex = fr"\mu={mean_tex},\ \sigma^2={var_tex}"
+
+            else:
+                return ''
+
+            if self.github_md:
+                return (f'<img src="https://render.githubusercontent.com/'
+                        f'render/math?math={annot_tex}">')
+            return f'${annot_tex}$'
+
+        except Exception:
+            return ''
+
     def expand_initializer(self, initializer):
         """
         Expand initializer from initializer dictionary
@@ -694,10 +761,15 @@ class MdExpander():
                      self.render_expression(initializer['variable']))
         if self.keep_initializer_order:
             init_str += (' of ' + self.expand_SpikeSource(initializer['source']) +
-                     ' initialized with ')
+                         ' initialized with ')
         else:
             init_str += '= '
         init_str += self.render_expression(initializer['value'])
+
+        annot = self._annotate_random_expr(str(initializer['value']),
+                                           str(initializer['variable']))
+        if annot:
+            init_str += f' (implies {annot})'
 
         # not a good checking
         if (isinstance(initializer['index'], str) and
