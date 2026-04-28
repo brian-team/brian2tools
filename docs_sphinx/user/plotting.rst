@@ -129,6 +129,8 @@ Using the same CUBA model as above, but recording all three state variables::
     run(1 * second)
     brian_plot(multi_mon)
 
+.. image:: ../images/brian_plot_multivar_state_mon.svg
+
 Custom display names and units can be provided per variable via dictionaries::
 
     brian_plot(multi_mon,

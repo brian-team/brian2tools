@@ -75,16 +75,16 @@ def _plot_state_variables(brian_obj, record_variables, axes, **kwds):
         axes_arr = np.asarray(axes).ravel()
         if len(axes_arr) != n_vars:
             raise TypeError(
-                "If multiple variables are recorded, 'axes' must be an "
-                "array-like of Axes with length %d (got %d)."
-                % (n_vars, len(axes_arr)))
+                f"If multiple variables are recorded, 'axes' must be an "
+                f"array-like of Axes with length {n_vars} (got {len(axes_arr)})."
+            )
 
     ret_axes = []
-    for i, var_name in enumerate(record_variables):
+    for ax, var_name in zip(axes_arr, record_variables):
         values = getattr(brian_obj, var_name).T
         kwds_var = _resolve_var_kwds(kwds, var_name, values)
         ret_axes.append(
-            plot_state(brian_obj.t, values, axes=axes_arr[i], **kwds_var))
+            plot_state(brian_obj.t, values, axes=ax, **kwds_var))
     return ret_axes
 
 
