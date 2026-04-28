@@ -50,6 +50,46 @@ def test_plot_monitors():
     assert isinstance(ax, matplotlib.axes.Axes)
 
 
+def test_plot_multivar_monitors():
+    set_device('runtime')
+    group = NeuronGroup(10, '''dv/dt = -v/(10*ms) : volt
+                               dw/dt = -w/(10*ms) : volt''',
+                        threshold='False', reset='', method='linear')
+    group.v = np.linspace(0, 1, 10)*mV
+    group.w = np.linspace(0, 0.5, 10)*mV
+    state_mon = StateMonitor(group, ['v', 'w'], record=[3, 5])
+    run(10*ms)
+
+    # Multi-variable StateMonitor should return a list of Axes
+    axes = brian_plot(state_mon)
+    assert isinstance(axes, list)
+    assert len(axes) == 2
+    for ax in axes:
+        assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+    # Pre-created axes of matching length should work
+    fig, ax_arr = plt.subplots(2, 1, sharex=True)
+    axes = brian_plot(state_mon, axes=ax_arr)
+    assert isinstance(axes, list)
+    assert len(axes) == 2
+    plt.close()
+
+    # Wrong number of axes should raise TypeError
+    fig, bad_axes = plt.subplots(3, 1)
+    with pytest.raises(TypeError):
+        brian_plot(state_mon, axes=bad_axes)
+    plt.close()
+
+    # StateMonitorView of a multi-variable monitor
+    axes = brian_plot(state_mon[3])
+    assert isinstance(axes, list)
+    assert len(axes) == 2
+    for ax in axes:
+        assert isinstance(ax, matplotlib.axes.Axes)
+    plt.close()
+
+
 def test_plot_synapses():
     set_device('runtime')
     group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt', threshold='False',
@@ -222,5 +262,6 @@ def test_plot_morphology_values_per_compartment_2d():
 
 if __name__ == '__main__':
     test_plot_monitors()
+    test_plot_multivar_monitors()
     test_plot_synapses()
     test_plot_morphology()
