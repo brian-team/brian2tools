@@ -1,6 +1,7 @@
 name: Run test suite
 
 on: [push, pull_request]
+permissions: {}
 
 jobs:
   build-linux:
