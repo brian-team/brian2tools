@@ -9,6 +9,7 @@ from brian2 import (
     Synapses,
     get_local_namespace,
 )
+from brian2.core.operations import NetworkOperation
 from brian2.core.variables import DynamicArrayVariable
 from brian2.devices.device import Device, RuntimeDevice, all_devices
 from brian2.groups import NeuronGroup
@@ -66,7 +67,7 @@ class BaseExporter(RuntimeDevice):
         self.supported_objs = (NeuronGroup, SpatialNeuron, SpikeGeneratorGroup,
                                PoissonGroup, StateMonitor, SpikeMonitor,
                                EventMonitor, PopulationRateMonitor, Synapses,
-                               PoissonInput)
+                               PoissonInput, NetworkOperation)
         self.runs = []
         self.initializers_connectors = []
         self.array_cache = {}
@@ -148,7 +149,9 @@ class BaseExporter(RuntimeDevice):
         run_inactive = []      # inactive objects for the run
 
         # dictionary to store objects and its collector functions
-        collector_map={'neurongroup': {'f': collect_NeuronGroup, 'n': True},
+        collector_map={'networkoperation': {'f': collect_NetworkOperation,
+                                            'n': False},
+                       'neurongroup': {'f': collect_NeuronGroup, 'n': True},
                        'spatialneuron': {'f': collect_SpatialNeuron, 'n': True},
                        'poissongroup': {'f': collect_PoissonGroup, 'n': True},
                        'spikegeneratorgroup': {'f': collect_SpikeGenerator,
