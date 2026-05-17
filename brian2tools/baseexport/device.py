@@ -432,6 +432,29 @@ class BaseExporter(RuntimeDevice):
             # reset to avoid affecting overall remaining session
             np.set_printoptions(old_threshold)
 
+    def save_runs(self, filename, **kwargs):
+        """
+        Pickle :attr:`runs` with NumPy 1.x / 2.x compatible encoding.
+
+        See :func:`brian2tools.serialization.dump_runs` for keyword arguments.
+        """
+        from ..serialization import dump_runs
+
+        with open(filename, 'wb') as f:
+            dump_runs(self.runs, f, **kwargs)
+
+    @staticmethod
+    def load_runs(filename, **kwargs):
+        """
+        Load data written by :meth:`save_runs`.
+
+        See :func:`brian2tools.serialization.load_runs` for keyword arguments.
+        """
+        from ..serialization import load_runs
+
+        with open(filename, 'rb') as f:
+            return load_runs(f, **kwargs)
+
 
 # instantiate StdDevice object and add to all_devices
 std_device = BaseExporter()
