@@ -414,7 +414,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/', None),
                        'mayavi': ('http://docs.enthought.com/mayavi/mayavi/', None)}
 
 # Configure linking to github
-extlinks = {'issue': ('https://github.com/brian-team/brian2tools/issues/%s','#')}
+extlinks = {'issue': ('https://github.com/brian-team/brian2tools/issues/%s','# %s')}
 
 # Create api docs
 def run_apidoc(_):
