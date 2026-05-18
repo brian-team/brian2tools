@@ -42,7 +42,7 @@ dynamic = ["version", "readme"]
 
 [project.optional-dependencies]
 test = ["pytest"]
-docs = ["sphinx>=1.7"]
+docs = ["sphinx>=1.7", "sphinx-rtd-theme"]
 
 [project.urls]
 Homepage = "https://github.com/brian-team/brian2tools"
