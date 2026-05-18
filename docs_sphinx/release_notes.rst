@@ -10,7 +10,7 @@ This release adds a number of major new features to the package. In particular:
   biophysical properties. This feature has been developed by Kapil Kumar
   (`@kapilkd13 <https://github.com/kapilkd13>`_) as part of the
   `Google Summer of Code <https://summerofcode.withgoogle.com/>`_ 2018.
-* improved support for :doc:`exporting neuronal models to NeuroML <user/nmlexporter>,
+* improved support for :doc:`exporting neuronal models to NeuroML <user/nmlexporter>`,
   and a new :doc:`general framework to export model descriptions <user/baseexporter>`.
   As a demonstration of this framework, it is now possible to export a Brian model
   description as :doc:`human-readable markdown <user/mdexporter>`. This feature has

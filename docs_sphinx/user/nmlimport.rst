@@ -189,7 +189,7 @@ about the cell:
     A dictionary with general properties such as the threshold condition or the
     intracellular resistivity. The names are chosen to be consistent with the argument
     names in `.~SpatialNeuron`, in many cases you should therefore be able to directly
-    pass this dictionary: ``neuron = SpatialNeuron(..., **nml_object.properties)`
+    pass this dictionary: ``neuron = SpatialNeuron(..., **nml_object.properties)``
 ``channel_properties``:
     A dictionary of reversal potentials and conductance densities for the different
     channels in the cell. The dictionary maps the name of segment groups to the name
