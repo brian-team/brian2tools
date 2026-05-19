@@ -93,7 +93,7 @@ def test_simple_syntax():
     condition = 'abs(i-j)<=5'
     syn.connect(condition=condition, p=0.999, n=2)
     syn.w = '1 * mV'
-    net = Network(group, spikegen, po_grp, syn)    
+    net = Network(group, spikegen, po_grp, syn)
     mon = SpikeMonitor(po_grp)
     mon2 = EventMonitor(group, 'custom')
     net.add(mon, mon2)
@@ -316,10 +316,77 @@ def test_user_options():
     device.reinit()
 
 
+def test_rand_annotation():
+    """
+    Verify that a single rand() initializer is annotated with lower/upper
+    bounds derived by substituting rand() → 0 and rand() → 1.
+
+    Example: ``v = El + (V_th - El)*rand()``
+    should produce an annotation containing ``\\in`` with ``El`` as the lower
+    and ``V_{th}`` (or equivalent) as the upper bound.
+    """
+    set_device('markdown')
+    El   = -60 * mV
+    V_th = -50 * mV
+    group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt',
+                        threshold='v > V_th', reset='v = El', method='euler')
+    group.v = 'El + (V_th - El)*rand()'
+    run(0 * ms)
+    md_str = device.md_text
+    assert _markdown_lint(md_str)
+    # The annotation must appear and must contain the interval notation.
+    assert 'implies' in md_str
+    assert r'\in' in md_str
+    device.reinit()
+
+
+def test_randn_annotation():
+    """
+    Verify that a single randn() initializer is annotated with the mean and
+    variance of the implied normal distribution, computed via substitution.
+
+    Example: ``v = El + (randn() * 5 - 5)*mV``
+    → mean = El − 5 mV,  σ² = (5 mV)² = 25 mV²
+    The annotation must include ``\\mu`` and ``\\sigma``.
+    """
+    set_device('markdown')
+    El = -60 * mV
+    group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt',
+                        threshold='False', reset='', method='euler')
+    group.v = 'El + (randn() * 5 - 5)*mV'
+    run(0 * ms)
+    md_str = device.md_text
+    assert _markdown_lint(md_str)
+    assert 'implies' in md_str
+    assert r'\mu' in md_str
+    assert r'\sigma' in md_str
+    device.reinit()
+
+
+def test_no_annotation_for_multiple_rand():
+    """
+    When an expression contains more than one rand() call no annotation should
+    be emitted (the bounds are not well-defined).
+    """
+    set_device('markdown')
+    group = NeuronGroup(10, 'dv/dt = -v/(10*ms) : volt',
+                        threshold='False', reset='', method='euler')
+    # Two rand() calls – annotation must be suppressed
+    group.v = 'rand() * rand() * mV'
+    run(0 * ms)
+    md_str = device.md_text
+    assert _markdown_lint(md_str)
+    # "implies" should NOT appear for this initializer
+    assert 'implies' not in md_str
+    device.reinit()
+
+
 if __name__ == '__main__':
 
     test_simple_syntax()
     test_common_example()
     test_from_papers_example()
-    test_custom_expander()
     test_user_options()
+    test_rand_annotation()
+    test_randn_annotation()
+    test_no_annotation_for_multiple_rand()
