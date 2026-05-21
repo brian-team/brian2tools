@@ -49,8 +49,6 @@ def collect_NeuronGroup(group, run_namespace):
     # get user defined stateupdation method
     if isinstance(group.method_choice, str):
         neuron_dict['user_method'] = group.method_choice
-    # if not specified by user
-    # TODO collect from run time
     else:
         neuron_dict['user_method'] = None
 
@@ -83,6 +81,11 @@ def collect_NeuronGroup(group, run_namespace):
         if isinstance(obj, StateUpdater):
             neuron_dict['when'] = obj.when
             neuron_dict['order'] = obj.order
+            # capture the runtime-resolved method (may differ from user_method
+            # when the user did not specify one explicitly)
+            if neuron_dict['user_method'] is None and isinstance(
+                    obj.method_choice, str):
+                neuron_dict['resolved_method'] = obj.method_choice
     
     # resolve group-specific identifiers
     identifiers = group.resolve_all(identifiers, run_namespace)
@@ -129,8 +132,6 @@ def collect_SpatialNeuron(group, run_namespace):
     # get user defined stateupdation method
     if isinstance(group.method_choice, str):
         neuron_dict['user_method'] = group.method_choice
-    # if not specified by user
-    # TODO collect from run time
     else:
         neuron_dict['user_method'] = None
 
@@ -173,7 +174,12 @@ def collect_SpatialNeuron(group, run_namespace):
         if isinstance(obj, StateUpdater):
             neuron_dict['when'] = obj.when
             neuron_dict['order'] = obj.order
-    
+            # capture the runtime-resolved method (may differ from user_method
+            # when the user did not specify one explicitly)
+            if neuron_dict['user_method'] is None and isinstance(
+                    obj.method_choice, str):
+                neuron_dict['resolved_method'] = obj.method_choice
+
     # resolve group-specific identifiers
     identifiers = group.resolve_all(identifiers, run_namespace)
     # with the identifiers connected to group, prune away unwanted
@@ -181,7 +187,7 @@ def collect_SpatialNeuron(group, run_namespace):
     # check the dictionary is not empty
     if identifiers:
         neuron_dict['identifiers'] = identifiers
-    
+
     return neuron_dict
 
 
@@ -625,9 +631,11 @@ def collect_Synapses(synapses, run_namespace):
                     'dt': obj.clock.dt, 'order': obj.order,
                     'when': obj.when
                    }
-            # check delay is defined
+            # only capture scalar (homogeneous) delays here; per-synapse
+            # heterogeneous delays are already recorded via the generic
+            # initializer mechanism in initializers_connectors
             if obj.variables['delay'].scalar:
-               path.update({'delay': obj.delay[:]})
+                path.update({'delay': obj.delay[:]})
             pathways.append(path)
             # check any identifiers specific to pathway expression
             _, _, unknown = analyse_identifiers(obj.code, obj.variables)
@@ -646,6 +654,37 @@ def collect_Synapses(synapses, run_namespace):
         synapse_dict['identifiers'] = identifiers
 
     return synapse_dict
+
+
+def collect_NetworkOperation(net_op):
+    """
+    Collect details of a `brian2.core.magic.NetworkOperation` and represent
+    them in dictionary format.
+
+    The function body cannot be serialized automatically. A warning is logged
+    so the user knows the operation is present but its code is not captured.
+
+    Parameters
+    ----------
+    net_op : brian2.core.magic.NetworkOperation
+
+    Returns
+    -------
+    net_op_dict : dict
+    """
+    from brian2.utils.logger import get_logger
+    _logger = get_logger(__name__)
+    _logger.warn(
+        f"NetworkOperation '{net_op.name}' cannot be fully serialized: "
+        "the function body is not captured. Only scheduling metadata is stored."
+    )
+    return {
+        'name': net_op.name,
+        'dt': net_op.clock.dt,
+        'when': net_op.when,
+        'order': net_op.order,
+        'unsupported': 'function body not serializable',
+    }
 
 
 def collect_PoissonInput(poinp, run_namespace):
